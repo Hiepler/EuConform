@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AImpact Annex IV Report Template (EU AI Act 2024/1689)",
+  "description": "Template / schema scaffold for Annex IV technical documentation export. This is not legal advice.",
+  "type": "object",
+  "required": [
+    "meta",
+    "section1_generalDescription",
+    "section2_designSpecifications",
+    "section3_dataManagement",
+    "section4_riskManagementAndMitigation",
+    "section5_performanceAndFairness",
+    "section6_humanOversight",
+    "section7_technicalDocumentation"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": [
+        "reportVersion",
+        "generatedAt",
+        "tool",
+        "disclaimer",
+        "legalSources",
+        "reproducibility"
+      ],
+      "properties": {
+        "reportVersion": { "type": "string", "enum": ["annex-iv.v1"] },
+        "generatedAt": { "type": "string", "description": "ISO-8601 timestamp" },
+        "tool": {
+          "type": "object",
+          "required": ["name"],
+          "properties": { "name": { "type": "string" }, "version": { "type": "string" } }
+        },
+        "disclaimer": { "type": "string" },
+        "legalSources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "reference"],
+            "properties": { "label": { "type": "string" }, "reference": { "type": "string" } }
+          }
+        },
+        "reproducibility": {
+          "type": "object",
+          "properties": {
+            "seed": { "type": "number" },
+            "notes": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "section1_generalDescription": {
+      "type": "object",
+      "description": "1. Allgemeine Beschreibung",
+      "properties": {
+        "provider": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "address": { "type": "string" },
+            "contact": { "type": "string" }
+          }
+        },
+        "system": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "intendedPurpose": { "type": "string" },
+            "deploymentContext": { "type": "string" },
+            "userGroups": { "type": "array", "items": { "type": "string" } },
+            "riskLevel": {
+              "type": "string",
+              "enum": ["unacceptable", "high", "limited", "minimal"]
+            },
+            "annexIII": { "type": "object" }
+          }
+        }
+      }
+    },
+    "section2_designSpecifications": {
+      "type": "object",
+      "description": "2. Design-Spezifikationen"
+    },
+    "section3_dataManagement": { "type": "object", "description": "3. Datenmanagement" },
+    "section4_riskManagementAndMitigation": {
+      "type": "object",
+      "description": "4. Risikomanagement & Mitigation"
+    },
+    "section5_performanceAndFairness": {
+      "type": "object",
+      "description": "5. Performance & Fairness-Metriken"
+    },
+    "section6_humanOversight": { "type": "object", "description": "6. Human Oversight" },
+    "section7_technicalDocumentation": {
+      "type": "object",
+      "description": "7. Technische Dokumentation"
+    }
+  }
+}

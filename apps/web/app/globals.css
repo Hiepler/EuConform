@@ -1,0 +1,101 @@
+@import "tailwindcss";
+@import "@euconform/tailwind-config";
+
+/* Configure dark mode */
+@variant dark (.dark &);
+
+/* AImpact Luxury/Institutional Design System */
+@theme {
+  /* Luxury Color Palette */
+  --color-paper: #fafafa;
+  --color-slate-deep: #0f172a;
+  --color-slate-medium: #1e293b;
+  --color-gold: #a67c00;
+  --color-gold-light: #d4af37;
+  --color-border: #e5e7eb;
+  --color-border-dark: #374151;
+}
+
+:root {
+  --foreground-rgb: 15, 23, 42;
+  --background-rgb: 250, 250, 250;
+  --gold-rgb: 166, 124, 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 248, 250, 252;
+    --background-rgb: 15, 23, 42;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  font-feature-settings: "rlig" 1, "calt" 1;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.font-serif {
+  font-family: "Playfair Display", Georgia, serif;
+}
+
+/* Subtle, luxury animations */
+@keyframes gentle-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-5px) rotate(0.5deg);
+  }
+}
+
+@keyframes gold-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(166, 124, 0, 0.1);
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(166, 124, 0, 0.3);
+  }
+}
+
+.animate-gentle-float {
+  animation: gentle-float 8s ease-in-out infinite;
+}
+
+.animate-gold-glow {
+  animation: gold-glow 3s ease-in-out infinite;
+}
+
+/* Luxury accent utilities */
+.gold-accent {
+  color: var(--color-gold);
+}
+
+.gold-border {
+  border-color: var(--color-gold);
+}
+
+.gold-bg {
+  background-color: var(--color-gold);
+}
+
+/* Focus styles for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection styling */
+::selection {
+  background-color: rgba(166, 124, 0, 0.2);
+  color: rgb(var(--foreground-rgb));
+}

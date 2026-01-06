@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# EuConform - EU AI Act Compliance Tool
+# 100% offline, privacy-first, GDPR-compliant

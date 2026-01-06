@@ -1,0 +1,40 @@
+{
+  "name": "euconform",
+  "description": "EuConform - EU AI Act Compliance Tool",
+  "version": "1.0.0",
+  "author": "Benedikt Hiepler",
+  "license": "MIT OR EUPL-1.2",
+  "type": "module",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hiepler/EuConform.git"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "format": "biome format . --write",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "check-types": "turbo run check-types",
+    "prepare": "husky",
+    "ci:publish": "changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@changesets/cli": "^2.27.10",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
+    "turbo": "^2.6.3",
+    "vitest": "^2.1.9"
+  },
+  "lint-staged": {
+    "*.{js,ts,jsx,tsx,json,md}": ["biome check --write --no-errors-on-unmatched"]
+  },
+  "packageManager": "pnpm@10.19.0",
+  "engines": {
+    "node": ">=18"
+  }
+}

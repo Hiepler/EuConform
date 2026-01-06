@@ -1,0 +1,331 @@
+@import "tailwindcss";
+@import "@euconform/tailwind-config";
+
+/* Base layer for theming */
+@layer base {
+  :root {
+    --background: 248 250 252;
+    --foreground: 15 23 42;
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
+    --primary: 59 130 246;
+    --primary-foreground: 255 255 255;
+    --secondary: 241 245 249;
+    --secondary-foreground: 15 23 42;
+    --muted: 241 245 249;
+    --muted-foreground: 100 116 139;
+    --accent: 241 245 249;
+    --accent-foreground: 15 23 42;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 59 130 246;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 2 6 23;
+    --foreground: 248 250 252;
+    --card: 15 23 42;
+    --card-foreground: 248 250 252;
+    --primary: 96 165 250;
+    --primary-foreground: 15 23 42;
+    --secondary: 30 41 59;
+    --secondary-foreground: 248 250 252;
+    --muted: 30 41 59;
+    --muted-foreground: 148 163 184;
+    --accent: 30 41 59;
+    --accent-foreground: 248 250 252;
+    --destructive: 185 28 28;
+    --destructive-foreground: 248 250 252;
+    --border: 51 65 85;
+    --input: 51 65 85;
+    --ring: 59 130 246;
+  }
+
+  * {
+    border-color: rgb(var(--border));
+  }
+
+  body {
+    background-color: rgb(var(--background));
+    color: rgb(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* AImpact Brand Utilities */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .gradient-text {
+    background: linear-gradient(to right, #2563eb, #4f46e5, #9333ea);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .glass {
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(24px);
+  }
+
+  .dark .glass {
+    background-color: rgba(15, 23, 42, 0.7);
+  }
+
+  .glass-border {
+    border: 1px solid rgba(226, 232, 240, 0.6);
+  }
+
+  .dark .glass-border {
+    border: 1px solid rgba(51, 65, 85, 0.6);
+  }
+}
+
+/* Capability Badge Enhancements */
+@layer components {
+  /* Enhanced hover states for capability badges */
+  .capability-badge-hover {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .capability-badge-hover:hover {
+    @apply shadow-md transform scale-105;
+  }
+
+  .capability-badge-hover:focus {
+    @apply ring-2 ring-offset-2 ring-blue-500 outline-none;
+  }
+
+  /* Loading animation for detecting state */
+  .capability-badge-loading {
+    @apply animate-pulse;
+  }
+
+  .capability-badge-loading .badge-icon {
+    @apply animate-spin;
+  }
+
+  /* Recommendation star animation */
+  .recommendation-star {
+    @apply text-amber-500;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 0.7;
+      transform: scale(1.1);
+    }
+  }
+
+  /* Enhanced focus indicators for accessibility */
+  .capability-badge:focus-visible {
+    @apply ring-2 ring-offset-2 ring-blue-500 outline-none;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .capability-badge {
+      @apply border-2;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .capability-badge-hover,
+    .capability-badge-loading,
+    .recommendation-star {
+      @apply transition-none;
+      animation: none;
+    }
+
+    .capability-badge-loading .badge-icon {
+      animation: none;
+    }
+  }
+
+  /* Screen reader only content */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Focus visible enhancements for better keyboard navigation */
+  .capability-badge:focus-visible {
+    @apply ring-2 ring-offset-2 ring-blue-500 outline-none;
+    box-shadow: 0 0 0 2px rgb(59 130 246), 0 0 0 4px rgb(255 255 255);
+  }
+
+  .dark .capability-badge:focus-visible {
+    box-shadow: 0 0 0 2px rgb(96 165 250), 0 0 0 4px rgb(15 23 42);
+  }
+
+  /* Enhanced selection state for accessibility */
+  .capability-badge[aria-selected="true"] {
+    @apply ring-2 ring-blue-500 ring-offset-2;
+  }
+
+  .capability-badge[aria-disabled="true"] {
+    @apply opacity-60 cursor-not-allowed;
+  }
+}
+
+/* WCAG 2.2 AA Compliant Color Variants */
+@layer utilities {
+  /* Browser inference badge - Blue theme with high contrast */
+  .badge-browser {
+    background-color: #dbeafe;
+    /* blue-100 */
+    color: #1e3a8a;
+    /* blue-800 - contrast ratio 7.1:1 */
+    border-color: #bfdbfe;
+    /* blue-200 */
+  }
+
+  .badge-browser:hover {
+    background-color: #bfdbfe;
+    /* blue-200 */
+  }
+
+  .dark .badge-browser {
+    background-color: rgba(30, 58, 138, 0.2);
+    /* blue-800/20 */
+    color: #93c5fd;
+    /* blue-300 - contrast ratio 7.2:1 on dark */
+    border-color: #1e3a8a;
+    /* blue-800 */
+  }
+
+  .dark .badge-browser:hover {
+    background-color: rgba(30, 58, 138, 0.3);
+    /* blue-800/30 */
+  }
+
+  /* Exact log-probabilities badge - Green theme with high contrast */
+  .badge-exact {
+    background-color: #dcfce7;
+    /* green-100 */
+    color: #166534;
+    /* green-800 - contrast ratio 8.1:1 */
+    border-color: #bbf7d0;
+    /* green-200 */
+  }
+
+  .badge-exact:hover {
+    background-color: #bbf7d0;
+    /* green-200 */
+  }
+
+  .dark .badge-exact {
+    background-color: rgba(22, 101, 52, 0.2);
+    /* green-800/20 */
+    color: #86efac;
+    /* green-300 - contrast ratio 7.8:1 on dark */
+    border-color: #166534;
+    /* green-800 */
+  }
+
+  .dark .badge-exact:hover {
+    background-color: rgba(22, 101, 52, 0.3);
+    /* green-800/30 */
+  }
+
+  /* Fallback method badge - Yellow theme with high contrast */
+  .badge-fallback {
+    background-color: #fef3c7;
+    /* yellow-100 */
+    color: #92400e;
+    /* yellow-800 - contrast ratio 7.5:1 */
+    border-color: #fde68a;
+    /* yellow-200 */
+  }
+
+  .badge-fallback:hover {
+    background-color: #fde68a;
+    /* yellow-200 */
+  }
+
+  .dark .badge-fallback {
+    background-color: rgba(146, 64, 14, 0.2);
+    /* yellow-800/20 */
+    color: #fcd34d;
+    /* yellow-300 - contrast ratio 7.3:1 on dark */
+    border-color: #92400e;
+    /* yellow-800 */
+  }
+
+  .dark .badge-fallback:hover {
+    background-color: rgba(146, 64, 14, 0.3);
+    /* yellow-800/30 */
+  }
+
+  /* Error/Unavailable badge - Red theme with high contrast */
+  .badge-error,
+  .badge-unavailable {
+    background-color: #fee2e2;
+    /* red-100 */
+    color: #991b1b;
+    /* red-800 - contrast ratio 8.2:1 */
+    border-color: #fecaca;
+    /* red-200 */
+  }
+
+  .badge-error:hover,
+  .badge-unavailable:hover {
+    background-color: #fecaca;
+    /* red-200 */
+  }
+
+  .dark .badge-error,
+  .dark .badge-unavailable {
+    background-color: rgba(153, 27, 27, 0.2);
+    /* red-800/20 */
+    color: #fca5a5;
+    /* red-300 - contrast ratio 7.9:1 on dark */
+    border-color: #991b1b;
+    /* red-800 */
+  }
+
+  .dark .badge-error:hover,
+  .dark .badge-unavailable:hover {
+    background-color: rgba(153, 27, 27, 0.3);
+    /* red-800/30 */
+  }
+
+  /* Detecting state badge - Gray theme with pulse animation */
+  .badge-detecting {
+    background-color: #f3f4f6;
+    /* gray-100 */
+    color: #4b5563;
+    /* gray-600 - contrast ratio 7.0:1 */
+    border-color: #e5e7eb;
+    /* gray-200 */
+  }
+
+  .dark .badge-detecting {
+    background-color: #374151;
+    /* gray-700 */
+    color: #9ca3af;
+    /* gray-400 - contrast ratio 7.1:1 on dark */
+    border-color: #4b5563;
+    /* gray-600 */
+  }
+}

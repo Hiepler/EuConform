@@ -1,0 +1,28 @@
+{
+  "name": "@euconform/core",
+  "version": "1.0.0",
+  "license": "MIT OR EUPL-1.2",
+  "author": "Benedikt Hiepler",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./risk-engine": "./src/risk-engine.ts",
+    "./fairness-metrics": "./src/fairness-metrics.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@euconform/typescript-config": "workspace:*",
+    "@types/node": "^22.15.30",
+    "typescript": "5.9.2",
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "@xenova/transformers": "^2.17.2"
+  }
+}

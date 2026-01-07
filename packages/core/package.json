@@ -19,6 +19,7 @@
   "devDependencies": {
     "@euconform/typescript-config": "workspace:*",
     "@types/node": "^22.15.30",
+    "@vitest/coverage-v8": "^2.1.8",
     "typescript": "5.9.2",
     "vitest": "^2.1.8"
   },

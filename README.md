@@ -175,7 +175,7 @@ The stereotype pairs are used **solely for scientific evaluation** and do not re
 ## 🏗️ Project Structure
 
 ```
-aimpact/
+euconform/
 ├── apps/
 │   ├── web/                  # Next.js 16 production app
 │   └── docs/                 # Documentation site (WIP)

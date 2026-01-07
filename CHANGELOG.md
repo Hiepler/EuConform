@@ -53,6 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fixed** for any bug fixes
 - **Security** for vulnerability fixes
 
-[Unreleased]: https://github.com/benedikthiepler/aimpact/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/benedikthiepler/aimpact/releases/tag/v1.0.0
+[Unreleased]: https://github.com/Hiepler/EuConform/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Hiepler/EuConform/releases/tag/v1.0.0
 

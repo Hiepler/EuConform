@@ -471,7 +471,7 @@ export function useComplianceWizard(): UseComplianceWizardReturn {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `aimpact-report-${selectedModel.replace(/[/:]/g, "-")}-${Date.now()}.pdf`;
+    a.download = `euconform-report-${selectedModel.replace(/[/:]/g, "-")}-${Date.now()}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -545,7 +545,7 @@ export function useComplianceWizard(): UseComplianceWizardReturn {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `aimpact-annex-iv-${(selectedModel || "system").replace(/[/:]/g, "-")}-${Date.now()}.json`;
+    a.download = `euconform-annex-iv-${(selectedModel || "system").replace(/[/:]/g, "-")}-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };

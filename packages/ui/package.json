@@ -7,7 +7,25 @@
     "./styles.css": "./dist/index.css",
     "./*": "./dist/*.js"
   },
+  "description": "UI components for EU AI Act compliance dashboards and assessment wizards.",
+  "keywords": [
+    "eu-ai-act",
+    "ui-components",
+    "compliance",
+    "assessment-wizard",
+    "react",
+    "tailwind"
+  ],
+  "homepage": "https://github.com/Hiepler/EuConform#readme",
+  "bugs": {
+    "url": "https://github.com/Hiepler/EuConform/issues"
+  },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hiepler/EuConform.git",
+    "directory": "packages/ui"
+  },
   "scripts": {
     "build:styles": "tailwindcss -i ./src/styles.css -o ./dist/index.css",
     "build:components": "tsc",

@@ -3,6 +3,11 @@
   "version": "0.0.0",
   "type": "module",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hiepler/EuConform.git",
+    "directory": "packages/tailwind-config"
+  },
   "exports": {
     ".": "./shared-styles.css",
     "./postcss": "./postcss.config.js"

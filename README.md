@@ -136,7 +136,7 @@ We use the **CrowS-Pairs** methodology ([Nangia et al., 2020](https://aclantholo
 | Aspect | Details |
 |--------|---------|
 | **Dataset** | [CrowS-Pairs (Hugging Face)](https://huggingface.co/datasets/crows_pairs) |
-| **License** | CC BY-SA 4.0 |
+| **License** | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) – see [dataset LICENSE](apps/web/public/datasets/LICENSE.txt) |
 | **German Adaptation** | ~100 pairs adapted for German cultural context |
 | **Metric** | `Score = mean(logprob_stereo - logprob_anti)` |
 | **Thresholds** | > 0.1 (Light Bias), > 0.3 (Strong Bias) |

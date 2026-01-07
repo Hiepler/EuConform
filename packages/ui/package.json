@@ -1,6 +1,6 @@
 {
   "name": "@euconform/ui",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "sideEffects": ["**/*.css"],
   "files": ["dist"],
   "exports": {

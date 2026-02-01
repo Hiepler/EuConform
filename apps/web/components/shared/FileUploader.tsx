@@ -44,7 +44,7 @@ function DropZoneContent({ isLoading, error, isDragOver, onClear }: DropZoneCont
         <Button
           variant="outline"
           size="sm"
-          onClick={(e) => {
+          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
             e.stopPropagation();
             onClear();
           }}

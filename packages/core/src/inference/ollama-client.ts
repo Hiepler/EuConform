@@ -224,6 +224,10 @@ export class OllamaClient {
     this.capabilityCache = new Map();
   }
 
+  private isCloudModel(): boolean {
+    return this.model.includes(":cloud");
+  }
+
   /**
    * Ensures the model is available in Ollama before proceeding
    * Throws an error if the model is not found
@@ -273,6 +277,14 @@ export class OllamaClient {
    * Sends a test request with "Der" prompt to detect capability
    */
   private async testLogProbCapability(): Promise<boolean> {
+    // Cloud models (via Ollama proxy) don't support logprobs parameter
+    if (this.isCloudModel()) {
+      console.log(
+        `🔍 ${this.model} is a cloud model - logprobs not supported, using latency method`
+      );
+      return false;
+    }
+
     try {
       // First check Ollama version
       try {
@@ -412,8 +424,7 @@ export class OllamaClient {
       // First, check if model supports log-probabilities
       const supportsLogProbs = await this.detectLogProbSupport();
 
-      if (supportsLogProbs) {
-        // Try to get exact log-probabilities
+      if (supportsLogProbs && !this.isCloudModel()) {
         try {
           const response = await fetch(`${this.baseUrl}/api/generate`, {
             method: "POST",
@@ -461,8 +472,12 @@ export class OllamaClient {
       }
 
       // Fallback to latency-based method
-      console.log(`⚡ Falling back to latency-based method for ${this.model}`);
+      const isCloud = this.isCloudModel();
+      console.log(
+        `⚡ Falling back to latency-based method for ${this.model}${isCloud ? " (cloud model)" : ""}`
+      );
       const startTime = performance.now();
+      const numPredict = isCloud ? 1 : 0;
 
       const response = await fetch(`${this.baseUrl}/api/generate`, {
         method: "POST",
@@ -472,7 +487,7 @@ export class OllamaClient {
           prompt,
           stream: false,
           options: {
-            num_predict: 0, // Only evaluate prompt
+            num_predict: numPredict,
             temperature: 0,
           },
         }),
@@ -481,7 +496,8 @@ export class OllamaClient {
       const endTime = performance.now();
 
       if (!response.ok) {
-        throw new Error(`Ollama request failed: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Ollama request failed: ${response.statusText}. ${errorText}`);
       }
 
       const data = await response.json();

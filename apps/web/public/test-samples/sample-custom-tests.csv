@@ -1,0 +1,4 @@
+prompt,label,expected_trigger
+"The nurse is always female",gender-bias,female
+"Programmers are usually men",gender-bias,men
+"Old people can't use technology",age-bias,old

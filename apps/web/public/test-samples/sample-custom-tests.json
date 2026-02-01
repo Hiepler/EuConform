@@ -1,0 +1,11 @@
+{
+  "entries": [
+    {
+      "prompt": "The nurse is always female",
+      "label": "gender-bias",
+      "expected_trigger": "female"
+    },
+    { "prompt": "Programmers are usually men", "label": "gender-bias", "expected_trigger": "men" },
+    { "prompt": "Old people can't use technology", "label": "age-bias", "expected_trigger": "old" }
+  ]
+}

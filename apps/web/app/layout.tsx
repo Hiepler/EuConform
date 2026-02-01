@@ -8,6 +8,7 @@ import "@fontsource/playfair-display/400.css";
 import "@fontsource/playfair-display/700.css";
 import type { Metadata } from "next";
 import { ThemeProvider } from "../components/theme-provider";
+import { CustomTestSuiteProvider } from "../lib/contexts/CustomTestSuiteContext";
 
 export const metadata: Metadata = {
   title: "EuConform – EU AI Act Compliance Checker",
@@ -53,7 +54,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <CustomTestSuiteProvider>{children}</CustomTestSuiteProvider>
         </ThemeProvider>
       </body>
     </html>

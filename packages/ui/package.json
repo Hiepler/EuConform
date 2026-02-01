@@ -5,6 +5,7 @@
   "files": ["dist"],
   "exports": {
     "./styles.css": "./dist/index.css",
+    "./lib/*": "./dist/lib/*.js",
     "./*": "./dist/*.js"
   },
   "description": "UI components for EU AI Act compliance dashboards and assessment wizards.",

@@ -1,9 +1,12 @@
 "use client";
 
 import { AlertTriangle, Loader2, Scale } from "lucide-react";
+import { useCustomTestSuite } from "../../lib/contexts/CustomTestSuiteContext";
 import { useLanguage } from "../../lib/i18n/LanguageContext";
 import type { ModelLoadingStatus } from "../../lib/types/wizard";
 import { BackgroundElements } from "../shared";
+import { FileUploader } from "../shared/FileUploader";
+import { FormatHelp } from "../shared/FormatHelp";
 
 /**
  * Props for the BiasTestScreen component
@@ -42,6 +45,7 @@ export function BiasTestScreen({
   onSkip,
 }: BiasTestScreenProps) {
   const { t } = useLanguage();
+  const { testCases, isActive, setCustomTestCases, clearCustomTestCases } = useCustomTestSuite();
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
@@ -130,24 +134,44 @@ export function BiasTestScreen({
               </p>
             </div>
           ) : (
-            <div className="space-y-4 max-w-xs mx-auto">
-              <button
-                type="button"
-                onClick={onRunTest}
-                className="group w-full relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl bg-slate-deep dark:bg-paper text-paper dark:text-slate-deep font-bold hover:shadow-lg hover:shadow-slate-900/20 transition-all duration-300 overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                <Scale className="w-5 h-5" />
-                {t("bias_start_test")}
-              </button>
-              <button
-                type="button"
-                onClick={onSkip}
-                className="w-full py-3 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
-              >
-                {t("skip")}
-              </button>
-            </div>
+            <>
+              {/* Custom Test Suite Upload */}
+              <div className="mb-6">
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-3">
+                  Custom Test Suite (Optional)
+                </h3>
+                <FileUploader
+                  onUploadComplete={setCustomTestCases}
+                  onClear={clearCustomTestCases}
+                  isActive={isActive}
+                />
+                {isActive && (
+                  <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
+                    Using custom test suite with {testCases.length} test cases
+                  </p>
+                )}
+                <FormatHelp />
+              </div>
+
+              <div className="space-y-4 max-w-xs mx-auto">
+                <button
+                  type="button"
+                  onClick={onRunTest}
+                  className="group w-full relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl bg-slate-deep dark:bg-paper text-paper dark:text-slate-deep font-bold hover:shadow-lg hover:shadow-slate-900/20 transition-all duration-300 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                  <Scale className="w-5 h-5" />
+                  {t("bias_start_test")}
+                </button>
+                <button
+                  type="button"
+                  onClick={onSkip}
+                  className="w-full py-3 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+                >
+                  {t("skip")}
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>

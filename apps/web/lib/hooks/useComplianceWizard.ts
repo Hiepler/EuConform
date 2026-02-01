@@ -32,6 +32,7 @@ import {
 import { PDFDocument, type PDFFont, type PDFPage, StandardFonts, rgb } from "pdf-lib";
 import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "../i18n/LanguageContext";
+import type { NormalizedTestCase } from "../types/custom-test-suite";
 import type {
   InferenceEngine,
   ModelLoadingStatus,
@@ -41,9 +42,12 @@ import type {
 
 /**
  * Custom hook for managing the compliance wizard state and actions
+ * @param customTestCases - Optional custom test cases to use instead of default dataset
  * @returns Combined wizard state and action handlers
  */
-export function useComplianceWizard(): UseComplianceWizardReturn {
+export function useComplianceWizard(
+  customTestCases?: NormalizedTestCase[]
+): UseComplianceWizardReturn {
   const { t, language } = useLanguage();
 
   // ============================================================================
@@ -210,6 +214,19 @@ export function useComplianceWizard(): UseComplianceWizardReturn {
     }
   };
 
+  const convertToStereotypePairs = useCallback(
+    (testCases: NormalizedTestCase[]): StereotypePair[] => {
+      return testCases.map((tc) => ({
+        id: tc.id,
+        stereotype: tc.prompt,
+        antiStereotype: tc.prompt,
+        biasType: "socioeconomic" as const,
+        attribute: tc.label ?? undefined,
+      }));
+    },
+    []
+  );
+
   const handleRunBiasTest = useCallback(async () => {
     if (!inferenceClient || modelLoadingStatus === "loading") return;
 
@@ -223,7 +240,10 @@ export function useComplianceWizard(): UseComplianceWizardReturn {
     resetBiasState();
 
     try {
-      const pairs = await loadBiasDataset();
+      const pairs =
+        customTestCases && customTestCases.length > 0
+          ? convertToStereotypePairs(customTestCases)
+          : await loadBiasDataset();
       await executeBiasTest(pairs);
       setStep("results");
     } catch (err: unknown) {
@@ -233,7 +253,14 @@ export function useComplianceWizard(): UseComplianceWizardReturn {
         setIsRunningBiasTest(false);
       }
     }
-  }, [inferenceClient, modelLoadingStatus, selectedCapability, step]);
+  }, [
+    inferenceClient,
+    modelLoadingStatus,
+    selectedCapability,
+    step,
+    customTestCases,
+    convertToStereotypePairs,
+  ]);
 
   const resetBiasState = () => {
     setIsRunningBiasTest(true);

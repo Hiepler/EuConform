@@ -21,6 +21,7 @@ import {
   QuizScreen,
   ResultsScreen,
 } from "../components/screens";
+import { useCustomTestSuite } from "../lib/contexts/CustomTestSuiteContext";
 import { useComplianceWizard } from "../lib/hooks";
 import { LanguageProvider } from "../lib/i18n/LanguageContext";
 
@@ -40,7 +41,8 @@ export default function Page() {
  * and renders the appropriate screen component based on the current step.
  */
 function ComplianceWizard() {
-  const wizard = useComplianceWizard();
+  const { testCases: customTestCases } = useCustomTestSuite();
+  const wizard = useComplianceWizard(customTestCases);
 
   // Render the appropriate screen based on current step
   switch (wizard.step) {

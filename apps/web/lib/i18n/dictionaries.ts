@@ -231,6 +231,66 @@ export interface Dictionary {
   disclaimer_no_guarantee: string;
   disclaimer_data_privacy: string;
   disclaimer_experimental_tool: string;
+
+  // Deadline Timeline
+  timeline_section_title: string;
+  timeline_section_subtitle: string;
+  timeline_today_label: string;
+  timeline_days_ago: string;
+  timeline_days_left: string;
+  timeline_in_force_since: string;
+  timeline_status_past: string;
+  timeline_status_imminent: string;
+  timeline_status_upcoming: string;
+  timeline_status_future: string;
+  timeline_relevant_badge: string;
+  timeline_proposed_badge: string;
+  timeline_show_obligations: string;
+  timeline_hide_obligations: string;
+  timeline_omnibus_title: string;
+  timeline_omnibus_desc: string;
+  timeline_penalty_label: string;
+  // Phase titles
+  timeline_phase0_title: string;
+  timeline_phase0_subtitle: string;
+  timeline_phase1_title: string;
+  timeline_phase1_subtitle: string;
+  timeline_phase2_title: string;
+  timeline_phase2_subtitle: string;
+  timeline_phase3_title: string;
+  timeline_phase3_subtitle: string;
+  timeline_phase4_title: string;
+  timeline_phase4_subtitle: string;
+  // Obligation titles
+  timeline_obligation_regulation_published: string;
+  timeline_obligation_definitions: string;
+  timeline_obligation_prohibited: string;
+  timeline_obligation_ai_literacy: string;
+  timeline_obligation_gpai_documentation: string;
+  timeline_obligation_gpai_copyright: string;
+  timeline_obligation_gpai_systemic_risk: string;
+  timeline_obligation_notified_bodies: string;
+  timeline_obligation_governance: string;
+  timeline_obligation_penalties_framework: string;
+  timeline_obligation_high_risk_requirements: string;
+  timeline_obligation_risk_management: string;
+  timeline_obligation_data_governance: string;
+  timeline_obligation_transparency_deployers: string;
+  timeline_obligation_human_oversight: string;
+  timeline_obligation_conformity_assessment: string;
+  timeline_obligation_ce_marking: string;
+  timeline_obligation_eu_database: string;
+  timeline_obligation_limited_risk_transparency: string;
+  timeline_obligation_post_market: string;
+  timeline_obligation_annex_i_products: string;
+  timeline_obligation_gpai_grace_period_ends: string;
+  // Omnibus proposals
+  timeline_omnibus_phase3_title: string;
+  timeline_omnibus_phase3_subtitle: string;
+  timeline_omnibus_phase4_title: string;
+  timeline_omnibus_phase4_subtitle: string;
+  timeline_omnibus_high_risk_delayed: string;
+  timeline_omnibus_annex_i_delayed: string;
 }
 
 export const dictionaries: Record<Language, Dictionary> = {
@@ -480,6 +540,96 @@ export const dictionaries: Record<Language, Dictionary> = {
       "All calculations are performed locally in your browser or on your local Ollama server. No data is transmitted to external servers.",
     disclaimer_experimental_tool:
       "This is an experimental research tool. The methodology for bias detection is continuously being developed. Use the results as supplementary information within a comprehensive AI governance framework.",
+
+    // Deadline Timeline
+    timeline_section_title: "Compliance Deadline Timeline",
+    timeline_section_subtitle:
+      "Key dates when EU AI Act obligations take effect – Regulation (EU) 2024/1689, Art. 113",
+    timeline_today_label: "Today",
+    timeline_days_ago: "days ago",
+    timeline_days_left: "days left",
+    timeline_in_force_since: "In force since",
+    timeline_status_past: "In force",
+    timeline_status_imminent: "Imminent",
+    timeline_status_upcoming: "Upcoming",
+    timeline_status_future: "Future",
+    timeline_relevant_badge: "Relevant for you",
+    timeline_proposed_badge: "Proposed – not yet law",
+    timeline_show_obligations: "Show obligations",
+    timeline_hide_obligations: "Hide obligations",
+    timeline_omnibus_title: "Digital Omnibus – Proposed Deadline Extensions",
+    timeline_omnibus_desc:
+      "In November 2025, the EU Commission proposed the Digital Omnibus to delay some obligations. This is under negotiation and not yet law. Compliance planning should be based on current deadlines.",
+    timeline_penalty_label: "Max. penalty",
+    // Phase titles
+    timeline_phase0_title: "Entry into Force",
+    timeline_phase0_subtitle: "Regulation (EU) 2024/1689 published and enters into force",
+    timeline_phase1_title: "Prohibited AI Practices",
+    timeline_phase1_subtitle:
+      "Hard bans on 8 categories of AI systems take effect – highest penalties",
+    timeline_phase2_title: "GPAI & Governance",
+    timeline_phase2_subtitle:
+      "General-Purpose AI model obligations (Art. 51–56) and national authorities operational",
+    timeline_phase3_title: "High-Risk AI – Annex III",
+    timeline_phase3_subtitle:
+      "Full compliance required for standalone high-risk AI systems across 8 use-case categories",
+    timeline_phase4_title: "High-Risk AI – Annex I (Products)",
+    timeline_phase4_subtitle:
+      "AI in regulated products (medical devices, machinery, vehicles, etc.) must comply",
+    // Obligation titles
+    timeline_obligation_regulation_published:
+      "Regulation published & enters into force (20-day rule)",
+    timeline_obligation_definitions: "Definitions, scope & AI literacy obligations (Art. 1–4)",
+    timeline_obligation_prohibited:
+      "8 prohibited AI practices banned (social scoring, real-time biometric ID, manipulation)",
+    timeline_obligation_ai_literacy:
+      "AI literacy measures for staff working with AI systems required",
+    timeline_obligation_gpai_documentation:
+      "Technical documentation & training data summary required for all GPAI models",
+    timeline_obligation_gpai_copyright:
+      "Copyright compliance policy (EU copyright law) mandatory for GPAI providers",
+    timeline_obligation_gpai_systemic_risk:
+      "Systemic risk measures for frontier models (>10²⁵ FLOPs): red-teaming, incident reporting",
+    timeline_obligation_notified_bodies:
+      "Notified bodies for conformity assessment must be designated by Member States",
+    timeline_obligation_governance:
+      "National competent authorities, EU AI Board, AI Office & Scientific Panel operational",
+    timeline_obligation_penalties_framework:
+      "Penalty enforcement framework applicable (Art. 99–100)",
+    timeline_obligation_high_risk_requirements:
+      "Full technical requirements (Art. 8–25) mandatory for Annex III high-risk AI",
+    timeline_obligation_risk_management:
+      "Risk management system (Art. 9) – continuous, documented process required",
+    timeline_obligation_data_governance:
+      "Data governance & training data requirements (Art. 10) – bias mitigation mandatory",
+    timeline_obligation_transparency_deployers:
+      "Transparency obligations to deployers & affected persons (Art. 13)",
+    timeline_obligation_human_oversight:
+      "Human oversight measures (Art. 14) – operators must be able to intervene",
+    timeline_obligation_conformity_assessment:
+      "Conformity assessment (Art. 43) – self-assessment or third-party notified body",
+    timeline_obligation_ce_marking: "CE marking required before placing on EU market (Art. 48)",
+    timeline_obligation_eu_database:
+      "Registration in EU database for high-risk AI systems (Art. 49)",
+    timeline_obligation_limited_risk_transparency:
+      "Chatbots must disclose AI nature; deepfakes must be watermarked/labeled (Art. 50)",
+    timeline_obligation_post_market:
+      "Post-market monitoring & serious incident reporting to authorities (Art. 72–73)",
+    timeline_obligation_annex_i_products:
+      "AI in regulated products (medical devices, machinery, vehicles, aviation) must comply",
+    timeline_obligation_gpai_grace_period_ends:
+      "Grace period ends: GPAI models placed on market before Aug 2025 must now fully comply",
+    // Omnibus proposals
+    timeline_omnibus_phase3_title: "Annex III – Proposed Extended Deadline",
+    timeline_omnibus_phase3_subtitle:
+      "If Digital Omnibus passes: standalone high-risk AI deadline shifted to Dec 2027",
+    timeline_omnibus_phase4_title: "Annex I Products – Proposed Extended Deadline",
+    timeline_omnibus_phase4_subtitle:
+      "If Digital Omnibus passes: product-embedded AI deadline shifted to Aug 2028",
+    timeline_omnibus_high_risk_delayed:
+      "Annex III standalone high-risk AI deadline proposed to shift to 2 December 2027",
+    timeline_omnibus_annex_i_delayed:
+      "Annex I product-embedded high-risk AI proposed to shift to 2 August 2028",
   },
   de: {
     title: "EuConform",
@@ -732,5 +882,95 @@ export const dictionaries: Record<Language, Dictionary> = {
       "Alle Berechnungen erfolgen lokal in Ihrem Browser oder auf Ihrem lokalen Ollama-Server. Es werden keine Daten an externe Server übertragen.",
     disclaimer_experimental_tool:
       "Dies ist ein experimentelles Forschungstool. Die Methodik zur Bias-Erkennung wird kontinuierlich weiterentwickelt. Verwenden Sie die Ergebnisse als ergänzende Information im Rahmen einer umfassenden KI-Governance.",
+
+    // Deadline Timeline
+    timeline_section_title: "Compliance-Deadline-Timeline",
+    timeline_section_subtitle:
+      "Wichtige Daten, ab wann EU AI Act Pflichten gelten – Verordnung (EU) 2024/1689, Art. 113",
+    timeline_today_label: "Heute",
+    timeline_days_ago: "Tage her",
+    timeline_days_left: "Tage verbleibend",
+    timeline_in_force_since: "In Kraft seit",
+    timeline_status_past: "In Kraft",
+    timeline_status_imminent: "Unmittelbar bevorstehend",
+    timeline_status_upcoming: "Bevorstehend",
+    timeline_status_future: "Zukünftig",
+    timeline_relevant_badge: "Relevant für Sie",
+    timeline_proposed_badge: "Vorschlag – noch kein Gesetz",
+    timeline_show_obligations: "Pflichten anzeigen",
+    timeline_hide_obligations: "Pflichten ausblenden",
+    timeline_omnibus_title: "Digital Omnibus – Geplante Fristverschiebungen",
+    timeline_omnibus_desc:
+      "Im November 2025 schlug die EU-Kommission den Digital Omnibus vor, um einige Fristen zu verschieben. Dies befindet sich in Verhandlung und ist noch kein Gesetz. Die Compliance-Planung sollte auf den aktuellen Fristen basieren.",
+    timeline_penalty_label: "Max. Strafe",
+    // Phase titles
+    timeline_phase0_title: "Inkrafttreten",
+    timeline_phase0_subtitle: "Verordnung (EU) 2024/1689 veröffentlicht und tritt in Kraft",
+    timeline_phase1_title: "Verbotene KI-Praktiken",
+    timeline_phase1_subtitle:
+      "Harte Verbote für 8 Kategorien von KI-Systemen in Kraft – höchste Strafen",
+    timeline_phase2_title: "GPAI & Governance",
+    timeline_phase2_subtitle:
+      "Pflichten für Allzweck-KI-Modelle (Art. 51–56) und nationale Behörden operativ",
+    timeline_phase3_title: "Hochrisiko-KI – Anhang III",
+    timeline_phase3_subtitle:
+      "Volle Compliance erforderlich für eigenständige Hochrisiko-KI in 8 Anwendungsbereichen",
+    timeline_phase4_title: "Hochrisiko-KI – Anhang I (Produkte)",
+    timeline_phase4_subtitle:
+      "KI in regulierten Produkten (Medizinprodukte, Maschinen, Fahrzeuge etc.) muss konform sein",
+    // Obligation titles
+    timeline_obligation_regulation_published:
+      "Verordnung veröffentlicht & tritt in Kraft (20-Tage-Regel)",
+    timeline_obligation_definitions: "Definitionen, Anwendungsbereich & KI-Kompetenzen (Art. 1–4)",
+    timeline_obligation_prohibited:
+      "8 verbotene KI-Praktiken gesperrt (Social Scoring, Echtzeit-Biometrie, Manipulation)",
+    timeline_obligation_ai_literacy:
+      "KI-Kompetenzmaßnahmen für Mitarbeitende im KI-Umfeld erforderlich",
+    timeline_obligation_gpai_documentation:
+      "Technische Dokumentation & Trainingsdaten-Zusammenfassung für alle GPAI-Modelle erforderlich",
+    timeline_obligation_gpai_copyright:
+      "Urheberrechts-Compliance-Richtlinie (EU-Urheberrecht) für GPAI-Anbieter verpflichtend",
+    timeline_obligation_gpai_systemic_risk:
+      "Systemische Risikomaßnahmen für Frontier-Modelle (>10²⁵ FLOPs): Red-Teaming, Vorfallmeldung",
+    timeline_obligation_notified_bodies:
+      "Notifizierte Stellen für Konformitätsbewertung müssen von Mitgliedstaaten benannt werden",
+    timeline_obligation_governance:
+      "Nationale Behörden, EU AI Board, AI Office & Wissenschaftliches Gremium operativ",
+    timeline_obligation_penalties_framework: "Sanktionsrahmen anwendbar (Art. 99–100)",
+    timeline_obligation_high_risk_requirements:
+      "Vollständige technische Anforderungen (Art. 8–25) für Anhang-III-Hochrisiko-KI verpflichtend",
+    timeline_obligation_risk_management:
+      "Risikomanagementsystem (Art. 9) – kontinuierlicher, dokumentierter Prozess erforderlich",
+    timeline_obligation_data_governance:
+      "Data-Governance & Trainingsdatenanforderungen (Art. 10) – Bias-Mitigation verpflichtend",
+    timeline_obligation_transparency_deployers:
+      "Transparenzpflichten gegenüber Betreibern & betroffenen Personen (Art. 13)",
+    timeline_obligation_human_oversight:
+      "Maßnahmen zur menschlichen Aufsicht (Art. 14) – Betreiber müssen eingreifen können",
+    timeline_obligation_conformity_assessment:
+      "Konformitätsbewertung (Art. 43) – Selbstbewertung oder Drittpartei-Notifizierte Stelle",
+    timeline_obligation_ce_marking:
+      "CE-Kennzeichnung vor Inverkehrbringen im EU-Markt erforderlich (Art. 48)",
+    timeline_obligation_eu_database:
+      "Registrierung in EU-Datenbank für Hochrisiko-KI-Systeme (Art. 49)",
+    timeline_obligation_limited_risk_transparency:
+      "Chatbots müssen KI-Natur offenlegen; Deepfakes müssen mit Wasserzeichen/Label versehen werden (Art. 50)",
+    timeline_obligation_post_market:
+      "Marktüberwachung & Meldung schwerwiegender Vorfälle an Behörden (Art. 72–73)",
+    timeline_obligation_annex_i_products:
+      "KI in regulierten Produkten (Medizinprodukte, Maschinen, Fahrzeuge, Luftfahrt) muss konform sein",
+    timeline_obligation_gpai_grace_period_ends:
+      "Übergangsfrist endet: GPAI-Modelle vor Aug 2025 am Markt müssen jetzt vollständig konform sein",
+    // Omnibus proposals
+    timeline_omnibus_phase3_title: "Anhang III – Vorgeschlagene Fristverlängerung",
+    timeline_omnibus_phase3_subtitle:
+      "Falls Digital Omnibus verabschiedet: Anhang-III-Hochrisiko-Frist auf Dez 2027 verschoben",
+    timeline_omnibus_phase4_title: "Anhang I Produkte – Vorgeschlagene Fristverlängerung",
+    timeline_omnibus_phase4_subtitle:
+      "Falls Digital Omnibus verabschiedet: produktintegrierte KI-Frist auf Aug 2028 verschoben",
+    timeline_omnibus_high_risk_delayed:
+      "Anhang-III-Frist für eigenständige Hochrisiko-KI vorgeschlagen auf 2. Dezember 2027 zu verschieben",
+    timeline_omnibus_annex_i_delayed:
+      "Anhang-I-Frist für produktintegrierte Hochrisiko-KI vorgeschlagen auf 2. August 2028 zu verschieben",
   },
 };

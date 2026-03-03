@@ -48,6 +48,13 @@ export {
   runCrowsPairsLogProbTest,
   runRegardTest,
   runToxicityTest,
+  EU_AI_ACT_TIMELINE,
+  DIGITAL_OMNIBUS_PROPOSALS,
+  getDeadlineStatus,
+  getDaysUntilDeadline,
+  getAudiencesForRiskLevel,
+  getNextDeadline,
+  getTimelineForRiskLevel,
 } from "./legal-checks";
 export type {
   AnnexIIIAnswer,
@@ -71,6 +78,10 @@ export type {
   SensitiveAttribute,
   ToxicityResult,
   ToxicityScorer,
+  DeadlineStatus,
+  AffectedAudience,
+  DeadlineObligation,
+  DeadlinePhase,
 } from "./legal-checks";
 
 // Risk Engine

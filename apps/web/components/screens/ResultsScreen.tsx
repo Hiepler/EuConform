@@ -14,7 +14,7 @@ import {
 } from "../../lib/bias-method-utils";
 import { useLanguage } from "../../lib/i18n/LanguageContext";
 import { MethodStatusIndicator } from "../MethodStatusIndicator";
-import { RiskBadge } from "../shared";
+import { DeadlineTimeline, RiskBadge } from "../shared";
 
 /**
  * Props for the ResultsScreen component
@@ -115,7 +115,7 @@ export function ResultsScreen({
         )}
 
         {/* Guidance */}
-        <div className="border border-border dark:border-border-dark rounded-lg bg-white dark:bg-slate-medium p-8 mb-8">
+        <div className="border border-border dark:border-border-dark rounded-lg bg-white dark:bg-slate-medium p-8 mb-6">
           <h2 className="font-serif text-xl font-bold text-slate-deep dark:text-paper mb-6">
             {t("recommendations_title")}
           </h2>
@@ -131,6 +131,8 @@ export function ResultsScreen({
             ))}
           </ul>
         </div>
+
+        <DeadlineTimeline riskLevel={assessment.level} showOmnibus />
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

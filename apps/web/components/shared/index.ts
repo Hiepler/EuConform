@@ -11,3 +11,6 @@ export type { BackgroundElementsProps } from "./BackgroundElements";
 
 export { RiskBadge } from "./RiskBadge";
 export type { RiskBadgeProps } from "./RiskBadge";
+
+export { DeadlineTimeline } from "./DeadlineTimeline";
+export type { DeadlineTimelineProps } from "./DeadlineTimeline";

@@ -53,3 +53,19 @@ export { getHumanOversightAndLoggingTemplate } from "./human-oversight-logging";
 
 export type { AnnexIVStructuredReportV1 } from "./annex-iv-report";
 export { buildAnnexIVReportV1 } from "./annex-iv-report";
+
+export type {
+  DeadlineStatus,
+  AffectedAudience,
+  DeadlineObligation,
+  DeadlinePhase,
+} from "./deadline-timeline";
+export {
+  EU_AI_ACT_TIMELINE,
+  DIGITAL_OMNIBUS_PROPOSALS,
+  getDeadlineStatus,
+  getDaysUntilDeadline,
+  getAudiencesForRiskLevel,
+  getNextDeadline,
+  getTimelineForRiskLevel,
+} from "./deadline-timeline";

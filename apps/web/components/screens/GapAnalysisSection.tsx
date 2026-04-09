@@ -1,7 +1,7 @@
 "use client";
 
 import type { GapAction, GapAnalysisResult, GapPriority } from "@euconform/core";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronUp, FileWarning } from "lucide-react";
 import { useState } from "react";
 import { useLanguage } from "../../lib/i18n/LanguageContext";
 
@@ -10,21 +10,33 @@ export interface GapAnalysisSectionProps {
 }
 
 /** Priority color configuration */
-const PRIORITY_STYLES: Record<GapPriority, { badge: string; border: string; dot: string }> = {
+const PRIORITY_STYLES: Record<
+  GapPriority,
+  { badge: string; border: string; dot: string; iconBase: string }
+> = {
   critical: {
-    badge: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-    border: "border-red-200 dark:border-red-800",
-    dot: "bg-red-500",
+    badge:
+      "bg-red-50/50 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-red-200/50 dark:border-red-500/20",
+    border:
+      "border-red-100 dark:border-red-900/40 hover:border-red-200 dark:hover:border-red-600/50",
+    dot: "bg-red-500 border-red-200 dark:border-red-600",
+    iconBase: "text-red-500 dark:text-red-400",
   },
   high: {
-    badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-    border: "border-amber-200 dark:border-amber-800",
-    dot: "bg-amber-500",
+    badge:
+      "bg-amber-50/50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200/50 dark:border-amber-500/20",
+    border:
+      "border-amber-100 dark:border-amber-900/40 hover:border-amber-200 dark:hover:border-amber-600/50",
+    dot: "bg-amber-500 border-amber-200 dark:border-amber-600",
+    iconBase: "text-amber-500 dark:text-amber-400",
   },
   medium: {
-    badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-    border: "border-blue-200 dark:border-blue-800",
-    dot: "bg-blue-400",
+    badge:
+      "bg-blue-50/50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200/50 dark:border-blue-500/20",
+    border:
+      "border-blue-100 dark:border-blue-900/40 hover:border-blue-200 dark:hover:border-blue-600/50",
+    dot: "bg-blue-500 border-blue-200 dark:border-blue-600",
+    iconBase: "text-blue-500 dark:text-blue-400",
   },
 };
 
@@ -36,19 +48,24 @@ export function GapAnalysisSection({ result }: GapAnalysisSectionProps) {
   const { t } = useLanguage();
 
   return (
-    <div className="border border-border dark:border-border-dark rounded-lg bg-white dark:bg-slate-medium p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-5">
-        <div>
-          <h2 className="font-serif text-xl font-bold text-slate-deep dark:text-paper">
-            {t("gap_analysis_title")}
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+    <div className="rounded-2xl bg-white dark:bg-[#1C1F26] border border-slate-200/80 dark:border-slate-800 shadow-sm p-4 sm:p-8 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+              <FileWarning className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+            </div>
+            <h2 className="text-[17px] font-semibold text-slate-900 dark:text-white">
+              {t("gap_analysis_title")}
+            </h2>
+          </div>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 max-w-lg leading-relaxed">
             {t("gap_analysis_subtitle")}
           </p>
         </div>
 
         {result.totalGaps > 0 && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
             {(
               [
                 ["critical", result.criticalCount, t("gap_priority_critical")],
@@ -60,7 +77,7 @@ export function GapAnalysisSection({ result }: GapAnalysisSectionProps) {
                 count > 0 && (
                   <span
                     key={priority}
-                    className={`px-2.5 py-1 rounded-full text-xs font-bold ${PRIORITY_STYLES[priority].badge}`}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide uppercase border ${PRIORITY_STYLES[priority].badge}`}
                   >
                     {count} {label}
                   </span>
@@ -71,7 +88,11 @@ export function GapAnalysisSection({ result }: GapAnalysisSectionProps) {
       </div>
 
       {result.totalGaps === 0 ? (
-        <p className="text-sm text-green-700 dark:text-green-400">{t("gap_no_gaps")}</p>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-6 text-center">
+          <p className="text-[13px] font-medium text-emerald-600 dark:text-emerald-400">
+            {t("gap_no_gaps")}
+          </p>
+        </div>
       ) : (
         <ul className="space-y-3">
           {result.actions.map((action) => (
@@ -100,57 +121,77 @@ function GapActionItem({ action }: { action: GapAction }) {
     action.status === "missing" ? t("gap_status_missing") : t("gap_status_partial");
 
   return (
-    <li className={`rounded-lg border ${styles.border} overflow-hidden`}>
+    <li
+      className={`rounded-xl border bg-white dark:bg-slate-900/50 shadow-sm transition-all duration-200 ${expanded ? "border-slate-300 dark:border-slate-700" : styles.border}`}
+    >
       <button
         type="button"
         onClick={() => setExpanded((prev) => !prev)}
-        className="w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+        className="w-full text-left p-4 sm:p-5 flex items-start sm:items-center gap-3 sm:gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
       >
-        <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${styles.dot}`} />
+        <div className="flex items-center justify-center pt-1 sm:pt-0">
+          <div className={`w-2.5 h-2.5 rounded-full border-[2.5px] ${styles.dot}`} />
+        </div>
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-0.5">
-            <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1.5">
+            <span className="text-[14px] sm:text-[15px] font-semibold text-slate-900 dark:text-white">
               {action.title}
             </span>
-            <span className={`px-2 py-0.5 rounded text-xs font-bold ${styles.badge}`}>
-              {priorityLabel}
-            </span>
-            <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400">
-              {action.articleRef}
-            </span>
-            <span className="px-2 py-0.5 rounded text-xs text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700">
-              {statusLabel}
-            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`px-2 py-0.5 rounded-md text-[10px] font-medium border uppercase tracking-wider ${styles.badge}`}
+              >
+                {priorityLabel}
+              </span>
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-mono border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                {action.articleRef}
+              </span>
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50">
+                {statusLabel}
+              </span>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 line-clamp-2 sm:line-clamp-1">
             {action.description}
           </p>
         </div>
-        <span className="mt-1 text-slate-400 dark:text-slate-500 shrink-0">
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </span>
+        <div className="shrink-0 pt-1 sm:pt-0 ml-1">
+          <span className="flex items-center justify-center w-6 h-6 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 dark:text-slate-500 group">
+            {expanded ? (
+              <ChevronUp className="w-4 h-4 group-hover:text-slate-700 dark:group-hover:text-slate-300" />
+            ) : (
+              <ChevronDown className="w-4 h-4 group-hover:text-slate-700 dark:group-hover:text-slate-300" />
+            )}
+          </span>
+        </div>
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-700">
-          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 uppercase tracking-wide">
+        <div className="px-4 sm:px-5 pb-5 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">
             {t("gap_steps_label")}
           </p>
-          <ol className="space-y-1.5">
+          <div className="space-y-2">
             {action.steps.map((step, i) => (
-              <li
+              <div
                 key={step}
-                className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300"
+                className="flex items-start gap-3 text-[13px] text-slate-600 dark:text-slate-300 p-3 rounded-lg bg-slate-50 border border-slate-100 dark:bg-slate-800/50 dark:border-slate-800 shadow-sm"
               >
-                <span className="text-gold font-bold shrink-0">{i + 1}.</span>
-                <span>{step}</span>
-              </li>
+                <div className="flex items-center justify-center w-5 h-5 rounded-md bg-white dark:bg-slate-700 text-[10px] font-semibold text-slate-500 border border-slate-200 dark:border-slate-600 shrink-0 shadow-sm mt-[1px]">
+                  {i + 1}
+                </div>
+                <span className="leading-relaxed">{step}</span>
+              </div>
             ))}
-          </ol>
+          </div>
           {action.penaltyRef && (
-            <p className="mt-3 text-xs text-red-500 dark:text-red-400">
-              Penalty reference: {action.penaltyRef} – up to €15M or 3% of global annual turnover
-            </p>
+            <div className="mt-4 flex items-start gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <p className="text-[12px] text-red-600/90 dark:text-red-400/90">
+                <span className="font-semibold">Penalty reference ({action.penaltyRef}):</span> up
+                to €15M or 3% of global annual turnover
+              </p>
+            </div>
           )}
         </div>
       )}

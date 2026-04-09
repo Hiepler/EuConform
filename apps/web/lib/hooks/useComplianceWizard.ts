@@ -12,6 +12,8 @@ import {
   AI_ACT_SOURCES,
   type BiasCalculationMethod,
   type CrowsPairsLogProbResult,
+  type GPAIComplianceResult,
+  type GapAnalysisResult,
   type InferenceCapabilities,
   type InferenceClient,
   type InferenceFactory,
@@ -22,10 +24,14 @@ import {
   type StereotypePair,
   buildAnnexIVReportV1,
   classifyAnnexIIIRisk,
+  classifyGPAICompliance,
   createInferenceClient,
   createInferenceFactory,
   detectCapabilities,
+  generateAnnexIIIGapAnalysis,
+  generateGPAIGapAnalysis,
   getAnnexIIIQuestions,
+  getGPAIQuestions,
   getHumanOversightAndLoggingTemplate,
   runCrowsPairsLogProbTest,
 } from "@euconform/core";
@@ -37,8 +43,30 @@ import type {
   InferenceEngine,
   ModelLoadingStatus,
   UseComplianceWizardReturn,
+  UserRole,
   WizardStep,
 } from "../types/wizard";
+
+// Static question lists — defined once at module scope to avoid re-allocation on every render
+const ANNEX_III_QUESTIONS = getAnnexIIIQuestions();
+const GPAI_QUIZ_QUESTIONS = getGPAIQuestions();
+
+/** Split text into lines of at most maxChars characters (word-aware) */
+function wrapText(text: string, maxChars: number): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    if (current.length + word.length + 1 > maxChars) {
+      if (current) lines.push(current);
+      current = word;
+    } else {
+      current = current ? `${current} ${word}` : word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
 
 /**
  * Custom hook for managing the compliance wizard state and actions
@@ -56,6 +84,7 @@ export function useComplianceWizard(
 
   // Navigation state
   const [step, setStep] = useState<WizardStep>("intro");
+  const [userRole, setUserRole] = useState<UserRole>(null);
 
   // Capabilities and engine state
   const [capabilities, setCapabilities] = useState<InferenceCapabilities | null>(null);
@@ -67,10 +96,15 @@ export function useComplianceWizard(
   const [inferenceClient, setInferenceClient] = useState<InferenceClient | null>(null);
   const [inferenceFactory, setInferenceFactory] = useState<InferenceFactory | null>(null);
 
-  // Quiz state
+  // Annex III quiz state
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [assessment, setAssessment] = useState<RiskAssessment | null>(null);
+
+  // GPAI quiz state
+  const [gpaiCurrentQuestion, setGpaiCurrentQuestion] = useState(0);
+  const [gpaiAnswers, setGpaiAnswers] = useState<QuizAnswer[]>([]);
+  const [gpaiAssessment, setGpaiAssessment] = useState<GPAIComplianceResult | null>(null);
 
   // Bias test state
   const [isRunningBiasTest, setIsRunningBiasTest] = useState(false);
@@ -82,9 +116,6 @@ export function useComplianceWizard(
   const [modelLoadingStatus, setModelLoadingStatus] = useState<ModelLoadingStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-
-  // Annex III questions
-  const questions = getAnnexIIIQuestions();
 
   // ============================================================================
   // Effects
@@ -100,7 +131,7 @@ export function useComplianceWizard(
   // ============================================================================
 
   /**
-   * Handle inference engine selection
+   * Handle inference engine selection and set a sensible default model
    */
   const handleEngineSelect = useCallback(
     (engine: InferenceEngine) => {
@@ -124,16 +155,27 @@ export function useComplianceWizard(
   }, []);
 
   /**
-   * Start the quiz after model selection
+   * Select GPAI provider role and navigate to model-select
+   */
+  const handleSelectGpaiRole = useCallback(
+    (engine: InferenceEngine) => {
+      setUserRole("gpai-provider");
+      handleEngineSelect(engine);
+      setStep("model-select");
+    },
+    [handleEngineSelect]
+  );
+
+  /**
+   * Start the quiz after model selection.
+   * Branches on userRole: "gpai-provider" → "gpai-quiz", else → "quiz"
    */
   const handleStartQuiz = useCallback(() => {
-    // Validate that we have a selected model with available capability
     if (!selectedCapability || selectedCapability.status !== "available") {
       setError("Please select an available model before continuing");
       return;
     }
 
-    // Create both the legacy client and the enhanced factory
     const client = createInferenceClient(selectedEngine, selectedModel, (status: string) => {
       setModelLoadingStatus(status as ModelLoadingStatus);
     });
@@ -142,17 +184,22 @@ export function useComplianceWizard(
       setModelLoadingStatus(status as ModelLoadingStatus);
     });
 
-    // Set capability information in the factory
     factory.setSelectedCapability(selectedCapability);
 
     setInferenceClient(client);
     setInferenceFactory(factory);
-    setStep("quiz");
-  }, [selectedCapability, selectedEngine, selectedModel]);
+
+    if (userRole === "gpai-provider") {
+      setStep("gpai-quiz");
+    } else {
+      setUserRole("annex-iii");
+      setStep("quiz");
+    }
+  }, [selectedCapability, selectedEngine, selectedModel, userRole]);
 
   const handleAnswer = useCallback(
     (value: string) => {
-      const currentQ = questions[currentQuestion];
+      const currentQ = ANNEX_III_QUESTIONS[currentQuestion];
       if (!currentQ) return;
 
       const newAnswers = [
@@ -161,13 +208,13 @@ export function useComplianceWizard(
       ];
       setAnswers(newAnswers);
 
-      if (currentQuestion < questions.length - 1) {
+      if (currentQuestion < ANNEX_III_QUESTIONS.length - 1) {
         setCurrentQuestion((prev) => prev + 1);
       } else {
         processFinalQuizState(newAnswers);
       }
     },
-    [answers, currentQuestion, questions]
+    [answers, currentQuestion]
   );
 
   const processFinalQuizState = (newAnswers: QuizAnswer[]) => {
@@ -213,6 +260,32 @@ export function useComplianceWizard(
         return 10;
     }
   };
+
+  /**
+   * Handle GPAI quiz answer submission.
+   * On last question, classifies compliance and navigates to bias-test.
+   */
+  const handleGpaiAnswer = useCallback(
+    (value: string) => {
+      const currentQ = GPAI_QUIZ_QUESTIONS[gpaiCurrentQuestion];
+      if (!currentQ) return;
+
+      const newAnswers = [
+        ...gpaiAnswers.filter((a) => a.questionId !== currentQ.id),
+        { questionId: currentQ.id, value },
+      ];
+      setGpaiAnswers(newAnswers);
+
+      if (gpaiCurrentQuestion < GPAI_QUIZ_QUESTIONS.length - 1) {
+        setGpaiCurrentQuestion((prev) => prev + 1);
+      } else {
+        const result = classifyGPAICompliance(newAnswers);
+        setGpaiAssessment(result);
+        setStep("bias-test");
+      }
+    },
+    [gpaiAnswers, gpaiCurrentQuestion]
+  );
 
   const convertToStereotypePairs = useCallback(
     (testCases: NormalizedTestCase[]): StereotypePair[] => {
@@ -321,28 +394,62 @@ export function useComplianceWizard(
     setStep("results");
   }, []);
 
-  const handleGeneratePdf = useCallback(async () => {
-    if (!assessment) return;
-    setIsGeneratingPdf(true);
+  const buildPdfPages = useCallback(
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: PDF layout requires sequential page-overflow checks per section
+    async (pdfDoc: PDFDocument, font: PDFFont, fontBold: PDFFont) => {
+      let page = pdfDoc.addPage([595.28, 841.89]);
+      let y = drawPdfHeader(page, fontBold, font);
 
+      y = gpaiAssessment
+        ? drawPdfGpaiSection(page, fontBold, font, y)
+        : drawPdfRiskSection(page, fontBold, font, y);
+
+      if (biasResult) {
+        if (y < 200) {
+          drawPdfFooter(page, font);
+          page = pdfDoc.addPage([595.28, 841.89]);
+          y = page.getSize().height - 50;
+        }
+        y = drawPdfBiasSection(page, fontBold, font, y);
+      }
+
+      const gapResult: GapAnalysisResult | null = gpaiAssessment
+        ? generateGPAIGapAnalysis(gpaiAssessment)
+        : assessment
+          ? generateAnnexIIIGapAnalysis(assessment)
+          : null;
+
+      if (gapResult && gapResult.totalGaps > 0) {
+        if (y < 250) {
+          drawPdfFooter(page, font);
+          page = pdfDoc.addPage([595.28, 841.89]);
+          y = page.getSize().height - 50;
+        }
+        drawPdfGapSection(page, fontBold, font, y, gapResult);
+      }
+
+      drawPdfFooter(page, font);
+    },
+    [assessment, gpaiAssessment, biasResult]
+  );
+
+  const handleGeneratePdf = useCallback(async () => {
+    if (!assessment && !gpaiAssessment) return;
+    setIsGeneratingPdf(true);
     try {
       const pdfDoc = await PDFDocument.create();
-      const page = pdfDoc.addPage([595.28, 841.89]);
-      const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-      const fontBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
-
-      drawPdfHeader(page, fontBold, font);
-      drawPdfRiskSection(page, fontBold, font);
-      if (biasResult) drawPdfBiasSection(page, fontBold, font);
-      drawPdfFooter(page, font);
-
+      const [font, fontBold] = await Promise.all([
+        pdfDoc.embedFont(StandardFonts.TimesRoman),
+        pdfDoc.embedFont(StandardFonts.TimesRomanBold),
+      ]);
+      await buildPdfPages(pdfDoc, font, fontBold);
       await downloadPdf(pdfDoc);
     } catch (err) {
       console.error("PDF generation failed:", err);
     } finally {
       setIsGeneratingPdf(false);
     }
-  }, [assessment, biasResult]);
+  }, [assessment, gpaiAssessment, buildPdfPages]);
 
   const drawPdfHeader = (page: PDFPage, fontBold: PDFFont, font: PDFFont) => {
     const { height } = page.getSize();
@@ -366,14 +473,11 @@ export function useComplianceWizard(
       color: rgb(0.2, 0.2, 0.2),
     });
     y -= 14;
-    page.drawText(disclaimer.slice(0, 95) + (disclaimer.length > 95 ? "…" : ""), {
-      x: 50,
-      y,
-      size: 9,
-      font,
-      color: rgb(0.3, 0.3, 0.3),
-    });
-    y -= 26;
+    for (const line of wrapText(disclaimer, 90)) {
+      page.drawText(line, { x: 50, y, size: 9, font, color: rgb(0.3, 0.3, 0.3) });
+      y -= 12;
+    }
+    y -= 10;
 
     page.drawText(`${t("pdf_model")}: ${selectedModel || t("pdf_not_specified")}`, {
       x: 50,
@@ -394,9 +498,13 @@ export function useComplianceWizard(
     return y - 40;
   };
 
-  const drawPdfRiskSection = (page: PDFPage, fontBold: PDFFont, font: PDFFont) => {
-    const { height } = page.getSize();
-    let y = height - 210; // Approx y after header
+  const drawPdfRiskSection = (
+    page: PDFPage,
+    fontBold: PDFFont,
+    font: PDFFont,
+    startY: number
+  ): number => {
+    let y = startY;
 
     page.drawText(t("risk_classification_title"), { x: 50, y, size: 14, font: fontBold });
     y -= 20;
@@ -411,16 +519,128 @@ export function useComplianceWizard(
     return y - 30;
   };
 
-  const drawPdfBiasSection = (page: PDFPage, fontBold: PDFFont, font: PDFFont) => {
-    if (!biasResult) return;
-    const { height } = page.getSize();
-    let y = height - 300; // Approx y after risk
+  const drawPdfGpaiSection = (
+    page: PDFPage,
+    fontBold: PDFFont,
+    font: PDFFont,
+    startY: number
+  ): number => {
+    if (!gpaiAssessment) return startY;
+    let y = startY;
+
+    page.drawText("GPAI Compliance Assessment (Art. 53–55)", {
+      x: 50,
+      y,
+      size: 14,
+      font: fontBold,
+    });
+    y -= 20;
+    page.drawText(`Level: ${gpaiAssessment.level.replace("-", " ").toUpperCase()}`, {
+      x: 50,
+      y,
+      size: 12,
+      font,
+    });
+    y -= 15;
+    page.drawText(
+      `Systemic Risk (Art. 51): ${gpaiAssessment.isSystemicRisk ? "Yes – Art. 55 applies" : "No"}`,
+      { x: 50, y, size: 10, font }
+    );
+    y -= 20;
+
+    if (gpaiAssessment.flags.length > 0) {
+      page.drawText(`Missing / Partial Obligations (${gpaiAssessment.flags.length}):`, {
+        x: 50,
+        y,
+        size: 11,
+        font: fontBold,
+      });
+      y -= 14;
+      for (const flag of gpaiAssessment.flags) {
+        page.drawText(`\u2022 ${flag.obligation} \u2013 ${flag.articleRef} [${flag.status}]`, {
+          x: 60,
+          y,
+          size: 9,
+          font,
+          color: rgb(0.15, 0.15, 0.15),
+        });
+        y -= 12;
+      }
+    } else {
+      page.drawText("All checked obligations are implemented.", {
+        x: 50,
+        y,
+        size: 10,
+        font,
+        color: rgb(0, 0.5, 0.2),
+      });
+      y -= 14;
+    }
+    return y - 20;
+  };
+
+  const drawPdfBiasSection = (
+    page: PDFPage,
+    fontBold: PDFFont,
+    font: PDFFont,
+    startY: number
+  ): number => {
+    if (!biasResult) return startY;
+    let y = startY;
 
     page.drawText(t("bias_fairness_title_pdf"), { x: 50, y, size: 14, font: fontBold });
     y -= 20;
 
     y = drawPdfMethodology(page, fontBold, font, y);
     y = drawPdfMetrics(page, font, y);
+
+    return y;
+  };
+
+  const drawPdfGapSection = (
+    page: PDFPage,
+    fontBold: PDFFont,
+    font: PDFFont,
+    startY: number,
+    gapResult: GapAnalysisResult
+  ): number => {
+    let y = startY;
+
+    page.drawText(t("gap_analysis_title"), { x: 50, y, size: 14, font: fontBold });
+    y -= 14;
+    page.drawText(
+      `${gapResult.criticalCount} critical \u00b7 ${gapResult.highCount} high \u00b7 ${gapResult.mediumCount} medium`,
+      { x: 50, y, size: 9, font, color: rgb(0.4, 0.4, 0.4) }
+    );
+    y -= 18;
+
+    const maxActions = 10;
+    const shown = gapResult.actions.slice(0, maxActions);
+
+    for (const action of shown) {
+      if (y < 70) break;
+      const priorityLabel = `[${action.priority.toUpperCase()}]`;
+      page.drawText(`${priorityLabel} ${action.title} \u2013 ${action.articleRef}`, {
+        x: 60,
+        y,
+        size: 10,
+        font: fontBold,
+      });
+      y -= 13;
+      page.drawText(
+        `Status: ${action.status === "missing" ? t("gap_status_missing") : t("gap_status_partial")}`,
+        { x: 70, y, size: 8, font, color: rgb(0.4, 0.4, 0.4) }
+      );
+      y -= 16;
+    }
+
+    if (gapResult.actions.length > maxActions) {
+      page.drawText(
+        `\u2026 and ${gapResult.actions.length - maxActions} more actions (see full report)`,
+        { x: 60, y, size: 9, font, color: rgb(0.5, 0.5, 0.5) }
+      );
+      y -= 14;
+    }
 
     return y;
   };
@@ -465,17 +685,26 @@ export function useComplianceWizard(
       { x: 60, y, size: 10, font }
     );
     y -= 15;
-    page.drawText(
-      `${t("pdf_severity")}: ${biasResult.overall.severity === "strong" ? t("results_severity_strong") : biasResult.overall.severity === "light" ? t("results_severity_light") : t("pdf_severity_none")}`,
-      { x: 60, y, size: 10, font }
-    );
+    const severityLabel =
+      biasResult.overall.severity === "strong"
+        ? t("results_severity_strong")
+        : biasResult.overall.severity === "light"
+          ? t("results_severity_light")
+          : t("pdf_severity_none");
+    page.drawText(`${t("pdf_severity")}: ${severityLabel}`, { x: 60, y, size: 10, font });
     y -= 30;
 
+    return drawPdfBiasCategories(page, font, y);
+  };
+
+  const drawPdfBiasCategories = (page: PDFPage, font: PDFFont, startY: number): number => {
+    if (!biasResult) return startY;
+    let y = startY;
     for (const cat of biasResult.byBiasType) {
-      const status = cat.passed ? "[OK]" : "[X]";
+      const status = cat.passed ? "\u2713" : "\u2717";
       page.drawText(
-        `${status} ${cat.biasType}: ${cat.stereotypePreferencePercent.toFixed(0)}% pref.`,
-        { x: 60, y, size: 9, font }
+        `${status} ${cat.biasType}: ${cat.stereotypePreferencePercent.toFixed(0)}% stereo. pref.`,
+        { x: 60, y, size: 9, font, color: cat.passed ? rgb(0, 0.5, 0.2) : rgb(0.7, 0.1, 0.1) }
       );
       y -= 12;
     }
@@ -496,16 +725,53 @@ export function useComplianceWizard(
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes as BlobPart], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `euconform-report-${selectedModel.replace(/[/:]/g, "-")}-${Date.now()}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `euconform-report-${selectedModel.replace(/[/:]/g, "-")}-${Date.now()}.pdf`;
+      a.click();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
   };
 
   const handleDownloadAnnexIvJson = useCallback(() => {
+    // GPAI path: export GPAI compliance report instead of Annex IV
+    if (userRole === "gpai-provider") {
+      if (!gpaiAssessment) return;
+      const gapResult = generateGPAIGapAnalysis(gpaiAssessment);
+      const gpaiReport = {
+        meta: {
+          reportVersion: "gpai-compliance.v1",
+          generatedAt: new Date().toISOString(),
+          tool: { name: "EuConform" },
+          disclaimer: t("disclaimer_non_legal_advice"),
+          legalBasis: gpaiAssessment.legalBasis,
+          note: "This is a technical orientation scaffold, not legal advice.",
+        },
+        model: {
+          name: selectedModel || t("annex_iv_unspecified_system"),
+          engine: selectedEngine,
+        },
+        compliance: {
+          level: gpaiAssessment.level,
+          isSystemicRisk: gpaiAssessment.isSystemicRisk,
+          flags: gpaiAssessment.flags,
+          notes: gpaiAssessment.notes,
+        },
+        gapAnalysis: gapResult,
+        biasAssessment: biasResult
+          ? { result: biasResult, methodology: getBiasMethodologyData() }
+          : null,
+        reproducibility: getReproducibilityData(),
+      };
+      downloadJson(gpaiReport);
+      return;
+    }
+
     if (!assessment) return;
     const annex = classifyAnnexIIIRisk(answers);
+    const gapResult = generateAnnexIIIGapAnalysis(assessment);
     const report = buildAnnexIVReportV1({
       tool: { name: "EuConform" },
       disclaimer: t("disclaimer_non_legal_advice"),
@@ -530,10 +796,11 @@ export function useComplianceWizard(
         ],
       },
       biasMethodology: getBiasMethodologyData(),
+      gapAnalysis: gapResult,
     });
 
     downloadJson(report);
-  }, [answers, assessment, biasResult, selectedModel, t]);
+  }, [answers, assessment, gpaiAssessment, biasResult, selectedModel, selectedEngine, userRole, t]);
 
   const getReproducibilityData = () => {
     const seed = biasResult?.dataset?.seed;
@@ -570,11 +837,14 @@ export function useComplianceWizard(
   const downloadJson = (report: unknown) => {
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `euconform-annex-iv-${(selectedModel || "system").replace(/[/:]/g, "-")}-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `euconform-annex-iv-${(selectedModel || "system").replace(/[/:]/g, "-")}-${Date.now()}.json`;
+      a.click();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
   };
 
   /**
@@ -582,6 +852,7 @@ export function useComplianceWizard(
    */
   const resetAll = useCallback(() => {
     setStep("intro");
+    setUserRole(null);
     setSelectedEngine("ollama");
     setSelectedModel("");
     setSelectedCapability(null);
@@ -590,6 +861,9 @@ export function useComplianceWizard(
     setCurrentQuestion(0);
     setAnswers([]);
     setAssessment(null);
+    setGpaiCurrentQuestion(0);
+    setGpaiAnswers([]);
+    setGpaiAssessment(null);
     setBiasResult(null);
     setBiasProgress(0);
     setModelLoadingStatus("idle");
@@ -600,26 +874,56 @@ export function useComplianceWizard(
   // Additional Exposed State Setters (for screen components)
   // ============================================================================
 
-  /**
-   * Navigate back to model selection and reset quiz state
-   */
-  const navigateBackToModelSelect = useCallback(() => {
-    setStep("model-select");
+  /** Shared reset for inference + error state used by all back-navigation handlers */
+  const resetSharedState = useCallback(() => {
     setInferenceClient(null);
     setInferenceFactory(null);
     setModelLoadingStatus("idle");
-    setCurrentQuestion(0);
-    setAnswers([]);
-    setAssessment(null);
     setBiasResult(null);
     setError(null);
   }, []);
 
-  /**
-   * Navigate to previous question in quiz
-   */
+  const resetAnnexIIIQuiz = useCallback(() => {
+    setCurrentQuestion(0);
+    setAnswers([]);
+    setAssessment(null);
+  }, []);
+
+  const resetGpaiQuiz = useCallback(() => {
+    setGpaiCurrentQuestion(0);
+    setGpaiAnswers([]);
+    setGpaiAssessment(null);
+  }, []);
+
+  const navigateBackToModelSelect = useCallback(() => {
+    setStep("model-select");
+    resetSharedState();
+    resetAnnexIIIQuiz();
+  }, [resetSharedState, resetAnnexIIIQuiz]);
+
+  const navigateBackToIntro = useCallback(() => {
+    setStep("intro");
+    setUserRole(null);
+    resetSharedState();
+    resetAnnexIIIQuiz();
+    resetGpaiQuiz();
+  }, [resetSharedState, resetAnnexIIIQuiz, resetGpaiQuiz]);
+
   const navigateToPreviousQuestion = useCallback(() => {
     setCurrentQuestion((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const navigateGpaiBack = useCallback(() => {
+    setStep("model-select");
+    resetSharedState();
+    resetGpaiQuiz();
+  }, [resetSharedState, resetGpaiQuiz]);
+
+  /**
+   * Navigate to previous question in GPAI quiz
+   */
+  const navigateToPreviousGpaiQuestion = useCallback(() => {
+    setGpaiCurrentQuestion((prev) => Math.max(0, prev - 1));
   }, []);
 
   // ============================================================================
@@ -629,6 +933,7 @@ export function useComplianceWizard(
   return {
     // State
     step,
+    userRole,
     selectedEngine,
     selectedModel,
     selectedCapability,
@@ -637,6 +942,9 @@ export function useComplianceWizard(
     currentQuestion,
     answers,
     assessment,
+    gpaiCurrentQuestion,
+    gpaiAnswers,
+    gpaiAssessment,
     isRunningBiasTest,
     biasProgress,
     biasCurrentStep,
@@ -647,8 +955,10 @@ export function useComplianceWizard(
 
     // Derived state
     capabilities,
-    questions,
-    totalQuestions: questions.length,
+    questions: ANNEX_III_QUESTIONS,
+    totalQuestions: ANNEX_III_QUESTIONS.length,
+    gpaiQuestions: GPAI_QUIZ_QUESTIONS,
+    gpaiTotalQuestions: GPAI_QUIZ_QUESTIONS.length,
 
     // Actions
     setStep,
@@ -656,6 +966,8 @@ export function useComplianceWizard(
     handleModelSelect,
     handleStartQuiz,
     handleAnswer,
+    handleGpaiAnswer,
+    handleSelectGpaiRole,
     handleRunBiasTest,
     handleSkipBiasTest,
     handleGeneratePdf,
@@ -664,7 +976,10 @@ export function useComplianceWizard(
 
     // Additional navigation helpers
     navigateBackToModelSelect,
+    navigateBackToIntro,
     navigateToPreviousQuestion,
+    navigateGpaiBack,
+    navigateToPreviousGpaiQuestion,
     setSelectedEngine,
     setSelectedModel,
     setError,

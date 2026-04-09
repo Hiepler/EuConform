@@ -1,7 +1,7 @@
 "use client";
 
 import type { InferenceCapabilities } from "@euconform/core";
-import { ArrowRight, Cpu, Github, Server, Shield } from "lucide-react";
+import { ArrowRight, Bot, Cpu, Github, Server, Shield } from "lucide-react";
 import { useLanguage } from "../../lib/i18n/LanguageContext";
 import type { InferenceEngine, WizardStep } from "../../lib/types/wizard";
 import { BackgroundElements, PageHeader } from "../shared";
@@ -20,6 +20,8 @@ export interface IntroScreenProps {
   setSelectedModel: (model: string) => void;
   /** Handler for navigating to a step */
   setStep: (step: WizardStep) => void;
+  /** Handler for selecting GPAI provider role */
+  onSelectGpaiRole: (engine: InferenceEngine) => void;
 }
 
 /**
@@ -32,6 +34,7 @@ export function IntroScreen({
   onEngineSelect,
   setSelectedModel,
   setStep,
+  onSelectGpaiRole,
 }: IntroScreenProps) {
   const { t } = useLanguage();
 
@@ -120,8 +123,23 @@ export function IntroScreen({
           <ArrowRight className="w-5 h-5" />
         </button>
 
+        {/* GPAI Provider Card */}
+        <div className="mt-8 pt-6 border-t border-border dark:border-border-dark">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            {t("gpai_intro_question")}
+          </p>
+          <button
+            type="button"
+            onClick={() => onSelectGpaiRole(selectedEngine)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border dark:border-border-dark text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100 transition-all"
+          >
+            <Bot className="w-4 h-4" />
+            {t("gpai_intro_cta")}
+          </button>
+        </div>
+
         {/* Footer */}
-        <div className="mt-16 pt-8 border-t border-border dark:border-border-dark">
+        <div className="mt-10 pt-8 border-t border-border dark:border-border-dark">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-6">
               <a

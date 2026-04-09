@@ -1,60 +1,97 @@
 "use client";
 
 import type { QuizAnswer } from "@euconform/core";
-import { Play, Shield } from "lucide-react";
+import { GPAI_QUESTIONS } from "@euconform/core";
+import { Bot } from "lucide-react";
 import { useLanguage } from "../../lib/i18n/LanguageContext";
+import type { Dictionary } from "../../lib/i18n/dictionaries";
 import { splitQuestionText } from "../../lib/utils/question-text";
 import { BackgroundElements, PageHeader } from "../shared";
 
+const ANSWER_OPTIONS: Array<{
+  value: "yes" | "unsure" | "no";
+  icon: string;
+  selectedBorder: string;
+  hoverBorder: string;
+  focusRing: string;
+  selectedIconBg: string;
+  defaultIconBg: string;
+  labelKey: keyof Dictionary;
+}> = [
+  {
+    value: "yes",
+    icon: "✓",
+    selectedBorder: "border-green-500 bg-green-50 dark:bg-green-900/20",
+    hoverBorder: "hover:border-green-400 dark:hover:border-green-600",
+    focusRing: "focus:ring-green-400/40",
+    selectedIconBg: "bg-green-500 text-white",
+    defaultIconBg: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400",
+    labelKey: "gpai_yes",
+  },
+  {
+    value: "unsure",
+    icon: "~",
+    selectedBorder: "border-amber-500 bg-amber-50 dark:bg-amber-900/20",
+    hoverBorder: "hover:border-amber-400 dark:hover:border-amber-600",
+    focusRing: "focus:ring-amber-400/40",
+    selectedIconBg: "bg-amber-500 text-white",
+    defaultIconBg: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
+    labelKey: "gpai_unsure",
+  },
+  {
+    value: "no",
+    icon: "✗",
+    selectedBorder: "border-red-500 bg-red-50 dark:bg-red-900/20",
+    hoverBorder: "hover:border-red-400 dark:hover:border-red-600",
+    focusRing: "focus:ring-red-400/40",
+    selectedIconBg: "bg-red-500 text-white",
+    defaultIconBg: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
+    labelKey: "gpai_no",
+  },
+];
+
 /**
- * Props for the QuizScreen component
+ * Props for the GpaiQuizScreen component
  */
-export interface QuizScreenProps {
+export interface GpaiQuizScreenProps {
   /** Current question index (0-based) */
   currentQuestion: number;
   /** Total number of questions */
   totalQuestions: number;
   /** Array of user answers */
   answers: QuizAnswer[];
-  /** Selected model identifier */
-  selectedModel: string;
   /** Handler for answer submission */
   onAnswer: (value: string) => void;
-  /** Handler for navigating back to model selection */
+  /** Handler for navigating back to model-select */
   onBack: () => void;
   /** Handler for navigating to previous question */
   onNavigateBack: () => void;
 }
 
 /**
- * QuizScreen displays the Annex III risk assessment questionnaire with
- * progress indicator, question display, and Yes/No answer buttons.
+ * GpaiQuizScreen displays the Art. 53–55 GPAI compliance questionnaire.
+ * Separate from QuizScreen because GPAI has different labels, badge, and back navigation.
  */
-export function QuizScreen({
+export function GpaiQuizScreen({
   currentQuestion,
   totalQuestions,
   answers,
-  selectedModel,
   onAnswer,
   onBack,
   onNavigateBack,
-}: QuizScreenProps) {
+}: GpaiQuizScreenProps) {
   const { t } = useLanguage();
 
   const progress = ((currentQuestion + 1) / totalQuestions) * 100;
-  const fullQuestionText = t(`quiz_q${currentQuestion + 1}`);
+  const fullQuestionText = t(`gpai_q${currentQuestion + 1}` as Parameters<typeof t>[0]);
   const { title: titleText, description: descriptionText } = splitQuestionText(fullQuestionText);
 
-  // Find selected value for current question
-  const questionId = `q${currentQuestion + 1}`;
+  const questionId = GPAI_QUESTIONS[currentQuestion]?.id ?? `gpai-q${currentQuestion + 1}`;
   const selectedValue = answers.find((a) => a.questionId === questionId)?.value;
 
   return (
     <main className="min-h-screen relative overflow-hidden">
-      {/* Subtle premium background */}
       <BackgroundElements variant="quiz" />
-
-      {/* Header (consistent with intro) */}
       <PageHeader />
 
       <div className="px-6 py-10">
@@ -63,12 +100,9 @@ export function QuizScreen({
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border dark:border-border-dark bg-white/60 dark:bg-slate-medium/60 backdrop-blur-sm text-xs font-medium tracking-wide text-slate-600 dark:text-slate-300">
-                <Shield className="w-3 h-3" />
-                ANNEX III • EU AI ACT
+                <Bot className="w-3 h-3" />
+                {t("gpai_badge")}
               </div>
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 font-mono truncate max-w-[32ch]">
-                {selectedModel || t("pdf_not_specified")}
-              </p>
             </div>
 
             <div className="text-right">
@@ -89,7 +123,7 @@ export function QuizScreen({
             />
           </div>
 
-          {/* Back button (like model select step, directly above card) */}
+          {/* Back button */}
           <button
             type="button"
             onClick={onBack}
@@ -113,70 +147,33 @@ export function QuizScreen({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => onAnswer("yes")}
-                className={`group w-full text-left p-5 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-gold/40 ${
-                  selectedValue === "yes"
-                    ? "border-gold bg-gold/10 shadow-[0_12px_40px_-28px_rgba(191,155,48,0.8)]"
-                    : "border-border dark:border-border-dark hover:border-slate-300 dark:hover:border-slate-600 bg-white/50 dark:bg-slate-900/20"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
+            {/* Three answer buttons: yes / unsure / no */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {ANSWER_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => onAnswer(opt.value)}
+                  className={`group w-full text-left p-4 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 ${opt.focusRing} ${
+                    selectedValue === opt.value
+                      ? opt.selectedBorder
+                      : `border-border dark:border-border-dark ${opt.hoverBorder} bg-white/50 dark:bg-slate-900/20`
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
                     <span
-                      className={`inline-flex items-center justify-center w-9 h-9 rounded-lg border ${
-                        selectedValue === "yes"
-                          ? "border-gold bg-gold/15"
-                          : "border-border dark:border-border-dark"
+                      className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm font-bold ${
+                        selectedValue === opt.value ? opt.selectedIconBg : opt.defaultIconBg
                       }`}
                     >
-                      <Play
-                        className={`w-4 h-4 ${selectedValue === "yes" ? "text-gold" : "text-slate-500 dark:text-slate-300"}`}
-                      />
+                      {opt.icon}
                     </span>
-                    <div>
-                      <div className="text-sm font-bold text-slate-900 dark:text-white">
-                        {t("quiz_yes")}
-                      </div>
+                    <div className="text-sm font-bold text-slate-900 dark:text-white">
+                      {t(opt.labelKey)}
                     </div>
                   </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onAnswer("no")}
-                className={`group w-full text-left p-5 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-gold/30 ${
-                  selectedValue === "no"
-                    ? "border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-900/30"
-                    : "border-border dark:border-border-dark hover:border-slate-300 dark:hover:border-slate-600 bg-white/50 dark:bg-slate-900/20"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`inline-flex items-center justify-center w-9 h-9 rounded-lg border ${
-                        selectedValue === "no"
-                          ? "border-slate-400 dark:border-slate-500 bg-white/60 dark:bg-slate-900/30"
-                          : "border-border dark:border-border-dark"
-                      }`}
-                    >
-                      <span
-                        className={`text-sm font-bold ${selectedValue === "no" ? "text-slate-700 dark:text-slate-200" : "text-slate-500 dark:text-slate-300"}`}
-                      >
-                        ×
-                      </span>
-                    </span>
-                    <div>
-                      <div className="text-sm font-bold text-slate-900 dark:text-white">
-                        {t("quiz_no")}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </button>
+                </button>
+              ))}
             </div>
 
             {/* Navigation */}

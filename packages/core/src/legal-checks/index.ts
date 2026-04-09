@@ -68,4 +68,21 @@ export {
   getAudiencesForRiskLevel,
   getNextDeadline,
   getTimelineForRiskLevel,
+  getTimelineForAudiences,
 } from "./deadline-timeline";
+
+export type {
+  GPAIObligationType,
+  GPAIComplianceLevel,
+  GPAIComplianceFlag,
+  GPAIComplianceResult,
+} from "./gpai-classifier";
+export {
+  GPAI_QUESTIONS,
+  classifyGPAICompliance,
+  getGPAIQuestions,
+  isSystemicRiskModel,
+} from "./gpai-classifier";
+
+export type { GapPriority, GapAction, GapAnalysisResult } from "./gap-analysis";
+export { generateAnnexIIIGapAnalysis, generateGPAIGapAnalysis } from "./gap-analysis";

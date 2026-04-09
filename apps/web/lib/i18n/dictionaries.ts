@@ -291,6 +291,50 @@ export interface Dictionary {
   timeline_omnibus_phase4_subtitle: string;
   timeline_omnibus_high_risk_delayed: string;
   timeline_omnibus_annex_i_delayed: string;
+
+  // GPAI Module – Art. 53–55
+  gpai_intro_question: string;
+  gpai_intro_cta: string;
+  gpai_badge: string;
+  // GPAI Questions (q1–q9)
+  gpai_q1: string;
+  gpai_q2: string;
+  gpai_q3: string;
+  gpai_q4: string;
+  gpai_q5: string;
+  gpai_q6: string;
+  gpai_q7: string;
+  gpai_q8: string;
+  gpai_q9: string;
+  // GPAI Answer buttons
+  gpai_yes: string;
+  gpai_no: string;
+  gpai_unsure: string;
+  // GPAI Results
+  gpai_results_title: string;
+  gpai_compliant: string;
+  gpai_partial: string;
+  gpai_non_compliant: string;
+  gpai_systemic_risk_title: string;
+  gpai_systemic_risk_desc: string;
+  gpai_art53_section: string;
+  gpai_art55_section: string;
+  gpai_obligation_missing: string;
+  gpai_obligation_partial: string;
+  gpai_obligation_done: string;
+  gpai_open_source_note: string;
+  gpai_export_json: string;
+
+  // Compliance Gap Analysis
+  gap_analysis_title: string;
+  gap_analysis_subtitle: string;
+  gap_no_gaps: string;
+  gap_priority_critical: string;
+  gap_priority_high: string;
+  gap_priority_medium: string;
+  gap_status_missing: string;
+  gap_status_partial: string;
+  gap_steps_label: string;
 }
 
 export const dictionaries: Record<Language, Dictionary> = {
@@ -630,6 +674,58 @@ export const dictionaries: Record<Language, Dictionary> = {
       "Annex III standalone high-risk AI deadline proposed to shift to 2 December 2027",
     timeline_omnibus_annex_i_delayed:
       "Annex I product-embedded high-risk AI proposed to shift to 2 August 2028",
+
+    // GPAI Module – Art. 53–55
+    gpai_intro_question: "Are you a Foundation Model / GPAI Provider?",
+    gpai_intro_cta: "GPAI Provider – Check Art. 53–55",
+    gpai_badge: "ART. 53–55 • EU AI ACT",
+    gpai_q1:
+      "Art. 53(1)(a): Technical documentation? Have you prepared and maintain technical documentation for the GPAI model per Annex XI/XII, including model capabilities, limitations, and risks?",
+    gpai_q2:
+      "Art. 53(1)(b): Downstream provider information? Do you provide downstream providers and deployers with the information they need to meet their own EU AI Act obligations?",
+    gpai_q3:
+      "Art. 53(1)(c–d): Copyright policy + training data summary? Have you established a copyright compliance policy and published a sufficiently detailed training data summary?",
+    gpai_q4:
+      "Art. 71: EU AI Database registration? Is the GPAI model registered in the EU AI Database before placing it on the EU market?",
+    gpai_q5:
+      "Art. 53(2): Open-source release? Is the model released as open source with weights publicly available? (Open-source models receive partial exemptions from Art. 53(1)(a–c) obligations.)",
+    gpai_q6:
+      "Art. 51 + Annex XIII: Systemic risk threshold? Was the model trained using ≥ 10²⁵ FLOP? Models above this threshold are subject to additional Art. 55 obligations.",
+    gpai_q7:
+      "Art. 55(1)(a): Adversarial testing / red-teaming? Have you conducted model evaluations, adversarial testing, and red-teaming to identify and mitigate systemic risks? (Only applies to systemic-risk models.)",
+    gpai_q8:
+      "Art. 55(1)(b): Incident reporting mechanisms? Do you have mechanisms to track, document, and report serious incidents to the AI Office and national authorities? (Only applies to systemic-risk models.)",
+    gpai_q9:
+      "Art. 55(1)(c): Cybersecurity measures? Have you implemented adequate cybersecurity protections, including adversarial robustness measures? (Only applies to systemic-risk models.)",
+    gpai_yes: "Yes, implemented",
+    gpai_no: "No, missing",
+    gpai_unsure: "In progress / unsure",
+    gpai_results_title: "GPAI Compliance Assessment",
+    gpai_compliant: "COMPLIANT",
+    gpai_partial: "PARTIALLY COMPLIANT",
+    gpai_non_compliant: "NON-COMPLIANT",
+    gpai_systemic_risk_title: "Systemic Risk (Art. 51)",
+    gpai_systemic_risk_desc:
+      "This model meets the Art. 51 threshold (≥ 10²⁵ FLOP). Additional Art. 55 obligations apply: adversarial testing, incident reporting, and cybersecurity measures.",
+    gpai_art53_section: "Art. 53 – Core GPAI Obligations",
+    gpai_art55_section: "Art. 55 – Systemic Risk Obligations",
+    gpai_obligation_missing: "Missing",
+    gpai_obligation_partial: "In Progress",
+    gpai_obligation_done: "Implemented",
+    gpai_open_source_note:
+      "Open-source model: Art. 53(1)(a–c) exemptions apply. Training data summary (Art. 53(1)(d)) and Art. 55 systemic risk obligations still apply if threshold is met.",
+    gpai_export_json: "Export GPAI Compliance JSON",
+
+    // Compliance Gap Analysis
+    gap_analysis_title: "Compliance Gap Analysis",
+    gap_analysis_subtitle: "Prioritized action plan to achieve EU AI Act compliance",
+    gap_no_gaps: "No compliance gaps identified. Your system appears to be on track.",
+    gap_priority_critical: "Critical",
+    gap_priority_high: "High",
+    gap_priority_medium: "Medium",
+    gap_status_missing: "Missing",
+    gap_status_partial: "In Progress",
+    gap_steps_label: "Action steps",
   },
   de: {
     title: "EuConform",
@@ -972,5 +1068,57 @@ export const dictionaries: Record<Language, Dictionary> = {
       "Anhang-III-Frist für eigenständige Hochrisiko-KI vorgeschlagen auf 2. Dezember 2027 zu verschieben",
     timeline_omnibus_annex_i_delayed:
       "Anhang-I-Frist für produktintegrierte Hochrisiko-KI vorgeschlagen auf 2. August 2028 zu verschieben",
+
+    // GPAI Module – Art. 53–55
+    gpai_intro_question: "Sind Sie ein Foundation Model / GPAI-Anbieter?",
+    gpai_intro_cta: "GPAI-Anbieter – Art. 53–55 prüfen",
+    gpai_badge: "ART. 53–55 • EU AI ACT",
+    gpai_q1:
+      "Art. 53(1)(a): Technische Dokumentation? Haben Sie technische Dokumentation für das GPAI-Modell gemäß Anhang XI/XII erstellt und halten diese aktuell (Fähigkeiten, Einschränkungen, Risiken)?",
+    gpai_q2:
+      "Art. 53(1)(b): Informationen für nachgelagerte Anbieter? Stellen Sie nachgelagerten Anbietern und Betreibern die Informationen bereit, die sie für eigene EU AI Act Pflichten benötigen?",
+    gpai_q3:
+      "Art. 53(1)(c–d): Urheberrechts-Richtlinie + Trainingsdaten-Zusammenfassung? Haben Sie eine Urheberrechts-Compliance-Richtlinie eingeführt und eine ausreichend detaillierte Trainingsdaten-Zusammenfassung veröffentlicht?",
+    gpai_q4:
+      "Art. 71: EU AI Datenbank-Registrierung? Ist das GPAI-Modell in der EU AI Datenbank registriert, bevor es auf dem EU-Markt bereitgestellt wird?",
+    gpai_q5:
+      "Art. 53(2): Open-Source-Veröffentlichung? Ist das Modell als Open Source mit öffentlich verfügbaren Gewichten veröffentlicht? (Open-Source-Modelle erhalten teilweise Ausnahmen von Art. 53(1)(a–c) Pflichten.)",
+    gpai_q6:
+      "Art. 51 + Anhang XIII: Schwelle für systemisches Risiko? Wurde das Modell mit ≥ 10²⁵ FLOP trainiert? Modelle über dieser Schwelle unterliegen zusätzlichen Art. 55 Pflichten.",
+    gpai_q7:
+      "Art. 55(1)(a): Adversariales Testen / Red-Teaming? Haben Sie Modellevaluierungen, adversariales Testen und Red-Teaming durchgeführt, um systemische Risiken zu identifizieren und zu mindern? (Gilt nur für Modelle mit systemischem Risiko.)",
+    gpai_q8:
+      "Art. 55(1)(b): Vorfallmeldepflichten? Haben Sie Mechanismen, um schwerwiegende Vorfälle zu erfassen, zu dokumentieren und dem AI Office sowie nationalen Behörden zu melden? (Gilt nur für Modelle mit systemischem Risiko.)",
+    gpai_q9:
+      "Art. 55(1)(c): Cybersicherheitsmaßnahmen? Haben Sie angemessene Cybersicherheitsschutzmaßnahmen inkl. Robustheit gegen adversariale Angriffe implementiert? (Gilt nur für Modelle mit systemischem Risiko.)",
+    gpai_yes: "Ja, umgesetzt",
+    gpai_no: "Nein, fehlt",
+    gpai_unsure: "In Bearbeitung / unklar",
+    gpai_results_title: "GPAI Compliance-Bewertung",
+    gpai_compliant: "KONFORM",
+    gpai_partial: "TEILWEISE KONFORM",
+    gpai_non_compliant: "NICHT KONFORM",
+    gpai_systemic_risk_title: "Systemisches Risiko (Art. 51)",
+    gpai_systemic_risk_desc:
+      "Dieses Modell erreicht die Art. 51 Schwelle (≥ 10²⁵ FLOP). Zusätzliche Art. 55 Pflichten gelten: adversariales Testen, Vorfallmeldung und Cybersicherheitsmaßnahmen.",
+    gpai_art53_section: "Art. 53 – Kern-Pflichten für GPAI-Anbieter",
+    gpai_art55_section: "Art. 55 – Pflichten bei systemischem Risiko",
+    gpai_obligation_missing: "Fehlt",
+    gpai_obligation_partial: "In Bearbeitung",
+    gpai_obligation_done: "Umgesetzt",
+    gpai_open_source_note:
+      "Open-Source-Modell: Art. 53(1)(a–c) Ausnahmen gelten. Trainingsdaten-Zusammenfassung (Art. 53(1)(d)) und Art. 55 Pflichten bei systemischem Risiko gelten weiterhin, falls die Schwelle erreicht ist.",
+    gpai_export_json: "GPAI Compliance JSON exportieren",
+
+    // Compliance Gap Analysis
+    gap_analysis_title: "Compliance-Lückenanalyse",
+    gap_analysis_subtitle: "Priorisierter Maßnahmenplan zur Erfüllung der EU KI-Verordnung",
+    gap_no_gaps: "Keine Compliance-Lücken identifiziert. Ihr System scheint auf dem richtigen Weg.",
+    gap_priority_critical: "Kritisch",
+    gap_priority_high: "Hoch",
+    gap_priority_medium: "Mittel",
+    gap_status_missing: "Fehlend",
+    gap_status_partial: "In Bearbeitung",
+    gap_steps_label: "Maßnahmen",
   },
 };

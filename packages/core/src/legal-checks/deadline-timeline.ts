@@ -295,3 +295,19 @@ export function getTimelineForRiskLevel(
     status: getDeadlineStatus(phase.isoDate),
   }));
 }
+
+/**
+ * Filter timeline phases by explicit audience list.
+ * Use this when the caller has audiences that don't map to a RiskLevel
+ * (e.g., GPAI providers need ["all", "gpai"]).
+ */
+export function getTimelineForAudiences(
+  audiences: AffectedAudience[]
+): (DeadlinePhase & { status: DeadlineStatus })[] {
+  return EU_AI_ACT_TIMELINE.filter((phase) =>
+    phase.obligations.some((o) => o.audiences.some((a) => audiences.includes(a)))
+  ).map((phase) => ({
+    ...phase,
+    status: getDeadlineStatus(phase.isoDate),
+  }));
+}

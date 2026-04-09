@@ -5,17 +5,24 @@
 
 import type {
   CrowsPairsLogProbResult,
+  GPAIComplianceResult,
   InferenceClient,
   InferenceFactory,
   ModelCapability,
   QuizAnswer,
+  QuizQuestion,
   RiskAssessment,
 } from "@euconform/core";
 
 /**
  * Wizard step type union representing each screen in the compliance flow
  */
-export type WizardStep = "intro" | "model-select" | "quiz" | "bias-test" | "results";
+export type WizardStep = "intro" | "model-select" | "quiz" | "bias-test" | "results" | "gpai-quiz";
+
+/**
+ * User role for branching between Annex III and GPAI provider paths
+ */
+export type UserRole = "annex-iii" | "gpai-provider" | null;
 
 /**
  * Model loading status for inference client initialization
@@ -33,6 +40,8 @@ export type InferenceEngine = "ollama" | "browser" | "demo";
 export interface WizardState {
   /** Current step in the wizard flow */
   step: WizardStep;
+  /** User role: annex-iii (default) or gpai-provider */
+  userRole: UserRole;
   /** Selected inference engine (ollama, browser, or demo) */
   selectedEngine: InferenceEngine;
   /** Selected model identifier */
@@ -49,6 +58,12 @@ export interface WizardState {
   answers: QuizAnswer[];
   /** Risk assessment result after quiz completion */
   assessment: RiskAssessment | null;
+  /** Current question index in the GPAI quiz (0-based) */
+  gpaiCurrentQuestion: number;
+  /** Array of user answers to GPAI quiz questions */
+  gpaiAnswers: QuizAnswer[];
+  /** GPAI compliance result after GPAI quiz completion */
+  gpaiAssessment: GPAIComplianceResult | null;
   /** Whether bias test is currently running */
   isRunningBiasTest: boolean;
   /** Bias test progress percentage (0-100) */
@@ -75,10 +90,14 @@ export interface WizardActions {
   handleEngineSelect: (engine: InferenceEngine) => void;
   /** Handle model selection from capability list */
   handleModelSelect: (capability: ModelCapability) => void;
-  /** Start the quiz after model selection */
+  /** Start the quiz after model selection (branches on userRole) */
   handleStartQuiz: () => void;
   /** Handle quiz answer submission */
   handleAnswer: (value: string) => void;
+  /** Handle GPAI quiz answer submission */
+  handleGpaiAnswer: (value: string) => void;
+  /** Select GPAI provider role and navigate to model-select */
+  handleSelectGpaiRole: (engine: InferenceEngine) => void;
   /** Execute the bias test */
   handleRunBiasTest: () => Promise<void>;
   /** Skip bias test and proceed to results */
@@ -98,9 +117,13 @@ export interface ExtendedWizardState extends WizardState {
   /** Detected inference capabilities */
   capabilities: import("@euconform/core").InferenceCapabilities | null;
   /** Annex III quiz questions */
-  questions: import("@euconform/core").QuizQuestion[];
-  /** Total number of quiz questions */
+  questions: QuizQuestion[];
+  /** Total number of Annex III quiz questions */
   totalQuestions: number;
+  /** GPAI compliance quiz questions */
+  gpaiQuestions: QuizQuestion[];
+  /** Total number of GPAI quiz questions */
+  gpaiTotalQuestions: number;
 }
 
 /**
@@ -111,6 +134,12 @@ export interface ExtendedWizardActions extends WizardActions {
   navigateBackToModelSelect: () => void;
   /** Navigate to previous question in quiz */
   navigateToPreviousQuestion: () => void;
+  /** Navigate back to intro and reset role selection */
+  navigateBackToIntro: () => void;
+  /** Navigate back from GPAI quiz to model-select */
+  navigateGpaiBack: () => void;
+  /** Navigate to previous question in GPAI quiz */
+  navigateToPreviousGpaiQuestion: () => void;
   /** Direct setter for selected engine */
   setSelectedEngine: (engine: InferenceEngine) => void;
   /** Direct setter for selected model */

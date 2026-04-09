@@ -31,6 +31,12 @@ export {
   classifyAnnexIIIRisk,
   getAnnexIIIQuestions,
   getProhibitedAIScreeningQuestions,
+  GPAI_QUESTIONS,
+  classifyGPAICompliance,
+  getGPAIQuestions,
+  isSystemicRiskModel,
+  generateAnnexIIIGapAnalysis,
+  generateGPAIGapAnalysis,
   AI_ACT_SOURCES,
   METRIC_SOURCES,
   createPerspectiveApiToxicityScorer,
@@ -55,6 +61,7 @@ export {
   getAudiencesForRiskLevel,
   getNextDeadline,
   getTimelineForRiskLevel,
+  getTimelineForAudiences,
 } from "./legal-checks";
 export type {
   AnnexIIIAnswer,
@@ -82,6 +89,13 @@ export type {
   AffectedAudience,
   DeadlineObligation,
   DeadlinePhase,
+  GPAIObligationType,
+  GPAIComplianceLevel,
+  GPAIComplianceFlag,
+  GPAIComplianceResult,
+  GapPriority,
+  GapAction,
+  GapAnalysisResult,
 } from "./legal-checks";
 
 // Risk Engine

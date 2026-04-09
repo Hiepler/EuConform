@@ -3,25 +3,36 @@
 import {
   AI_ACT_SOURCES,
   type CrowsPairsLogProbResult,
+  type GPAIComplianceResult,
   type ModelCapability,
   type RiskAssessment,
+  generateAnnexIIIGapAnalysis,
+  generateGPAIGapAnalysis,
   getComplianceGuidance,
 } from "@euconform/core";
 import { AlertTriangle, CheckCircle2, Download, FileCheck } from "lucide-react";
+import { useMemo } from "react";
 import {
   mapEngineToInferenceEngine,
   mapMethodologyToBiasMethod,
 } from "../../lib/bias-method-utils";
 import { useLanguage } from "../../lib/i18n/LanguageContext";
+import type { UserRole } from "../../lib/types/wizard";
 import { MethodStatusIndicator } from "../MethodStatusIndicator";
 import { DeadlineTimeline, RiskBadge } from "../shared";
+import { GapAnalysisSection } from "./GapAnalysisSection";
+import { GpaiResultsSection } from "./GpaiResultsSection";
 
 /**
  * Props for the ResultsScreen component
  */
 export interface ResultsScreenProps {
-  /** Risk assessment result */
-  assessment: RiskAssessment;
+  /** Risk assessment result (Annex III path) */
+  assessment: RiskAssessment | null;
+  /** GPAI compliance result (GPAI provider path) */
+  gpaiAssessment?: GPAIComplianceResult | null;
+  /** User role to determine which results to show */
+  userRole?: UserRole;
   /** Bias test result (optional) */
   biasResult: CrowsPairsLogProbResult | null;
   /** Selected model identifier */
@@ -44,6 +55,8 @@ export interface ResultsScreenProps {
  */
 export function ResultsScreen({
   assessment,
+  gpaiAssessment,
+  userRole,
   biasResult,
   selectedModel,
   selectedCapability,
@@ -53,7 +66,17 @@ export function ResultsScreen({
   onReset,
 }: ResultsScreenProps) {
   const { t } = useLanguage();
-  const guidance = getComplianceGuidance(assessment);
+  const isGpaiPath = userRole === "gpai-provider";
+  const guidance = !isGpaiPath && assessment ? getComplianceGuidance(assessment) : [];
+  const gapAnalysis = useMemo(
+    () =>
+      gpaiAssessment
+        ? generateGPAIGapAnalysis(gpaiAssessment)
+        : assessment
+          ? generateAnnexIIIGapAnalysis(assessment)
+          : null,
+    [gpaiAssessment, assessment]
+  );
 
   return (
     <main className="min-h-screen py-16 px-6">
@@ -85,54 +108,78 @@ export function ResultsScreen({
           </div>
         </div>
 
-        {/* Risk Score */}
-        <div className="border border-border dark:border-border-dark rounded-lg bg-white dark:bg-slate-medium p-8 mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="font-serif text-xl font-bold text-slate-deep dark:text-paper">
-              {t("risk_classification_title")}
-            </h2>
-            <RiskBadge level={assessment.level} />
+        {/* GPAI Compliance Checklist (GPAI path) */}
+        {isGpaiPath && gpaiAssessment ? (
+          <div className="mb-6">
+            <GpaiResultsSection gpaiAssessment={gpaiAssessment} selectedModel={selectedModel} />
           </div>
-          <div className="text-center">
-            <p className="text-5xl font-serif font-bold text-slate-deep dark:text-paper mb-2">
-              {assessment.score}
-              <span className="text-2xl text-slate-400">/100</span>
-            </p>
-            <div className="h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-4">
-              <div
-                className={`h-full transition-all duration-1000 ${
-                  assessment.level === "minimal" ? "gold-bg" : "bg-slate-400"
-                }`}
-                style={{ width: `${assessment.score}%` }}
-              />
-            </div>
-          </div>
-        </div>
+        ) : (
+          assessment && (
+            <>
+              {/* Risk Score */}
+              <div className="border border-border dark:border-border-dark rounded-lg bg-white dark:bg-slate-medium p-8 mb-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="font-serif text-xl font-bold text-slate-deep dark:text-paper">
+                    {t("risk_classification_title")}
+                  </h2>
+                  <RiskBadge level={assessment.level} />
+                </div>
+                <div className="text-center">
+                  <p className="text-5xl font-serif font-bold text-slate-deep dark:text-paper mb-2">
+                    {assessment.score}
+                    <span className="text-2xl text-slate-400">/100</span>
+                  </p>
+                  <div className="h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-4">
+                    <div
+                      className={`h-full transition-all duration-1000 ${
+                        assessment.level === "minimal" ? "gold-bg" : "bg-slate-400"
+                      }`}
+                      style={{ width: `${assessment.score}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
 
-        {/* Bias Results */}
-        {biasResult && (
-          <BiasResultsSection biasResult={biasResult} selectedCapability={selectedCapability} />
+              {/* Guidance */}
+              <div className="border border-border dark:border-border-dark rounded-lg bg-white dark:bg-slate-medium p-8 mb-6">
+                <h2 className="font-serif text-xl font-bold text-slate-deep dark:text-paper mb-6">
+                  {t("recommendations_title")}
+                </h2>
+                <ul className="space-y-3">
+                  {guidance.map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300"
+                    >
+                      <span className="text-gold">•</span>
+                      <span>{item.slice(2)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </>
+          )
         )}
 
-        {/* Guidance */}
-        <div className="border border-border dark:border-border-dark rounded-lg bg-white dark:bg-slate-medium p-8 mb-6">
-          <h2 className="font-serif text-xl font-bold text-slate-deep dark:text-paper mb-6">
-            {t("recommendations_title")}
-          </h2>
-          <ul className="space-y-3">
-            {guidance.map((item) => (
-              <li
-                key={item}
-                className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300"
-              >
-                <span className="text-gold">•</span>
-                <span>{item.slice(2)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {/* Bias Results (shared between both paths) */}
+        {biasResult && (
+          <div className="mb-6">
+            <BiasResultsSection biasResult={biasResult} selectedCapability={selectedCapability} />
+          </div>
+        )}
 
-        <DeadlineTimeline riskLevel={assessment.level} showOmnibus />
+        {/* Gap Analysis (both paths) */}
+        {gapAnalysis && (
+          <div className="mb-6">
+            <GapAnalysisSection result={gapAnalysis} />
+          </div>
+        )}
+
+        <DeadlineTimeline
+          riskLevel={assessment?.level ?? "minimal"}
+          audiences={isGpaiPath ? ["all", "gpai"] : undefined}
+          showOmnibus
+        />
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

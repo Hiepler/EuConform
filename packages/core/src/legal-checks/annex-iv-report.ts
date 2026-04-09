@@ -17,6 +17,7 @@
 import type { BiasCalculationMethod, BiasTestResult, RiskLevel } from "../types";
 import type { Citation } from "./bias-metrics";
 import type { DataGovernanceChecklistResult } from "./data-governance";
+import type { GapAnalysisResult } from "./gap-analysis";
 import type { HumanOversightRecommendation } from "./human-oversight-logging";
 import type { AnnexIIIRiskResult } from "./risk-classifier";
 
@@ -88,6 +89,7 @@ export interface AnnexIVStructuredReportV1 {
     changeLog?: Array<{ date: string; change: string }>;
     references: Citation[];
   };
+  section8_gapAnalysis?: GapAnalysisResult;
 }
 
 export function buildAnnexIVReportV1(input: {
@@ -104,6 +106,7 @@ export function buildAnnexIVReportV1(input: {
   humanOversight?: AnnexIVStructuredReportV1["section6_humanOversight"];
   technicalDocumentation?: Partial<AnnexIVStructuredReportV1["section7_technicalDocumentation"]>;
   biasMethodology?: AnnexIVStructuredReportV1["section5_performanceAndFairness"]["biasMethodology"];
+  gapAnalysis?: GapAnalysisResult;
   tool?: { name: string; version?: string };
   disclaimer?: string;
 }): AnnexIVStructuredReportV1 {
@@ -153,5 +156,6 @@ export function buildAnnexIVReportV1(input: {
       ],
       references: input.technicalDocumentation?.references ?? input.legalSources,
     },
+    section8_gapAnalysis: input.gapAnalysis,
   };
 }

@@ -5,11 +5,11 @@ import {
   DIGITAL_OMNIBUS_PROPOSALS,
   type DeadlinePhase,
   type DeadlineStatus,
-  EU_AI_ACT_TIMELINE,
   type RiskLevel,
   getAudiencesForRiskLevel,
   getDaysUntilDeadline,
-  getDeadlineStatus,
+  getTimelineForAudiences,
+  getTimelineForRiskLevel,
 } from "@euconform/core";
 import {
   AlertTriangle,
@@ -263,27 +263,33 @@ function PhaseCard({ phase, relevantAudiences, nowMs, isLast, isRelevantPhase }:
 
 export interface DeadlineTimelineProps {
   riskLevel?: RiskLevel;
+  audiences?: AffectedAudience[];
   showOmnibus?: boolean;
 }
 
-export function DeadlineTimeline({ riskLevel, showOmnibus = true }: DeadlineTimelineProps) {
+export function DeadlineTimeline({
+  riskLevel,
+  audiences,
+  showOmnibus = true,
+}: DeadlineTimelineProps) {
   const { t, language } = useLanguage();
   const [omnibusOpen, setOmnibusOpen] = useState(false);
 
   const nowMs = useMemo(() => Date.now(), []);
 
   const relevantAudiences = useMemo<AffectedAudience[]>(
-    () => (riskLevel ? getAudiencesForRiskLevel(riskLevel) : DEFAULT_AUDIENCES),
-    [riskLevel]
+    () => audiences ?? (riskLevel ? getAudiencesForRiskLevel(riskLevel) : DEFAULT_AUDIENCES),
+    [audiences, riskLevel]
   );
 
   const phasesWithStatus = useMemo(
     () =>
-      EU_AI_ACT_TIMELINE.map((phase) => ({
-        ...phase,
-        status: getDeadlineStatus(phase.isoDate, nowMs),
-      })),
-    [nowMs]
+      audiences
+        ? getTimelineForAudiences(audiences)
+        : riskLevel
+          ? getTimelineForRiskLevel(riskLevel)
+          : getTimelineForAudiences(DEFAULT_AUDIENCES),
+    [audiences, riskLevel]
   );
 
   const firstUpcomingIndex = phasesWithStatus.findIndex((p) => p.status !== "past");

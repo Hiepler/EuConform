@@ -16,6 +16,7 @@
 
 import {
   BiasTestScreen,
+  GpaiQuizScreen,
   IntroScreen,
   ModelSelectScreen,
   QuizScreen,
@@ -54,6 +55,7 @@ function ComplianceWizard() {
           onEngineSelect={wizard.handleEngineSelect}
           setSelectedModel={wizard.setSelectedModel}
           setStep={wizard.setStep}
+          onSelectGpaiRole={wizard.handleSelectGpaiRole}
         />
       );
 
@@ -65,7 +67,7 @@ function ComplianceWizard() {
           selectedEngine={wizard.selectedEngine}
           error={wizard.error}
           onModelSelect={wizard.handleModelSelect}
-          onBack={() => wizard.setStep("intro")}
+          onBack={wizard.navigateBackToIntro}
           onContinue={wizard.handleStartQuiz}
         />
       );
@@ -83,6 +85,18 @@ function ComplianceWizard() {
         />
       );
 
+    case "gpai-quiz":
+      return (
+        <GpaiQuizScreen
+          currentQuestion={wizard.gpaiCurrentQuestion}
+          totalQuestions={wizard.gpaiTotalQuestions}
+          answers={wizard.gpaiAnswers}
+          onAnswer={wizard.handleGpaiAnswer}
+          onBack={wizard.navigateGpaiBack}
+          onNavigateBack={wizard.navigateToPreviousGpaiQuestion}
+        />
+      );
+
     case "bias-test":
       return (
         <BiasTestScreen
@@ -97,14 +111,15 @@ function ComplianceWizard() {
         />
       );
 
-    case "results":
-      // Only render results if we have an assessment
-      if (!wizard.assessment) {
-        return null;
-      }
+    case "results": {
+      const isGpaiPath = wizard.userRole === "gpai-provider";
+      if (isGpaiPath && !wizard.gpaiAssessment) return null;
+      if (!isGpaiPath && !wizard.assessment) return null;
       return (
         <ResultsScreen
           assessment={wizard.assessment}
+          gpaiAssessment={wizard.gpaiAssessment}
+          userRole={wizard.userRole}
           biasResult={wizard.biasResult}
           selectedModel={wizard.selectedModel}
           selectedCapability={wizard.selectedCapability}
@@ -114,6 +129,7 @@ function ComplianceWizard() {
           onReset={wizard.resetAll}
         />
       );
+    }
 
     default:
       return null;

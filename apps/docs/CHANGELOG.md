@@ -1,5 +1,11 @@
 # @euconform/docs
 
+## 1.0.3
+
+### Patch Changes
+
+- caae33d: ECEF Stage 2: Add bundle.v1 manifest with SHA-256 integrity hashes and optional ZIP transport. Add verify command to CLI for manifest, directory, and ZIP validation. First public release of @euconform/cli with scan, verify, and --zip support.
+
 ## 1.0.2
 
 ### Patch Changes

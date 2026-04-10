@@ -62,6 +62,7 @@
 | 🎯 **Risk Classification** | Interactive quiz implementing EU AI Act Article 5 (prohibited), Article 6 + Annex III (high-risk) |
 | 📊 **Bias Detection** | CrowS-Pairs methodology with log-probability analysis for scientific bias measurement |
 | 📄 **PDF Reports** | Generate Annex IV-compliant technical documentation entirely in-browser |
+| 🚦 **Compliance CI Gate** | Turn `euconform scan` into GitHub-native annotations, CI summaries, and machine-readable artifacts |
 | 🌐 **100% Offline** | All processing happens client-side using transformers.js (WebGPU) |
 | 🔒 **Privacy-First** | Zero tracking, no cookies, no external fonts – your data never leaves your browser |
 | 📤 **Custom Test Suites** | Upload your own CSV/JSON test cases for domain-specific bias evaluation |
@@ -96,6 +97,66 @@ pnpm dev
 # Open http://localhost:3001
 ```
 
+### CLI Scanner
+
+The local scanner turns EuConform into a reproducible evidence tool for real repositories:
+
+```bash
+# Build the CLI
+pnpm --filter @euconform/cli build
+
+# Scan the current project
+node packages/cli/dist/index.js scan . --scope production
+```
+
+This writes:
+- `.euconform/euconform.report.json`
+- `.euconform/euconform.aibom.json`
+- `.euconform/euconform.summary.md`
+- `.euconform/euconform.bundle.json`
+
+For CI usage, add GitHub-native annotations and fail thresholds:
+
+```bash
+node packages/cli/dist/index.js scan . --scope production --ci github --fail-on high
+```
+
+For portable artifact exchange, create a bundle archive:
+
+```bash
+node packages/cli/dist/index.js scan . --scope production --zip true
+```
+
+Verify a bundle manifest, extracted bundle directory, or ZIP archive:
+
+```bash
+node packages/cli/dist/index.js verify .euconform/euconform.bundle.json
+```
+
+### Try ECEF In 10 Minutes
+
+If you want to evaluate the current adoption path as an OSS builder, use one of the
+reference projects in [`examples/`](examples/README.md):
+
+```bash
+# 1. Build the CLI
+pnpm --filter @euconform/cli build
+
+# 2. Scan a reference project
+node packages/cli/dist/index.js scan examples/ollama-chatbot \
+  --scope production \
+  --output /tmp/ecef-ollama
+
+# 3. Verify the generated bundle
+node packages/cli/dist/index.js verify /tmp/ecef-ollama/euconform.bundle.json
+
+# 4. Open the web app and import the generated artifacts
+pnpm dev
+```
+
+For a retrieval-first example, replace `examples/ollama-chatbot` with
+`examples/rag-assistant`.
+
 ### Using with Local AI Models (Optional)
 
 For enhanced bias detection with your own models:
@@ -129,6 +190,40 @@ Supports Llama, Mistral, and Qwen variants with automatic log-probability detect
 | **Annex IV** | Technical Documentation (report structure) |
 
 **Implementation Timeline**: Obligations become effective in stages. High-risk obligations apply from 2027. Always verify current guidelines and delegated acts.
+
+### CLI Scanner & CI
+
+`euconform scan` is designed to complement the web wizard:
+- The **scanner** gathers technical evidence from a real codebase.
+- The **web app** remains the place for role and risk classification with human context.
+- The **bias evaluation tooling** adds empirical model-behavior evidence on top.
+
+#### GitHub Actions Example
+
+```yaml
+- name: Build CLI
+  run: pnpm --filter @euconform/cli build
+
+- name: Run EuConform scan
+  run: node packages/cli/dist/index.js scan . --scope production --ci github --fail-on high
+```
+
+In GitHub Actions, EuConform emits:
+- workflow annotations for top compliance gaps
+- a markdown step summary
+- machine-readable CI artifacts: `euconform.ci.json` and `euconform.ci-summary.md`
+
+### EuConform Evidence Format (ECEF)
+
+The scanner artifacts are defined as the **EuConform Evidence Format (ECEF)**, an open specification for offline AI Act evidence exchange.
+
+- `euconform.report.v1` captures compliance evidence, gaps, and open questions
+- `euconform.aibom.v1` is the AI Bill of Materials (AI BOM) inventory layer
+- `euconform.ci.v1` captures CI thresholds, status, and top findings
+- `euconform.bundle.v1` binds artifact sets into a portable, integrity-aware manifest
+
+Stage 1 documentation, schemas, and example artifacts live in [docs/ecef/README.md](docs/ecef/README.md).
+Reference source projects for OSS builders live in [examples/README.md](examples/README.md).
 
 ### Bias Testing Methodology
 
@@ -221,7 +316,8 @@ euconform/
 │   ├── web/                  # Next.js 16 production app
 │   └── docs/                 # Documentation site (WIP)
 ├── packages/
-│   ├── core/                 # Risk engine, fairness metrics, types
+│   ├── cli/                  # Local repo scanner and CI integration
+│   ├── core/                 # Risk engine, scanner engine, fairness metrics, types
 │   ├── ui/                   # Shared UI components (shadcn-style)
 │   ├── typescript-config/    # Shared TypeScript configuration
 │   └── tailwind-config/      # Shared Tailwind configuration

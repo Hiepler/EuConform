@@ -1,0 +1,9 @@
+{
+  "name": "my-nextjs-ai-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "openai": "^4.0.0"
+  }
+}

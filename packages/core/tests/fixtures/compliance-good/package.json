@@ -1,0 +1,10 @@
+{
+  "name": "compliant-ai-service",
+  "version": "2.0.0",
+  "dependencies": {
+    "openai": "^4.0.0",
+    "pino": "^8.0.0",
+    "@sentry/node": "^7.0.0",
+    "@euconform/core": "^1.0.0"
+  }
+}

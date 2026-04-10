@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "euconform.bundle.v1",
+  "generatedAt": "2026-04-10T12:05:00.000Z",
+  "tool": {
+    "name": "euconform",
+    "version": "0.1.0"
+  },
+  "target": {
+    "name": "ollama-chatbot-example",
+    "rootPath": "/examples/ollama-chatbot"
+  },
+  "artifacts": [
+    {
+      "role": "report",
+      "fileName": "euconform.report.json",
+      "sha256": "bba37c5e38bd0b39164b9a55d2a9d3eb6b5848191c7ff0ecbdda8ae109196e58",
+      "schemaVersion": "euconform.report.v1",
+      "required": true
+    },
+    {
+      "role": "aibom",
+      "fileName": "euconform.aibom.json",
+      "sha256": "1650203a2309f8ee933ba4d7c1d7adec803fdc592a5527b1022c577af768f3c5",
+      "schemaVersion": "euconform.aibom.v1",
+      "required": false
+    },
+    {
+      "role": "ci",
+      "fileName": "euconform.ci.json",
+      "sha256": "7e3d555e2c0ab9a58ff0b980c4afb820356dd84961c956d1d8e6c0e36d080bde",
+      "schemaVersion": "euconform.ci.v1",
+      "required": false
+    }
+  ]
+}

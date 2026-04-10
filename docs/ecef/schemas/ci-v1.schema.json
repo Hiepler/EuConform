@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://euconform.dev/schemas/ecef/ci-v1.schema.json",
+  "title": "EuConform Evidence Format CI v1",
+  "description": "Stage 1 CI gate document for EuConform scan outputs.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "target",
+    "status",
+    "aiDetected",
+    "scanScope",
+    "artifacts",
+    "complianceOverview",
+    "topGaps"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "euconform.ci.v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "target": {
+      "type": "object",
+      "required": ["name", "rootPath"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "rootPath": { "type": "string" }
+      }
+    },
+    "status": {
+      "type": "object",
+      "required": ["failOn", "failing", "gapCounts", "openQuestions"],
+      "additionalProperties": false,
+      "properties": {
+        "failOn": { "enum": ["none", "critical", "high", "medium", "low"] },
+        "failing": { "type": "boolean" },
+        "gapCounts": {
+          "type": "object",
+          "required": ["critical", "high", "medium", "low"],
+          "additionalProperties": false,
+          "properties": {
+            "critical": { "type": "integer" },
+            "high": { "type": "integer" },
+            "medium": { "type": "integer" },
+            "low": { "type": "integer" }
+          }
+        },
+        "openQuestions": { "type": "integer" }
+      }
+    },
+    "aiDetected": { "type": "boolean" },
+    "scanScope": { "enum": ["production", "all"] },
+    "artifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "complianceOverview": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["area", "status", "confidence"],
+        "additionalProperties": false,
+        "properties": {
+          "area": { "type": "string" },
+          "status": { "enum": ["present", "partial", "absent", "unknown"] },
+          "confidence": { "enum": ["high", "medium", "low"] }
+        }
+      }
+    },
+    "topGaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "priority", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "priority": { "enum": ["critical", "high", "medium", "low"] },
+          "status": { "enum": ["missing", "partial"] }
+        }
+      }
+    }
+  }
+}

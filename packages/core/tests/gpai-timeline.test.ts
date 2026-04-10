@@ -15,7 +15,7 @@ describe("getTimelineForAudiences", () => {
     const phases = getTimelineForAudiences(["all", "gpai"]);
     const phase2 = phases.find((p) => p.id === "phase-2-gpai");
     expect(phase2).toBeDefined();
-    const gpaiObligation = phase2!.obligations.find((o) => o.articleRef === "Art. 53");
+    const gpaiObligation = phase2?.obligations.find((o) => o.articleRef === "Art. 53");
     expect(gpaiObligation).toBeDefined();
   });
 
@@ -23,7 +23,7 @@ describe("getTimelineForAudiences", () => {
     const phases = getTimelineForAudiences(["all", "gpai"]);
     const phase2 = phases.find((p) => p.id === "phase-2-gpai");
     expect(phase2).toBeDefined();
-    const systemicObligation = phase2!.obligations.find((o) => o.articleRef === "Art. 55");
+    const systemicObligation = phase2?.obligations.find((o) => o.articleRef === "Art. 55");
     expect(systemicObligation).toBeDefined();
   });
 

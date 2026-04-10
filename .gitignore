@@ -81,3 +81,5 @@ lerna-debug.log*
 .cache/
 .temp/
 tmp/
+.euconform/
+.euconform-ci/

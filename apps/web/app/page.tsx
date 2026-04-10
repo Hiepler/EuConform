@@ -21,6 +21,7 @@ import {
   ModelSelectScreen,
   QuizScreen,
   ResultsScreen,
+  ScanViewerScreen,
 } from "../components/screens";
 import { useCustomTestSuite } from "../lib/contexts/CustomTestSuiteContext";
 import { useComplianceWizard } from "../lib/hooks";
@@ -130,6 +131,14 @@ function ComplianceWizard() {
         />
       );
     }
+
+    case "scan-viewer":
+      return (
+        <ScanViewerScreen
+          onNavigateToWizard={() => wizard.setStep("intro")}
+          onBack={() => wizard.setStep("intro")}
+        />
+      );
 
     default:
       return null;

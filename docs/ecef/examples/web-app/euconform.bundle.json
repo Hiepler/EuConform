@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "euconform.bundle.v1",
+  "generatedAt": "2026-04-10T12:00:00.000Z",
+  "tool": {
+    "name": "euconform",
+    "version": "0.1.0"
+  },
+  "target": {
+    "name": "example-web-app",
+    "rootPath": "/examples/web-app"
+  },
+  "artifacts": [
+    {
+      "role": "report",
+      "fileName": "euconform.report.json",
+      "sha256": "26f06d9abe6aa1768ab06c75a01eb3e9f6caac5ce63037bda702fb13f4920aa3",
+      "schemaVersion": "euconform.report.v1",
+      "required": true
+    },
+    {
+      "role": "aibom",
+      "fileName": "euconform.aibom.json",
+      "sha256": "9869ff4907dc84316c960846f32165cd726b50d79d4e68ee5de92e3a8dbcd986",
+      "schemaVersion": "euconform.aibom.v1",
+      "required": false
+    },
+    {
+      "role": "ci",
+      "fileName": "euconform.ci.json",
+      "sha256": "47623ef7d4c770eb0c8142a45202359e56d5b6aa4dcce019598313da47f90f3c",
+      "schemaVersion": "euconform.ci.v1",
+      "required": false
+    }
+  ]
+}

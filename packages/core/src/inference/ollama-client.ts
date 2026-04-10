@@ -413,6 +413,95 @@ export class OllamaClient {
     return supports;
   }
 
+  private async tryExactLogProbs(
+    prompt: string
+  ): Promise<{ logprob: number; method: BiasCalculationMethod } | null> {
+    const supportsLogProbs = await this.detectLogProbSupport();
+    if (!supportsLogProbs || this.isCloudModel()) return null;
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: this.model,
+          prompt,
+          stream: false,
+          logprobs: true,
+          options: { num_predict: 0, temperature: 0 },
+        }),
+      });
+
+      if (!response.ok) {
+        console.warn(
+          `❌ Log-probability request failed for ${this.model}: ${response.status} ${response.statusText}`
+        );
+        return null;
+      }
+
+      const data = await response.json();
+      if (!data.logprobs || !Array.isArray(data.logprobs) || data.logprobs.length === 0) {
+        console.warn(`❌ No logprobs in response for ${this.model}, response:`, data);
+        return null;
+      }
+
+      const avgLogProb =
+        data.logprobs.reduce(
+          (sum: number, item: { token: string; logprob: number }) => sum + item.logprob,
+          0
+        ) / data.logprobs.length;
+      console.log(`✅ Using exact log-probabilities for ${this.model}: ${avgLogProb}`);
+      return { logprob: avgLogProb, method: "logprobs_exact" };
+    } catch (error) {
+      console.warn(
+        `❌ Log-probability request failed for ${this.model}, falling back to latency method:`,
+        error
+      );
+      return null;
+    }
+  }
+
+  private async latencyFallback(
+    prompt: string
+  ): Promise<{ logprob: number; method: BiasCalculationMethod }> {
+    const isCloud = this.isCloudModel();
+    console.log(
+      `⚡ Falling back to latency-based method for ${this.model}${isCloud ? " (cloud model)" : ""}`
+    );
+    const startTime = performance.now();
+
+    const response = await fetch(`${this.baseUrl}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: this.model,
+        prompt,
+        stream: false,
+        options: { num_predict: isCloud ? 1 : 0, temperature: 0 },
+      }),
+    });
+
+    const endTime = performance.now();
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Ollama request failed: ${response.statusText}. ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    let latency: number;
+    if (data.prompt_eval_duration && data.prompt_eval_count) {
+      latency = data.prompt_eval_duration / data.prompt_eval_count / 1e9;
+    } else {
+      const totalTime = (endTime - startTime) / 1000;
+      const tokenCount = prompt.split(/\s+/).length;
+      latency = totalTime / Math.max(tokenCount, 1);
+    }
+
+    return { logprob: -Math.log(latency + 0.00001), method: "logprobs_fallback_latency" };
+  }
+
   /**
    * Get log-probability with automatic fallback to latency method
    * Returns both the calculated value and the method used
@@ -421,107 +510,9 @@ export class OllamaClient {
     prompt: string
   ): Promise<{ logprob: number; method: BiasCalculationMethod }> {
     try {
-      // First, check if model supports log-probabilities
-      const supportsLogProbs = await this.detectLogProbSupport();
-
-      if (supportsLogProbs && !this.isCloudModel()) {
-        try {
-          const response = await fetch(`${this.baseUrl}/api/generate`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: this.model,
-              prompt,
-              stream: false,
-              logprobs: true,
-              options: {
-                num_predict: 0, // Only evaluate prompt, don't generate
-                temperature: 0,
-              },
-            }),
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-
-            if (data.logprobs && Array.isArray(data.logprobs) && data.logprobs.length > 0) {
-              // Calculate average log-probability across all tokens
-              const avgLogProb =
-                data.logprobs.reduce(
-                  (sum: number, item: { token: string; logprob: number }) => sum + item.logprob,
-                  0
-                ) / data.logprobs.length;
-              console.log(`✅ Using exact log-probabilities for ${this.model}: ${avgLogProb}`);
-              return {
-                logprob: avgLogProb,
-                method: "logprobs_exact",
-              };
-            }
-            console.warn(`❌ No logprobs in response for ${this.model}, response:`, data);
-          } else {
-            console.warn(
-              `❌ Log-probability request failed for ${this.model}: ${response.status} ${response.statusText}`
-            );
-          }
-        } catch (error) {
-          console.warn(
-            `❌ Log-probability request failed for ${this.model}, falling back to latency method:`,
-            error
-          );
-        }
-      }
-
-      // Fallback to latency-based method
-      const isCloud = this.isCloudModel();
-      console.log(
-        `⚡ Falling back to latency-based method for ${this.model}${isCloud ? " (cloud model)" : ""}`
-      );
-      const startTime = performance.now();
-      const numPredict = isCloud ? 1 : 0;
-
-      const response = await fetch(`${this.baseUrl}/api/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: this.model,
-          prompt,
-          stream: false,
-          options: {
-            num_predict: numPredict,
-            temperature: 0,
-          },
-        }),
-      });
-
-      const endTime = performance.now();
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Ollama request failed: ${response.statusText}. ${errorText}`);
-      }
-
-      const data = await response.json();
-
-      // Calculate latency-based pseudo log-probability
-      let latency: number;
-
-      if (data.prompt_eval_duration && data.prompt_eval_count) {
-        // Use prompt evaluation metrics (preferred)
-        latency = data.prompt_eval_duration / data.prompt_eval_count / 1e9; // ns to seconds per token
-      } else {
-        // Fallback to total request time
-        const totalTime = (endTime - startTime) / 1000; // ms to seconds
-        const tokenCount = prompt.split(/\s+/).length; // rough token estimate
-        latency = totalTime / Math.max(tokenCount, 1);
-      }
-
-      // Convert latency to pseudo log-probability (faster = higher probability)
-      const pseudoLogProb = -Math.log(latency + 0.00001);
-
-      return {
-        logprob: pseudoLogProb,
-        method: "logprobs_fallback_latency",
-      };
+      const exact = await this.tryExactLogProbs(prompt);
+      if (exact) return exact;
+      return await this.latencyFallback(prompt);
     } catch (error) {
       console.error(`Error in getLogProbWithFallback for model ${this.model}:`, error);
       throw error;

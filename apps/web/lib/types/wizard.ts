@@ -17,7 +17,14 @@ import type {
 /**
  * Wizard step type union representing each screen in the compliance flow
  */
-export type WizardStep = "intro" | "model-select" | "quiz" | "bias-test" | "results" | "gpai-quiz";
+export type WizardStep =
+  | "intro"
+  | "model-select"
+  | "quiz"
+  | "bias-test"
+  | "results"
+  | "gpai-quiz"
+  | "scan-viewer";
 
 /**
  * User role for branching between Annex III and GPAI provider paths

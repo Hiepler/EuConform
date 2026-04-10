@@ -1,0 +1,9 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8000:8000"

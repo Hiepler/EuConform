@@ -107,6 +107,38 @@ jobs:
       - name: Build
         run: pnpm build
 
+  compliance:
+    name: Compliance Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm --filter @euconform/cli build
+
+      - name: Run EuConform compliance scan
+        run: node packages/cli/dist/index.js scan . --scope production --ci github --fail-on none --output .euconform-ci
+
+      - name: Upload compliance artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: euconform-compliance-scan
+          path: .euconform-ci/
+
   security:
     name: Security Audit
     runs-on: ubuntu-latest

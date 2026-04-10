@@ -1,0 +1,14 @@
+{
+  "name": "ollama-chatbot-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal local Ollama chatbot — EuConform scan demo target",
+  "dependencies": {
+    "express": "^4.21.0",
+    "ollama": "^0.5.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}

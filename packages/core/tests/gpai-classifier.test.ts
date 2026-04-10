@@ -32,8 +32,8 @@ describe("classifyGPAICompliance", () => {
       const result = classifyGPAICompliance(answers);
       const flag = result.flags.find((f) => f.obligation === "copyright-policy");
       expect(flag).toBeDefined();
-      expect(flag!.status).toBe("missing");
-      expect(flag!.articleRef).toBe("Art. 53(1)(d)");
+      expect(flag?.status).toBe("missing");
+      expect(flag?.articleRef).toBe("Art. 53(1)(d)");
     });
 
     it("flags copyright-policy as partial when open-source answers 'unsure'", () => {
@@ -44,8 +44,8 @@ describe("classifyGPAICompliance", () => {
       const result = classifyGPAICompliance(answers);
       const flag = result.flags.find((f) => f.obligation === "copyright-policy");
       expect(flag).toBeDefined();
-      expect(flag!.status).toBe("partial");
-      expect(flag!.articleRef).toBe("Art. 53(1)(d)");
+      expect(flag?.status).toBe("partial");
+      expect(flag?.articleRef).toBe("Art. 53(1)(d)");
     });
 
     it("does NOT flag copyright-policy when open-source answers 'yes'", () => {

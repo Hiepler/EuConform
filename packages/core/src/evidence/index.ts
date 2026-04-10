@@ -11,6 +11,8 @@ export type {
   AssessmentHint,
   BomComponent,
   BomComponentKind,
+  BundleArtifactRef,
+  BundleArtifactRole,
   CiReport,
   ComplianceSignalGroup,
   ConfidenceLevel,
@@ -21,6 +23,7 @@ export type {
   GapCounts,
   OpenQuestion,
   RepoProfile,
+  ScanBundle,
   ScanFile,
   ScanGap,
   ScanMeta,
@@ -36,3 +39,5 @@ export type {
 
 export { generateScanOutput } from "./output";
 export { generateSummaryMarkdown } from "./markdown";
+export { buildBundleManifest } from "./bundle";
+export { sha256Hex } from "./hash";

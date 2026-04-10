@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "euconform.bundle.v1",
+  "generatedAt": "2026-04-10T12:15:00.000Z",
+  "tool": { "name": "euconform", "version": "1.1.0" },
+  "target": { "name": "example-static-site", "rootPath": "/examples/non-ai" },
+  "artifacts": [
+    {
+      "role": "report",
+      "fileName": "euconform.report.json",
+      "sha256": "85fd44334876ff1e9b943b671785ad73235c4e8999eb8b065810488b8c4d5920",
+      "schemaVersion": "euconform.report.v1",
+      "required": true
+    },
+    {
+      "role": "aibom",
+      "fileName": "euconform.aibom.json",
+      "sha256": "21cb5954d0f56e965e5fabec075341931cfbdb1f6d2efc2a74794ff56f03b6f6",
+      "schemaVersion": "euconform.aibom.v1",
+      "required": false
+    },
+    {
+      "role": "ci",
+      "fileName": "euconform.ci.json",
+      "sha256": "93f43a1753eca133cbee04be1ac0e749f63d9cb2169b7b9eed9b9a1f585c4a23",
+      "schemaVersion": "euconform.ci.v1",
+      "required": false
+    }
+  ]
+}

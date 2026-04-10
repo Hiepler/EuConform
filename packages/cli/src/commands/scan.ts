@@ -7,7 +7,7 @@ import { defineCommand } from "citty";
 import consola from "consola";
 import { type BaseArtifactName, type CiMode, writeCiArtifacts } from "../output/ci";
 import { printTerminalSummary } from "../output/terminal";
-import { writeOutputFiles } from "../output/writer";
+import { writeOutputFiles, writeZipBundle } from "../output/writer";
 import { type FailOnLevel, shouldFailOnGaps } from "../utils/gap-priority";
 
 const VALID_FORMATS = new Set(["json", "md", "all"]);
@@ -134,6 +134,11 @@ export default defineCommand({
       type: "string",
       description: "Additional exclude patterns (repeatable)",
     },
+    zip: {
+      type: "boolean",
+      default: false,
+      description: "Create a ZIP archive of all scan artifacts",
+    },
     verbose: {
       type: "boolean",
       default: false,
@@ -168,6 +173,10 @@ export default defineCommand({
       consola.info(
         `CI artifacts ready: ${resolve(ciArtifacts.reportPath)} and ${resolve(ciArtifacts.summaryPath)}`
       );
+    }
+
+    if (args.zip) {
+      await writeZipBundle(outputDir);
     }
 
     if (shouldFailOnGaps(output.report.gaps, failOn)) {

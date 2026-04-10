@@ -13,6 +13,8 @@ type JsonSchema = {
   additionalProperties?: boolean;
   items?: JsonSchema;
   format?: string;
+  pattern?: string;
+  minItems?: number;
 };
 
 const ROOT = resolve(__dirname, "../../../..");
@@ -95,9 +97,14 @@ function validateArraySchema(
     return [`${path} must be an array`];
   }
 
-  if (!schema.items) return [];
-
   const errors: string[] = [];
+
+  if (schema.minItems !== undefined && value.length < schema.minItems) {
+    errors.push(`${path} must have at least ${schema.minItems} item(s)`);
+  }
+
+  if (!schema.items) return errors;
+
   for (let i = 0; i < value.length; i++) {
     errors.push(...validateAgainstSchema(rootSchema, schema.items, value[i], `${path}[${i}]`));
   }
@@ -105,8 +112,12 @@ function validateArraySchema(
 }
 
 function validatePrimitive(schema: JsonSchema, value: unknown, path: string): string[] {
-  if (schema.type === "string" && typeof value !== "string") {
-    return [`${path} must be a string`];
+  if (schema.type === "string") {
+    if (typeof value !== "string") return [`${path} must be a string`];
+    if (schema.pattern && !new RegExp(schema.pattern).test(value)) {
+      return [`${path} must match pattern ${schema.pattern}`];
+    }
+    return [];
   }
   if (schema.type === "boolean" && typeof value !== "boolean") {
     return [`${path} must be a boolean`];
@@ -147,15 +158,17 @@ const SCHEMA_FILES = {
   report: resolve(SCHEMAS_DIR, "report-v1.schema.json"),
   aibom: resolve(SCHEMAS_DIR, "aibom-v1.schema.json"),
   ci: resolve(SCHEMAS_DIR, "ci-v1.schema.json"),
+  bundle: resolve(SCHEMAS_DIR, "bundle-v1.schema.json"),
 } as const;
 
 const EXAMPLE_FILES = {
   report: "euconform.report.json",
   aibom: "euconform.aibom.json",
   ci: "euconform.ci.json",
+  bundle: "euconform.bundle.json",
 } as const;
 
-describe("ECEF stage 1 schemas", () => {
+describe("ECEF schemas", () => {
   const schemaEntries = Object.entries(SCHEMA_FILES).map(([kind, path]) => [
     kind,
     readJson<JsonSchema>(path),
@@ -238,6 +251,7 @@ describe("ECEF stage 1 schemas", () => {
       report: "euconform.report.v1",
       aibom: "euconform.aibom.v1",
       ci: "euconform.ci.v1",
+      bundle: "euconform.bundle.v1",
     } as const;
 
     const exampleDirs = readdirSync(EXAMPLES_DIR, { withFileTypes: true })
@@ -254,5 +268,49 @@ describe("ECEF stage 1 schemas", () => {
         expect(artifact.schemaVersion).toBe(expectedVersions[kind]);
       }
     }
+  });
+
+  it("rejects bundle with invalid sha256 format", () => {
+    const bundleSchema = schemaEntries.find(([kind]) => kind === "bundle")?.[1];
+    if (!bundleSchema) throw new Error("bundle schema not found");
+
+    const badBundle = {
+      schemaVersion: "euconform.bundle.v1",
+      generatedAt: "2026-01-01T00:00:00Z",
+      tool: { name: "euconform", version: "1.0.0" },
+      target: { name: "test", rootPath: "/test" },
+      artifacts: [
+        {
+          role: "report",
+          fileName: "euconform.report.json",
+          sha256: "not-a-valid-hash",
+          required: true,
+        },
+      ],
+    };
+    const errors = validateAgainstSchema(bundleSchema, bundleSchema, badBundle);
+    expect(errors.some((e) => e.includes("sha256"))).toBe(true);
+  });
+
+  it("rejects bundle with invalid artifact role", () => {
+    const bundleSchema = schemaEntries.find(([kind]) => kind === "bundle")?.[1];
+    if (!bundleSchema) throw new Error("bundle schema not found");
+
+    const badBundle = {
+      schemaVersion: "euconform.bundle.v1",
+      generatedAt: "2026-01-01T00:00:00Z",
+      tool: { name: "euconform", version: "1.0.0" },
+      target: { name: "test", rootPath: "/test" },
+      artifacts: [
+        {
+          role: "unknown-role",
+          fileName: "test.json",
+          sha256: "a".repeat(64),
+          required: true,
+        },
+      ],
+    };
+    const errors = validateAgainstSchema(bundleSchema, bundleSchema, badBundle);
+    expect(errors.some((e) => e.includes("role"))).toBe(true);
   });
 });

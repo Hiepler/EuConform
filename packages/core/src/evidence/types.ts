@@ -304,3 +304,26 @@ export interface ScanOutput {
   aibom: AiBillOfMaterials;
   summaryMarkdown: string;
 }
+
+// ---------------------------------------------------------------------------
+// Bundle manifest (euconform.bundle.v1)
+// ---------------------------------------------------------------------------
+
+export type BundleArtifactRole = "report" | "aibom" | "ci" | "summary";
+
+export interface BundleArtifactRef {
+  role: BundleArtifactRole;
+  fileName: string;
+  sha256: string;
+  schemaVersion?: string;
+  mimeType?: string;
+  required: boolean;
+}
+
+export interface ScanBundle {
+  schemaVersion: "euconform.bundle.v1";
+  generatedAt: string;
+  tool: { name: string; version: string };
+  target: { name: string; rootPath: string };
+  artifacts: BundleArtifactRef[];
+}

@@ -89,7 +89,12 @@ export function buildCiReport(
     },
     aiDetected: output.report.aiFootprint.usesAI,
     scanScope,
-    artifacts: [...baseArtifacts, "euconform.ci.json", "euconform.ci-summary.md"],
+    artifacts: [
+      ...baseArtifacts,
+      "euconform.bundle.json",
+      "euconform.ci.json",
+      "euconform.ci-summary.md",
+    ],
     complianceOverview: complianceAreas.map(({ area, group }) => ({
       area,
       status: group.status,

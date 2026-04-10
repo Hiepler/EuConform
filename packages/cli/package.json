@@ -20,7 +20,8 @@
   "dependencies": {
     "@euconform/core": "workspace:*",
     "citty": "^0.1.6",
-    "consola": "^3.4.0"
+    "consola": "^3.4.0",
+    "fflate": "^0.8.2"
   },
   "devDependencies": {
     "@euconform/typescript-config": "workspace:*",

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "euconform.bundle.v1",
+  "generatedAt": "2026-04-10T12:05:00.000Z",
+  "tool": { "name": "euconform", "version": "1.1.0" },
+  "target": { "name": "example-local-ollama", "rootPath": "/examples/local-ollama" },
+  "artifacts": [
+    {
+      "role": "report",
+      "fileName": "euconform.report.json",
+      "sha256": "74798beb83f188cfc6c587a62c60f8b7b70b1ba9f8c49eb9cfb305b2617a38ce",
+      "schemaVersion": "euconform.report.v1",
+      "required": true
+    },
+    {
+      "role": "aibom",
+      "fileName": "euconform.aibom.json",
+      "sha256": "2756574fa38e776662301148b56c209db9826d4c52f9b54ad16ab053df6e05a9",
+      "schemaVersion": "euconform.aibom.v1",
+      "required": false
+    },
+    {
+      "role": "ci",
+      "fileName": "euconform.ci.json",
+      "sha256": "385ec00df3967b4fe67de5f132c2a22b2c3e5477aef39713f2f40cb53a4c751e",
+      "schemaVersion": "euconform.ci.v1",
+      "required": false
+    }
+  ]
+}

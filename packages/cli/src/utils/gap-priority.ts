@@ -1,6 +1,6 @@
-import type { ScanGap } from "@euconform/core/evidence";
+import type { FailOnLevel, ScanGap } from "@euconform/core/evidence";
 
-export type FailOnLevel = "none" | "critical" | "high" | "medium" | "low";
+export type { FailOnLevel };
 
 export const GAP_PRIORITY_ORDER: Record<Exclude<FailOnLevel, "none">, number> = {
   critical: 0,

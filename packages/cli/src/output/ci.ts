@@ -1,7 +1,9 @@
 import { appendFile, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type {
+  CiReport,
   ComplianceSignalGroup,
+  GapCounts,
   ScanGap,
   ScanOutput,
   ScanScope,
@@ -9,54 +11,18 @@ import type {
 import consola from "consola";
 import { type FailOnLevel, shouldFailOnGaps } from "../utils/gap-priority";
 
-export type { FailOnLevel };
+export type { CiReport, FailOnLevel };
 export type CiMode = "off" | "github";
 export type BaseArtifactName =
   | "euconform.report.json"
   | "euconform.aibom.json"
   | "euconform.summary.md";
 
-interface GapCounts {
-  critical: number;
-  high: number;
-  medium: number;
-  low: number;
-}
-
 export interface CiArtifacts {
   reportPath: string;
   summaryPath: string;
   githubStepSummaryPath?: string;
   baseArtifacts: BaseArtifactName[];
-}
-
-export interface CiReport {
-  schemaVersion: "euconform.ci.v1";
-  generatedAt: string;
-  target: {
-    name: string;
-    rootPath: string;
-  };
-  status: {
-    failOn: FailOnLevel;
-    failing: boolean;
-    gapCounts: GapCounts;
-    openQuestions: number;
-  };
-  aiDetected: boolean;
-  scanScope: ScanScope;
-  artifacts: string[];
-  complianceOverview: Array<{
-    area: string;
-    status: ComplianceSignalGroup["status"];
-    confidence: ComplianceSignalGroup["confidence"];
-  }>;
-  topGaps: Array<{
-    id: string;
-    title: string;
-    priority: ScanGap["priority"];
-    status: ScanGap["status"];
-  }>;
 }
 
 interface CiComplianceArea {

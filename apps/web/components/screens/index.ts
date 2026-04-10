@@ -26,3 +26,5 @@ export type { GpaiResultsSectionProps } from "./GpaiResultsSection";
 
 export { GapAnalysisSection } from "./GapAnalysisSection";
 export type { GapAnalysisSectionProps } from "./GapAnalysisSection";
+
+export { ScanViewerScreen } from "./scan-viewer";

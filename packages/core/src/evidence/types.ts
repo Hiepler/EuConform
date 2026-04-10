@@ -253,6 +253,48 @@ export interface AiBillOfMaterials {
 }
 
 // ---------------------------------------------------------------------------
+// CI report (euconform.ci.v1)
+// ---------------------------------------------------------------------------
+
+export type FailOnLevel = "none" | "critical" | "high" | "medium" | "low";
+
+export interface GapCounts {
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
+export interface CiReport {
+  schemaVersion: "euconform.ci.v1";
+  generatedAt: string;
+  target: {
+    name: string;
+    rootPath: string;
+  };
+  status: {
+    failOn: FailOnLevel;
+    failing: boolean;
+    gapCounts: GapCounts;
+    openQuestions: number;
+  };
+  aiDetected: boolean;
+  scanScope: ScanScope;
+  artifacts: string[];
+  complianceOverview: Array<{
+    area: string;
+    status: ComplianceSignalGroup["status"];
+    confidence: ComplianceSignalGroup["confidence"];
+  }>;
+  topGaps: Array<{
+    id: string;
+    title: string;
+    priority: ScanGap["priority"];
+    status: ScanGap["status"];
+  }>;
+}
+
+// ---------------------------------------------------------------------------
 // Combined scan output
 // ---------------------------------------------------------------------------
 

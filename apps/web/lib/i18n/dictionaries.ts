@@ -335,6 +335,29 @@ export interface Dictionary {
   gap_status_missing: string;
   gap_status_partial: string;
   gap_steps_label: string;
+
+  // Scan Viewer
+  scan_viewer_cta: string;
+  scan_viewer_title: string;
+  scan_viewer_subtitle: string;
+  scan_viewer_back: string;
+  scan_viewer_import_prompt: string;
+  scan_viewer_file_required: string;
+  scan_viewer_file_optional: string;
+  scan_viewer_clear: string;
+  scan_viewer_ai_detected: string;
+  scan_viewer_no_ai: string;
+  scan_viewer_ci_passing: string;
+  scan_viewer_ci_failing: string;
+  scan_viewer_compliance_title: string;
+  scan_viewer_gaps_title: string;
+  scan_viewer_bom_title: string;
+  scan_viewer_summary: string;
+  scan_viewer_open_questions: string;
+  scan_viewer_recommendations: string;
+  scan_viewer_start_classification: string;
+  scan_viewer_ignored_files: string;
+  scan_viewer_no_report: string;
 }
 
 export const dictionaries: Record<Language, Dictionary> = {
@@ -726,6 +749,29 @@ export const dictionaries: Record<Language, Dictionary> = {
     gap_status_missing: "Missing",
     gap_status_partial: "In Progress",
     gap_steps_label: "Action steps",
+
+    // Scan Viewer
+    scan_viewer_cta: "Open Scan Results",
+    scan_viewer_title: "Scan Viewer",
+    scan_viewer_subtitle: "Import and review CLI scan artifacts locally in your browser.",
+    scan_viewer_back: "Back",
+    scan_viewer_import_prompt: "Drop your EuConform scan files here, or click to select",
+    scan_viewer_file_required: "required",
+    scan_viewer_file_optional: "optional",
+    scan_viewer_clear: "Clear import",
+    scan_viewer_ai_detected: "AI detected",
+    scan_viewer_no_ai: "No AI detected",
+    scan_viewer_ci_passing: "CI Passing",
+    scan_viewer_ci_failing: "CI Failing",
+    scan_viewer_compliance_title: "Compliance Signals",
+    scan_viewer_gaps_title: "Compliance Gaps",
+    scan_viewer_bom_title: "AI Bill of Materials",
+    scan_viewer_summary: "Scan Summary",
+    scan_viewer_open_questions: "Open Questions",
+    scan_viewer_recommendations: "Recommendations",
+    scan_viewer_start_classification: "Start Guided Classification",
+    scan_viewer_ignored_files: "Ignored files",
+    scan_viewer_no_report: "euconform.report.json is required but was not found or is invalid.",
   },
   de: {
     title: "EuConform",
@@ -1120,5 +1166,29 @@ export const dictionaries: Record<Language, Dictionary> = {
     gap_status_missing: "Fehlend",
     gap_status_partial: "In Bearbeitung",
     gap_steps_label: "Maßnahmen",
+
+    // Scan Viewer
+    scan_viewer_cta: "Scan-Ergebnisse öffnen",
+    scan_viewer_title: "Scan Viewer",
+    scan_viewer_subtitle: "CLI-Scan-Artefakte lokal im Browser importieren und prüfen.",
+    scan_viewer_back: "Zurück",
+    scan_viewer_import_prompt: "EuConform-Scan-Dateien hier ablegen oder klicken zum Auswählen",
+    scan_viewer_file_required: "erforderlich",
+    scan_viewer_file_optional: "optional",
+    scan_viewer_clear: "Import zurücksetzen",
+    scan_viewer_ai_detected: "KI erkannt",
+    scan_viewer_no_ai: "Keine KI erkannt",
+    scan_viewer_ci_passing: "CI bestanden",
+    scan_viewer_ci_failing: "CI fehlgeschlagen",
+    scan_viewer_compliance_title: "Compliance-Signale",
+    scan_viewer_gaps_title: "Compliance-Lücken",
+    scan_viewer_bom_title: "KI-Stückliste (AIBOM)",
+    scan_viewer_summary: "Scan-Zusammenfassung",
+    scan_viewer_open_questions: "Offene Fragen",
+    scan_viewer_recommendations: "Empfehlungen",
+    scan_viewer_start_classification: "Guided Classification starten",
+    scan_viewer_ignored_files: "Ignorierte Dateien",
+    scan_viewer_no_report:
+      "euconform.report.json ist erforderlich, wurde aber nicht gefunden oder ist ungültig.",
   },
 };

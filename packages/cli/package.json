@@ -5,9 +5,20 @@
   "author": "Benedikt Hiepler",
   "description": "CLI for scanning AI projects for EU AI Act compliance evidence.",
   "type": "module",
+  "keywords": ["eu-ai-act", "compliance", "scanner", "ai-bom", "ecef", "cli"],
+  "homepage": "https://github.com/Hiepler/EuConform#cli-scanner",
+  "bugs": {
+    "url": "https://github.com/Hiepler/EuConform/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hiepler/EuConform.git",
+    "directory": "packages/cli"
+  },
   "bin": {
     "euconform": "./dist/index.js"
   },
+  "files": ["dist"],
   "exports": {
     ".": "./src/index.ts"
   },

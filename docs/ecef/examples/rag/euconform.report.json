@@ -3,11 +3,11 @@
   "generatedAt": "2026-04-10T12:10:00.000Z",
   "tool": {
     "name": "euconform",
-    "version": "1.1.0"
+    "version": "0.1.0"
   },
   "target": {
-    "rootPath": "/examples/rag",
-    "name": "example-rag-service",
+    "rootPath": "/examples/rag-assistant",
+    "name": "rag-assistant-example",
     "repoType": "api-server",
     "detectedStack": ["Node.js", "LangChain", "ChromaDB"]
   },
@@ -18,7 +18,11 @@
     "ragHints": ["ChromaDB", "Embeddings"]
   },
   "complianceSignals": {
-    "disclosure": { "status": "absent", "confidence": "low", "evidence": [] },
+    "disclosure": {
+      "status": "absent",
+      "confidence": "low",
+      "evidence": []
+    },
     "biasTesting": {
       "status": "partial",
       "confidence": "medium",

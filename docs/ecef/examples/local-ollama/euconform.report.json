@@ -3,11 +3,11 @@
   "generatedAt": "2026-04-10T12:05:00.000Z",
   "tool": {
     "name": "euconform",
-    "version": "1.1.0"
+    "version": "0.1.0"
   },
   "target": {
-    "rootPath": "/examples/local-ollama",
-    "name": "example-local-ollama",
+    "rootPath": "/examples/ollama-chatbot",
+    "name": "ollama-chatbot-example",
     "repoType": "chatbot",
     "detectedStack": ["Node.js", "Ollama", "llama.cpp"]
   },
@@ -58,7 +58,12 @@
       "status": "partial",
       "confidence": "medium",
       "evidence": [
-        { "file": "lib/audit.ts", "line": 7, "snippet": "auditLog.append", "provenance": "runtime" }
+        {
+          "file": "lib/audit.ts",
+          "line": 7,
+          "snippet": "auditLog.append",
+          "provenance": "runtime"
+        }
       ]
     },
     "humanOversight": {
@@ -85,7 +90,11 @@
         }
       ]
     },
-    "incidentReporting": { "status": "absent", "confidence": "low", "evidence": [] }
+    "incidentReporting": {
+      "status": "absent",
+      "confidence": "low",
+      "evidence": []
+    }
   },
   "assessmentHints": {
     "possibleModes": ["annex-iii-unclear"],

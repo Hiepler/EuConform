@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "EuConform Evidence Format (ECEF) — Open Specification",
   description:
-    "ECEF is an open specification for structured, offline AI Act compliance evidence. Stage 1 defines report, AI BOM, and CI document types.",
+    "ECEF is an open specification for structured, offline AI Act compliance evidence. Stage 1 defines report, AI BOM, and CI. Stage 2 adds bundle manifests for transport and integrity verification.",
 };
 
 const SCHEMA_BASE = "/schemas/ecef";
@@ -20,10 +20,12 @@ const TOC = [
   { id: "report-v1", label: "Report v1" },
   { id: "aibom-v1", label: "AI BOM v1" },
   { id: "ci-v1", label: "CI v1" },
+  { id: "bundle-v1", label: "Bundle v1" },
   { id: "schemas", label: "Schemas" },
   { id: "examples", label: "Examples" },
   { id: "validation", label: "Validation" },
   { id: "generate", label: "Generate with CLI" },
+  { id: "verify", label: "Verify bundles" },
   { id: "viewer", label: "View in Web App" },
   { id: "versioning", label: "Versioning" },
   { id: "scope", label: "Scope and limitations" },
@@ -77,26 +79,38 @@ const CI_FIELDS = [
   ["topGaps", "First 5 gaps (id, title, priority, status)"],
 ] as const;
 
+const BUNDLE_FIELDS = [
+  ["schemaVersion", '"euconform.bundle.v1"'],
+  ["generatedAt", "ISO 8601 timestamp"],
+  ["tool", "Tool name and version used to generate the bundle"],
+  ["target", "Project name and root path shared by the artifact set"],
+  ["artifacts", "Manifest entries containing role, filename, SHA-256, and optional schemaVersion"],
+] as const;
+
 const EXAMPLE_SCENARIOS = [
   {
     name: "Web App",
     dir: "web-app",
     desc: "Next.js with cloud OpenAI — typical SaaS AI integration",
+    sourceHref: null,
   },
   {
     name: "Local Ollama",
     dir: "local-ollama",
     desc: "Local inference with Ollama/llama.cpp — no cloud dependency",
+    sourceHref: `${GITHUB_BASE}/tree/main/examples/ollama-chatbot`,
   },
   {
     name: "RAG Service",
     dir: "rag",
     desc: "Retrieval-Augmented Generation with LangChain and ChromaDB",
+    sourceHref: `${GITHUB_BASE}/tree/main/examples/rag-assistant`,
   },
   {
     name: "Non-AI",
     dir: "non-ai",
     desc: "Static site with no AI components — demonstrates clean zero-AI evidence",
+    sourceHref: null,
   },
 ] as const;
 
@@ -196,6 +210,9 @@ export default function EcefPage() {
             <span className="px-2.5 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 rounded-full">
               Stage 1 — Stable
             </span>
+            <span className="px-2.5 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 rounded-full">
+              Stage 2 — Bundle Available
+            </span>
           </div>
           <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl">
             ECEF is an open specification for structured, offline AI Act compliance evidence. It
@@ -225,8 +242,8 @@ export default function EcefPage() {
 
         <Section id="overview" title="Overview">
           <p className="text-slate-600 dark:text-slate-300 mb-4">
-            ECEF defines three document types that together form a complete evidence package for EU
-            AI Act compliance assessment:
+            ECEF defines three stable Stage 1 document types and one Stage 2 transport document for
+            EU AI Act evidence:
           </p>
           <ul className="list-disc pl-6 space-y-1 text-slate-600 dark:text-slate-300">
             <li>
@@ -241,6 +258,10 @@ export default function EcefPage() {
               <strong>CI</strong> is the <em>enforcement layer</em> — pass/fail gate status for CI
               pipelines
             </li>
+            <li>
+              <strong>Bundle</strong> is the <em>transport and integrity layer</em> — which files
+              belong together and whether they still match their recorded hashes
+            </li>
           </ul>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-4">
             &ldquo;AI BOM&rdquo; is one document type within ECEF, not the name of the overall
@@ -249,7 +270,7 @@ export default function EcefPage() {
         </Section>
 
         <Section id="documents" title="Document types">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 name: "euconform.report.v1",
@@ -265,6 +286,11 @@ export default function EcefPage() {
                 name: "euconform.ci.v1",
                 purpose: "CI gate status, gap counts, and top findings",
                 anchor: "#ci-v1",
+              },
+              {
+                name: "euconform.bundle.v1",
+                purpose: "Integrity and transport manifest for artifact sets",
+                anchor: "#bundle-v1",
               },
             ].map((doc) => (
               <a
@@ -359,9 +385,28 @@ export default function EcefPage() {
           />
         </Section>
 
+        <Section id="bundle-v1" title="Bundle v1">
+          <p className="text-slate-600 dark:text-slate-300 mb-4">
+            The bundle is the Stage 2 transport and integrity layer. It binds artifacts from a
+            single scan run into a verifiable unit and optionally packages them as a flat ZIP
+            archive.
+          </p>
+          <h3 className="font-medium text-slate-900 dark:text-white mb-2">Required fields</h3>
+          <FieldTable fields={BUNDLE_FIELDS} />
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
+            Each artifact entry records <Code>role</Code>, <Code>fileName</Code>,{" "}
+            <Code>sha256</Code>, <Code>required</Code>, and optional <Code>schemaVersion</Code> or{" "}
+            <Code>mimeType</Code>.
+          </p>
+          <SchemaFooter
+            schemaFile="bundle-v1.schema.json"
+            examplePath={`${EXAMPLES_BASE}/web-app/euconform.bundle.json`}
+          />
+        </Section>
+
         <Section id="schemas" title="Schemas">
           <p className="text-slate-600 dark:text-slate-300 mb-4">
-            All Stage 1 schemas use JSON Schema Draft 2020-12 with{" "}
+            All ECEF schemas use JSON Schema Draft 2020-12 with{" "}
             <Code>additionalProperties: false</Code> for strict validation.
           </p>
           <ul className="space-y-2 text-sm">
@@ -374,6 +419,9 @@ export default function EcefPage() {
             <li>
               <ExtLink href={`${SCHEMA_BASE}/ci-v1.schema.json`}>ci-v1.schema.json</ExtLink>
             </li>
+            <li>
+              <ExtLink href={`${SCHEMA_BASE}/bundle-v1.schema.json`}>bundle-v1.schema.json</ExtLink>
+            </li>
           </ul>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-4">
             Canonical URLs:{" "}
@@ -383,7 +431,8 @@ export default function EcefPage() {
 
         <Section id="examples" title="Examples">
           <p className="text-slate-600 dark:text-slate-300 mb-4">
-            Four example scenarios demonstrate ECEF across different project types:
+            Four example scenarios demonstrate ECEF across different project types. The local Ollama
+            and RAG scenarios also have builder-facing source projects in the repository.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {EXAMPLE_SCENARIOS.map((ex) => (
@@ -399,6 +448,15 @@ export default function EcefPage() {
                   </ExtLink>
                   <ExtLink href={`${EXAMPLES_BASE}/${ex.dir}/euconform.aibom.json`}>aibom</ExtLink>
                   <ExtLink href={`${EXAMPLES_BASE}/${ex.dir}/euconform.ci.json`}>ci</ExtLink>
+                  <ExtLink href={`${EXAMPLES_BASE}/${ex.dir}/euconform.bundle.json`}>
+                    bundle
+                  </ExtLink>
+                  {ex.sourceHref ? (
+                    <>
+                      {" "}
+                      <ExtLink href={ex.sourceHref}>source</ExtLink>
+                    </>
+                  ) : null}
                 </p>
               </div>
             ))}
@@ -432,6 +490,10 @@ const report = JSON.parse(
 const valid = ajv.validate(schema, report);
 if (!valid) console.error(ajv.errors);
 else console.log("Valid ECEF report.");`}</Pre>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-4">
+            For full artifact-set verification, prefer the built-in CLI verify command instead of
+            validating the manifest alone.
+          </p>
         </Section>
 
         <Section id="generate" title="Generate with CLI">
@@ -439,7 +501,9 @@ else console.log("Valid ECEF report.");`}</Pre>
             The EuConform CLI scans a codebase and writes ECEF artifacts to <Code>.euconform/</Code>
             :
           </p>
-          <Pre>{`npx euconform scan .
+          <Pre>{`pnpm --filter @euconform/cli build
+
+node packages/cli/dist/index.js scan .
 
 # Output:
 #   .euconform/euconform.report.json
@@ -447,15 +511,43 @@ else console.log("Valid ECEF report.");`}</Pre>
 #   .euconform/euconform.summary.md
 
 # With CI gate:
-npx euconform scan . --ci github --fail-on high
+node packages/cli/dist/index.js scan . --ci github --fail-on high
 
 # Additional output:
 #   .euconform/euconform.ci.json
-#   .euconform/euconform.ci-summary.md`}</Pre>
+#   .euconform/euconform.ci-summary.md
+#   .euconform/euconform.bundle.json
+
+# Create a transport archive:
+node packages/cli/dist/index.js scan . --zip true
+
+# Additional output:
+#   .euconform/euconform.bundle.zip`}</Pre>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-4">
-            See the full{" "}
-            <ExtLink href={`${GITHUB_BASE}#cli--ci-integration`}>CLI documentation</ExtLink> for all
-            options.
+            For a fast adoption path, try <Code>examples/ollama-chatbot</Code> or{" "}
+            <Code>examples/rag-assistant</Code> from the repo root before scanning your own project.
+          </p>
+        </Section>
+
+        <Section id="verify" title="Verify bundles">
+          <p className="text-slate-600 dark:text-slate-300 mb-4">
+            The CLI is the first Stage 2 bundle consumer. It verifies bundle manifests, extracted
+            bundle directories, and ZIP archives without modifying your project.
+          </p>
+          <Pre>{`# Verify a manifest file
+node packages/cli/dist/index.js verify .euconform/euconform.bundle.json
+
+# Verify an extracted bundle directory
+node packages/cli/dist/index.js verify .euconform/euconform.bundle
+
+# Verify a ZIP archive
+node packages/cli/dist/index.js verify .euconform/euconform.bundle.zip
+
+# Escalate warnings to errors for CI
+node packages/cli/dist/index.js verify .euconform/euconform.bundle.json --strict --fail-on warnings`}</Pre>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-4">
+            Hash and metadata mismatches are warnings by default. Missing required artifacts or an
+            invalid bundle manifest are always errors.
           </p>
         </Section>
 
@@ -499,18 +591,15 @@ npx euconform scan . --ci github --fail-on high
 
         <Section id="scope" title="Scope and limitations">
           <p className="text-slate-600 dark:text-slate-300 mb-3">
-            ECEF Stage 1 is intentionally focused. The following are <strong>not</strong> part of
-            the current specification:
+            ECEF currently covers Stage 1 evidence documents and the Stage 2 bundle manifest. The
+            following are <strong>not</strong> part of the current specification:
           </p>
           <ul className="list-disc pl-6 space-y-1 text-slate-600 dark:text-slate-300 text-sm">
-            <li>
-              <Code>euconform.bundle.v1</Code> — manifest document for artifact sets (planned for
-              Stage 2)
-            </li>
             <li>
               <Code>euconform.eval.v1</Code> — evaluation results and benchmarks (reserved, not yet
               specified)
             </li>
+            <li>Automatic ZIP import in the web viewer</li>
             <li>Full prompt histories or training data disclosure</li>
             <li>Legally binding classification or certification</li>
             <li>A separate npm consumer package (use the schemas directly)</li>

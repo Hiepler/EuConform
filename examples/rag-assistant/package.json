@@ -1,10 +1,12 @@
 {
-  "name": "ollama-chatbot-example",
+  "name": "rag-assistant-example",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Minimal local Ollama chatbot — EuConform scan demo target",
+  "description": "Minimal RAG assistant — EuConform scan demo target",
   "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "chromadb": "^1.8.1",
     "express": "^4.21.0",
     "ollama": "^0.5.0",
     "pino": "^9.5.0"

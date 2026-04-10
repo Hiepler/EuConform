@@ -2,8 +2,8 @@
   "schemaVersion": "euconform.ci.v1",
   "generatedAt": "2026-04-10T12:10:00.000Z",
   "target": {
-    "name": "example-rag-service",
-    "rootPath": "/examples/rag"
+    "name": "rag-assistant-example",
+    "rootPath": "/examples/rag-assistant"
   },
   "status": {
     "failOn": "medium",
@@ -20,13 +20,41 @@
   "scanScope": "production",
   "artifacts": ["euconform.report.json", "euconform.aibom.json", "euconform.ci.json"],
   "complianceOverview": [
-    { "area": "Disclosure", "status": "absent", "confidence": "low" },
-    { "area": "Bias Testing", "status": "partial", "confidence": "medium" },
-    { "area": "Reporting & Exports", "status": "partial", "confidence": "medium" },
-    { "area": "Logging & Monitoring", "status": "present", "confidence": "high" },
-    { "area": "Human Oversight", "status": "partial", "confidence": "medium" },
-    { "area": "Data Governance", "status": "present", "confidence": "high" },
-    { "area": "Incident Reporting", "status": "partial", "confidence": "medium" }
+    {
+      "area": "Disclosure",
+      "status": "absent",
+      "confidence": "low"
+    },
+    {
+      "area": "Bias Testing",
+      "status": "partial",
+      "confidence": "medium"
+    },
+    {
+      "area": "Reporting & Exports",
+      "status": "partial",
+      "confidence": "medium"
+    },
+    {
+      "area": "Logging & Monitoring",
+      "status": "present",
+      "confidence": "high"
+    },
+    {
+      "area": "Human Oversight",
+      "status": "partial",
+      "confidence": "medium"
+    },
+    {
+      "area": "Data Governance",
+      "status": "present",
+      "confidence": "high"
+    },
+    {
+      "area": "Incident Reporting",
+      "status": "partial",
+      "confidence": "medium"
+    }
   ],
   "topGaps": [
     {

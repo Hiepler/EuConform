@@ -1,27 +1,33 @@
 {
   "schemaVersion": "euconform.bundle.v1",
   "generatedAt": "2026-04-10T12:10:00.000Z",
-  "tool": { "name": "euconform", "version": "1.1.0" },
-  "target": { "name": "example-rag-service", "rootPath": "/examples/rag" },
+  "tool": {
+    "name": "euconform",
+    "version": "0.1.0"
+  },
+  "target": {
+    "name": "rag-assistant-example",
+    "rootPath": "/examples/rag-assistant"
+  },
   "artifacts": [
     {
       "role": "report",
       "fileName": "euconform.report.json",
-      "sha256": "a83a96843f8c9629dd9b814ee07d7bcce8b34985c845fa2454030c5fd09d85e3",
+      "sha256": "f2adb537bab75b84d6a5219f8018c87ca721cd985c4075c826804a531f7e6f59",
       "schemaVersion": "euconform.report.v1",
       "required": true
     },
     {
       "role": "aibom",
       "fileName": "euconform.aibom.json",
-      "sha256": "b9bdd687895ba92727ed030dded5a244233b48e04a61715d64c673585f212f9c",
+      "sha256": "50fd2a4ef2a392a8eff7ddf4b9d2a6d389b0b12d6d94da864095c222e35eaf3d",
       "schemaVersion": "euconform.aibom.v1",
       "required": false
     },
     {
       "role": "ci",
       "fileName": "euconform.ci.json",
-      "sha256": "80e592c0a78ec9b3a154323d1c04d6ec1fa8a3419a99faa527bf0a66454748a0",
+      "sha256": "dec5f06f9e0ba1efd60778ea217293acaa626944d3e3678cd40c97fddf47128d",
       "schemaVersion": "euconform.ci.v1",
       "required": false
     }

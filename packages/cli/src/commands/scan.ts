@@ -7,7 +7,7 @@ import { defineCommand } from "citty";
 import consola from "consola";
 import { type BaseArtifactName, type CiMode, writeCiArtifacts } from "../output/ci";
 import { printTerminalSummary } from "../output/terminal";
-import { writeOutputFiles, writeZipBundle } from "../output/writer";
+import { writeBundleManifest, writeOutputFiles, writeZipBundle } from "../output/writer";
 import { type FailOnLevel, shouldFailOnGaps } from "../utils/gap-priority";
 
 const VALID_FORMATS = new Set(["json", "md", "all"]);
@@ -58,6 +58,10 @@ async function validateAndParseArgs(args: Record<string, unknown>): Promise<Vali
   }
   if (!VALID_CI_MODES.has(ciMode)) {
     consola.error(`Invalid ci mode: ${ciMode}. Use one of: off, github.`);
+    process.exit(1);
+  }
+  if (args.zip && format === "md") {
+    consola.error('Cannot create euconform.bundle.zip when format is "md" only.');
     process.exit(1);
   }
 
@@ -174,6 +178,15 @@ export default defineCommand({
         `CI artifacts ready: ${resolve(ciArtifacts.reportPath)} and ${resolve(ciArtifacts.summaryPath)}`
       );
     }
+
+    await writeBundleManifest(outputDir, {
+      tool: output.report.tool,
+      target: {
+        name: output.report.target.name,
+        rootPath: output.report.target.rootPath,
+      },
+      generatedAt: output.report.generatedAt,
+    });
 
     if (args.zip) {
       await writeZipBundle(outputDir);

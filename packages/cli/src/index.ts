@@ -2,6 +2,7 @@
 
 import { defineCommand, runMain } from "citty";
 import scanCommand from "./commands/scan";
+import verifyCommand from "./commands/verify";
 
 const main = defineCommand({
   meta: {
@@ -10,6 +11,7 @@ const main = defineCommand({
   },
   subCommands: {
     scan: scanCommand,
+    verify: verifyCommand,
   },
 });
 

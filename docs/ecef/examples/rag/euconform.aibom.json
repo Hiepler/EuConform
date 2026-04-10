@@ -2,19 +2,34 @@
   "schemaVersion": "euconform.aibom.v1",
   "generatedAt": "2026-04-10T12:10:00.000Z",
   "project": {
-    "name": "example-rag-service",
-    "rootPath": "/examples/rag"
+    "name": "rag-assistant-example",
+    "rootPath": "/examples/rag-assistant"
   },
   "components": [
-    { "id": "runtime:node-js", "kind": "runtime", "name": "Node.js", "source": "package.json" },
+    {
+      "id": "runtime:node-js",
+      "kind": "runtime",
+      "name": "Node.js",
+      "source": "package.json"
+    },
     {
       "id": "ai-framework:langchain",
       "kind": "ai-framework",
       "name": "LangChain",
       "source": "package.json"
     },
-    { "id": "vector-store:chromadb", "kind": "vector-store", "name": "ChromaDB", "source": "code" },
-    { "id": "embedding:embeddings", "kind": "embedding", "name": "Embeddings", "source": "code" },
+    {
+      "id": "vector-store:chromadb",
+      "kind": "vector-store",
+      "name": "ChromaDB",
+      "source": "code"
+    },
+    {
+      "id": "embedding:embeddings",
+      "kind": "embedding",
+      "name": "Embeddings",
+      "source": "code"
+    },
     {
       "id": "inference-provider:ollama",
       "kind": "inference-provider",

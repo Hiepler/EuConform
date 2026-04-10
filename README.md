@@ -113,12 +113,49 @@ This writes:
 - `.euconform/euconform.report.json`
 - `.euconform/euconform.aibom.json`
 - `.euconform/euconform.summary.md`
+- `.euconform/euconform.bundle.json`
 
 For CI usage, add GitHub-native annotations and fail thresholds:
 
 ```bash
 node packages/cli/dist/index.js scan . --scope production --ci github --fail-on high
 ```
+
+For portable artifact exchange, create a bundle archive:
+
+```bash
+node packages/cli/dist/index.js scan . --scope production --zip true
+```
+
+Verify a bundle manifest, extracted bundle directory, or ZIP archive:
+
+```bash
+node packages/cli/dist/index.js verify .euconform/euconform.bundle.json
+```
+
+### Try ECEF In 10 Minutes
+
+If you want to evaluate the current adoption path as an OSS builder, use one of the
+reference projects in [`examples/`](examples/README.md):
+
+```bash
+# 1. Build the CLI
+pnpm --filter @euconform/cli build
+
+# 2. Scan a reference project
+node packages/cli/dist/index.js scan examples/ollama-chatbot \
+  --scope production \
+  --output /tmp/ecef-ollama
+
+# 3. Verify the generated bundle
+node packages/cli/dist/index.js verify /tmp/ecef-ollama/euconform.bundle.json
+
+# 4. Open the web app and import the generated artifacts
+pnpm dev
+```
+
+For a retrieval-first example, replace `examples/ollama-chatbot` with
+`examples/rag-assistant`.
 
 ### Using with Local AI Models (Optional)
 
@@ -183,8 +220,10 @@ The scanner artifacts are defined as the **EuConform Evidence Format (ECEF)**, a
 - `euconform.report.v1` captures compliance evidence, gaps, and open questions
 - `euconform.aibom.v1` is the AI Bill of Materials (AI BOM) inventory layer
 - `euconform.ci.v1` captures CI thresholds, status, and top findings
+- `euconform.bundle.v1` binds artifact sets into a portable, integrity-aware manifest
 
 Stage 1 documentation, schemas, and example artifacts live in [docs/ecef/README.md](docs/ecef/README.md).
+Reference source projects for OSS builders live in [examples/README.md](examples/README.md).
 
 ### Bias Testing Methodology
 

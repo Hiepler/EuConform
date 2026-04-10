@@ -41,3 +41,11 @@ export { generateScanOutput } from "./output";
 export { generateSummaryMarkdown } from "./markdown";
 export { buildBundleManifest } from "./bundle";
 export { sha256Hex } from "./hash";
+export {
+  getSchemaMajorVersion,
+  validateAiBillOfMaterials,
+  validateCiReport,
+  validateEcefJsonDocument,
+  validateScanBundle,
+  validateScanReport,
+} from "./validate";

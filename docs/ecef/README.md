@@ -12,7 +12,7 @@ The **EuConform Evidence Format (ECEF)** is the open specification behind the sc
 | `euconform.aibom.v1` | AI Bill of Materials (AI BOM) inventory for runtimes, providers, models, and supporting components |
 | `euconform.ci.v1` | CI gate status, fail threshold, gap counts, and top findings |
 
-### Stage 2
+### Stage 2 — Available
 
 | Document | Purpose |
 |----------|---------|
@@ -51,6 +51,14 @@ The **EuConform Evidence Format (ECEF)** is the open specification behind the sc
 - [AI BOM v1 guide](./aibom-v1.md)
 - [CI v1 guide](./ci-v1.md)
 - [Bundle v1 guide](./bundle-v1.md)
+
+## Verification flow
+
+- Build the CLI with `pnpm --filter @euconform/cli build`
+- Generate artifacts with `node packages/cli/dist/index.js scan .`
+- Optionally create a transport archive with `node packages/cli/dist/index.js scan . --zip true`
+- Verify a manifest, bundle directory, or ZIP archive with `node packages/cli/dist/index.js verify <path>`
+- Hash and metadata mismatches are warnings by default and become errors in strict mode
 
 ## Reserved future document types
 

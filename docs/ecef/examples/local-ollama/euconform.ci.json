@@ -2,8 +2,8 @@
   "schemaVersion": "euconform.ci.v1",
   "generatedAt": "2026-04-10T12:05:00.000Z",
   "target": {
-    "name": "example-local-ollama",
-    "rootPath": "/examples/local-ollama"
+    "name": "ollama-chatbot-example",
+    "rootPath": "/examples/ollama-chatbot"
   },
   "status": {
     "failOn": "high",
@@ -20,13 +20,41 @@
   "scanScope": "production",
   "artifacts": ["euconform.report.json", "euconform.aibom.json", "euconform.ci.json"],
   "complianceOverview": [
-    { "area": "Disclosure", "status": "present", "confidence": "high" },
-    { "area": "Bias Testing", "status": "present", "confidence": "high" },
-    { "area": "Reporting & Exports", "status": "partial", "confidence": "medium" },
-    { "area": "Logging & Monitoring", "status": "partial", "confidence": "medium" },
-    { "area": "Human Oversight", "status": "present", "confidence": "high" },
-    { "area": "Data Governance", "status": "partial", "confidence": "medium" },
-    { "area": "Incident Reporting", "status": "absent", "confidence": "low" }
+    {
+      "area": "Disclosure",
+      "status": "present",
+      "confidence": "high"
+    },
+    {
+      "area": "Bias Testing",
+      "status": "present",
+      "confidence": "high"
+    },
+    {
+      "area": "Reporting & Exports",
+      "status": "partial",
+      "confidence": "medium"
+    },
+    {
+      "area": "Logging & Monitoring",
+      "status": "partial",
+      "confidence": "medium"
+    },
+    {
+      "area": "Human Oversight",
+      "status": "present",
+      "confidence": "high"
+    },
+    {
+      "area": "Data Governance",
+      "status": "partial",
+      "confidence": "medium"
+    },
+    {
+      "area": "Incident Reporting",
+      "status": "absent",
+      "confidence": "low"
+    }
   ],
   "topGaps": [
     {

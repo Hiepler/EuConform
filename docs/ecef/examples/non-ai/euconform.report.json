@@ -3,7 +3,7 @@
   "generatedAt": "2026-04-10T12:15:00.000Z",
   "tool": {
     "name": "euconform",
-    "version": "1.1.0"
+    "version": "0.1.0"
   },
   "target": {
     "rootPath": "/examples/non-ai",
@@ -18,13 +18,41 @@
     "ragHints": []
   },
   "complianceSignals": {
-    "disclosure": { "status": "unknown", "confidence": "low", "evidence": [] },
-    "biasTesting": { "status": "unknown", "confidence": "low", "evidence": [] },
-    "reportingExports": { "status": "unknown", "confidence": "low", "evidence": [] },
-    "loggingMonitoring": { "status": "unknown", "confidence": "low", "evidence": [] },
-    "humanOversight": { "status": "unknown", "confidence": "low", "evidence": [] },
-    "dataGovernance": { "status": "unknown", "confidence": "low", "evidence": [] },
-    "incidentReporting": { "status": "unknown", "confidence": "low", "evidence": [] }
+    "disclosure": {
+      "status": "unknown",
+      "confidence": "low",
+      "evidence": []
+    },
+    "biasTesting": {
+      "status": "unknown",
+      "confidence": "low",
+      "evidence": []
+    },
+    "reportingExports": {
+      "status": "unknown",
+      "confidence": "low",
+      "evidence": []
+    },
+    "loggingMonitoring": {
+      "status": "unknown",
+      "confidence": "low",
+      "evidence": []
+    },
+    "humanOversight": {
+      "status": "unknown",
+      "confidence": "low",
+      "evidence": []
+    },
+    "dataGovernance": {
+      "status": "unknown",
+      "confidence": "low",
+      "evidence": []
+    },
+    "incidentReporting": {
+      "status": "unknown",
+      "confidence": "low",
+      "evidence": []
+    }
   },
   "assessmentHints": {
     "possibleModes": [],

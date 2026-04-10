@@ -3,7 +3,7 @@
   "generatedAt": "2026-04-10T12:00:00.000Z",
   "tool": {
     "name": "euconform",
-    "version": "1.1.0"
+    "version": "0.1.0"
   },
   "target": {
     "rootPath": "/examples/web-app",
@@ -30,7 +30,11 @@
         }
       ]
     },
-    "biasTesting": { "status": "absent", "confidence": "low", "evidence": [] },
+    "biasTesting": {
+      "status": "absent",
+      "confidence": "low",
+      "evidence": []
+    },
     "reportingExports": {
       "status": "present",
       "confidence": "high",
@@ -47,7 +51,12 @@
       "status": "partial",
       "confidence": "medium",
       "evidence": [
-        { "file": "lib/logging.ts", "line": 4, "snippet": "logAiDecision", "provenance": "runtime" }
+        {
+          "file": "lib/logging.ts",
+          "line": 4,
+          "snippet": "logAiDecision",
+          "provenance": "runtime"
+        }
       ]
     },
     "humanOversight": {
@@ -62,8 +71,16 @@
         }
       ]
     },
-    "dataGovernance": { "status": "absent", "confidence": "low", "evidence": [] },
-    "incidentReporting": { "status": "absent", "confidence": "low", "evidence": [] }
+    "dataGovernance": {
+      "status": "absent",
+      "confidence": "low",
+      "evidence": []
+    },
+    "incidentReporting": {
+      "status": "absent",
+      "confidence": "low",
+      "evidence": []
+    }
   },
   "assessmentHints": {
     "possibleModes": ["gpai-user", "annex-iii-unclear"],

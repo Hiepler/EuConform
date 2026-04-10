@@ -9,6 +9,49 @@ interface WrittenArtifact {
   content: string;
 }
 
+interface BundleMetadata {
+  generatedAt: string;
+  target: { name: string; rootPath: string };
+  tool: { name: string; version: string };
+}
+
+async function tryReadArtifact(
+  outputDir: string,
+  fileName: string
+): Promise<WrittenArtifact | null> {
+  try {
+    const content = await readFile(join(outputDir, fileName), "utf-8");
+    return { fileName, content };
+  } catch {
+    return null;
+  }
+}
+
+export async function writeBundleManifest(
+  outputDir: string,
+  metadata: BundleMetadata
+): Promise<string | null> {
+  const report = await tryReadArtifact(outputDir, "euconform.report.json");
+  if (!report) {
+    return null;
+  }
+
+  const bundle = buildBundleManifest({
+    report,
+    aibom: (await tryReadArtifact(outputDir, "euconform.aibom.json")) ?? undefined,
+    ci: (await tryReadArtifact(outputDir, "euconform.ci.json")) ?? undefined,
+    summary: (await tryReadArtifact(outputDir, "euconform.summary.md")) ?? undefined,
+    tool: metadata.tool,
+    target: metadata.target,
+    generatedAt: metadata.generatedAt,
+  });
+
+  const bundlePath = join(outputDir, "euconform.bundle.json");
+  await writeFile(bundlePath, `${JSON.stringify(bundle, null, 2)}\n`, "utf-8");
+  consola.success(`Written ${bundlePath}`);
+  return bundlePath;
+}
+
 /**
  * Writes scan output artifacts to the specified directory
  * and generates a bundle manifest with SHA-256 integrity hashes.
@@ -43,25 +86,15 @@ export async function writeOutputFiles(
     written.push({ fileName: "euconform.summary.md", content: output.summaryMarkdown });
   }
 
-  if (written.length > 0) {
-    const reportArtifact = written.find((a) => a.fileName === "euconform.report.json");
-    if (reportArtifact) {
-      const bundle = buildBundleManifest({
-        report: reportArtifact,
-        aibom: written.find((a) => a.fileName === "euconform.aibom.json"),
-        summary: written.find((a) => a.fileName === "euconform.summary.md"),
-        tool: output.report.tool,
-        target: {
-          name: output.report.target.name,
-          rootPath: output.report.target.rootPath,
-        },
-        generatedAt: output.report.generatedAt,
-      });
-
-      const bundlePath = join(outputDir, "euconform.bundle.json");
-      await writeFile(bundlePath, `${JSON.stringify(bundle, null, 2)}\n`, "utf-8");
-      consola.success(`Written ${bundlePath}`);
-    }
+  if (written.some((artifact) => artifact.fileName === "euconform.report.json")) {
+    await writeBundleManifest(outputDir, {
+      tool: output.report.tool,
+      target: {
+        name: output.report.target.name,
+        rootPath: output.report.target.rootPath,
+      },
+      generatedAt: output.report.generatedAt,
+    });
   }
 }
 
@@ -90,6 +123,10 @@ export async function writeZipBundle(outputDir: string): Promise<string> {
     } catch {
       // File doesn't exist — skip optional artifacts
     }
+  }
+
+  if (!("euconform.bundle.json" in zipData)) {
+    throw new Error("Cannot create euconform.bundle.zip without euconform.bundle.json");
   }
 
   const zipped = zipSync(zipData);

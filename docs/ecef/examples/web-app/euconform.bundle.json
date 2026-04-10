@@ -1,13 +1,19 @@
 {
   "schemaVersion": "euconform.bundle.v1",
   "generatedAt": "2026-04-10T12:00:00.000Z",
-  "tool": { "name": "euconform", "version": "1.1.0" },
-  "target": { "name": "example-web-app", "rootPath": "/examples/web-app" },
+  "tool": {
+    "name": "euconform",
+    "version": "0.1.0"
+  },
+  "target": {
+    "name": "example-web-app",
+    "rootPath": "/examples/web-app"
+  },
   "artifacts": [
     {
       "role": "report",
       "fileName": "euconform.report.json",
-      "sha256": "b177a468be8ec40d4184cc17a21ad3c149d62a79a5dfea2b2eb4bb21708adfba",
+      "sha256": "26f06d9abe6aa1768ab06c75a01eb3e9f6caac5ce63037bda702fb13f4920aa3",
       "schemaVersion": "euconform.report.v1",
       "required": true
     },

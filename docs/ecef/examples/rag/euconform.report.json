@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "euconform.report.v1",
+  "generatedAt": "2026-04-10T12:10:00.000Z",
+  "tool": {
+    "name": "euconform",
+    "version": "1.1.0"
+  },
+  "target": {
+    "rootPath": "/examples/rag",
+    "name": "example-rag-service",
+    "repoType": "api-server",
+    "detectedStack": ["Node.js", "LangChain", "ChromaDB"]
+  },
+  "aiFootprint": {
+    "usesAI": true,
+    "inferenceModes": ["local-ollama"],
+    "providerHints": [],
+    "ragHints": ["ChromaDB", "Embeddings"]
+  },
+  "complianceSignals": {
+    "disclosure": { "status": "absent", "confidence": "low", "evidence": [] },
+    "biasTesting": {
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": "tests/eval.ts",
+          "line": 14,
+          "snippet": "evaluateRetrievalBias()",
+          "provenance": "test"
+        }
+      ]
+    },
+    "reportingExports": {
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": "lib/report.ts",
+          "line": 17,
+          "snippet": "serializeScanSummary",
+          "provenance": "runtime"
+        }
+      ]
+    },
+    "loggingMonitoring": {
+      "status": "present",
+      "confidence": "high",
+      "evidence": [
+        {
+          "file": "lib/logging.ts",
+          "line": 11,
+          "snippet": "structuredLogger.info",
+          "provenance": "runtime"
+        }
+      ]
+    },
+    "humanOversight": {
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": "routes/review.ts",
+          "line": 6,
+          "snippet": "manualReviewRequired",
+          "provenance": "runtime"
+        }
+      ]
+    },
+    "dataGovernance": {
+      "status": "present",
+      "confidence": "high",
+      "evidence": [
+        {
+          "file": "lib/retrieval.ts",
+          "line": 8,
+          "snippet": "documentProvenance",
+          "provenance": "runtime"
+        }
+      ]
+    },
+    "incidentReporting": {
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": "lib/incidents.ts",
+          "line": 4,
+          "snippet": "createIncidentRecord",
+          "provenance": "runtime"
+        }
+      ]
+    }
+  },
+  "assessmentHints": {
+    "possibleModes": ["annex-iii-unclear"],
+    "riskIndicators": [
+      {
+        "hint": "RAG components detected; retrieval provenance should be documented.",
+        "articleRef": "Art. 10",
+        "confidence": "high"
+      }
+    ],
+    "gpaiIndicators": [],
+    "openQuestions": [
+      "Does retrieval content contain personal or sensitive data?",
+      "Is there a user-facing disclosure for AI-assisted answers?"
+    ]
+  },
+  "gaps": [
+    {
+      "id": "gap-disclosure",
+      "title": "No AI disclosure mechanism detected",
+      "description": "No user-facing disclosure implementation was found in the production codebase.",
+      "priority": "critical",
+      "status": "missing",
+      "basis": "scanner-rule",
+      "evidence": []
+    },
+    {
+      "id": "gap-bias",
+      "title": "Partial bias testing infrastructure",
+      "description": "Some implementation signals were found, but confidence is not yet high.",
+      "priority": "low",
+      "status": "partial",
+      "basis": "scanner-rule",
+      "evidence": [
+        {
+          "file": "tests/eval.ts",
+          "line": 14,
+          "snippet": "evaluateRetrievalBias()",
+          "provenance": "test"
+        }
+      ]
+    }
+  ],
+  "recommendationSummary": [
+    "[CRITICAL] Implement: No AI disclosure mechanism detected",
+    "[LOW] Strengthen: Partial bias testing infrastructure",
+    "Review the generated artifacts and complete role/risk classification in the EuConform web app"
+  ]
+}

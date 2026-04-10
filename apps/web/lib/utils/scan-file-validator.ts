@@ -31,83 +31,128 @@ export function identifyFileSlot(fileName: string): ScanFileSlot | null {
 }
 
 // ---------------------------------------------------------------------------
+// Validation helpers
+// ---------------------------------------------------------------------------
+
+function assertObject(data: unknown, label: string): Record<string, unknown> {
+  if (!data || typeof data !== "object") {
+    throw new Error(`Invalid ${label}: expected a JSON object`);
+  }
+  return data as Record<string, unknown>;
+}
+
+function requireField(
+  obj: Record<string, unknown>,
+  field: string,
+  type: "string" | "boolean" | "number" | "object" | "array",
+  label: string,
+  path = field
+): unknown {
+  const value = obj[field];
+  if (type === "array") {
+    if (!Array.isArray(value)) throw new Error(`Invalid ${label}: missing '${path}' array`);
+    return value;
+  }
+  if (type === "object") {
+    if (!value || typeof value !== "object")
+      throw new Error(`Invalid ${label}: missing '${path}' field`);
+    return value as Record<string, unknown>;
+  }
+  if (type === "string" && typeof value !== "string") {
+    throw new Error(`Invalid ${label}: missing '${path}' field`);
+  }
+  if (type === "boolean" && typeof value !== "boolean") {
+    throw new Error(`Invalid ${label}: missing '${path}' field`);
+  }
+  if (type === "number" && typeof value !== "number") {
+    throw new Error(`Invalid ${label}: missing '${path}' field`);
+  }
+  return value;
+}
+
+function requireSchemaVersion(obj: Record<string, unknown>, expected: string, label: string): void {
+  if (obj.schemaVersion !== expected) {
+    throw new Error(
+      `Invalid ${label} schema version: expected "${expected}", got "${String(obj.schemaVersion)}"`
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Validators
 // ---------------------------------------------------------------------------
 
 export function validateReportJson(data: unknown): ScanReport {
-  if (!data || typeof data !== "object") {
-    throw new Error("Invalid report: expected a JSON object");
+  const obj = assertObject(data, "report");
+  requireSchemaVersion(obj, "euconform.report.v1", "report");
+  requireField(obj, "generatedAt", "string", "report");
+  const tool = requireField(obj, "tool", "object", "report") as Record<string, unknown>;
+  if (typeof tool.name !== "string" || typeof tool.version !== "string") {
+    throw new Error("Invalid report: 'tool' must have 'name' and 'version' strings");
   }
-  const obj = data as Record<string, unknown>;
-  if (obj.schemaVersion !== "euconform.report.v1") {
-    throw new Error(
-      `Invalid report schema version: expected "euconform.report.v1", got "${String(obj.schemaVersion)}"`
-    );
+  requireField(obj, "target", "object", "report");
+  requireField(obj, "aiFootprint", "object", "report");
+  requireField(obj, "complianceSignals", "object", "report");
+  const hints = requireField(obj, "assessmentHints", "object", "report") as Record<string, unknown>;
+  const openQuestions = requireField(
+    hints,
+    "openQuestions",
+    "array",
+    "report",
+    "assessmentHints.openQuestions"
+  ) as unknown[];
+  if (!openQuestions.every((item) => typeof item === "string")) {
+    throw new Error("Invalid report: 'assessmentHints.openQuestions' must contain strings");
   }
-  if (!obj.target || typeof obj.target !== "object") {
-    throw new Error("Invalid report: missing 'target' field");
-  }
-  if (!obj.aiFootprint || typeof obj.aiFootprint !== "object") {
-    throw new Error("Invalid report: missing 'aiFootprint' field");
-  }
-  if (!obj.complianceSignals || typeof obj.complianceSignals !== "object") {
-    throw new Error("Invalid report: missing 'complianceSignals' field");
-  }
-  if (!obj.assessmentHints || typeof obj.assessmentHints !== "object") {
-    throw new Error("Invalid report: missing 'assessmentHints' field");
-  }
-  const hints = obj.assessmentHints as Record<string, unknown>;
-  if (!Array.isArray(hints.openQuestions)) {
-    throw new Error("Invalid report: missing 'assessmentHints.openQuestions' array");
-  }
-  if (!Array.isArray(obj.gaps)) {
-    throw new Error("Invalid report: missing 'gaps' array");
-  }
-  if (!Array.isArray(obj.recommendationSummary)) {
-    throw new Error("Invalid report: missing 'recommendationSummary' array");
+  requireField(obj, "gaps", "array", "report");
+  const recommendations = requireField(
+    obj,
+    "recommendationSummary",
+    "array",
+    "report"
+  ) as unknown[];
+  if (!recommendations.every((item) => typeof item === "string")) {
+    throw new Error("Invalid report: 'recommendationSummary' must contain strings");
   }
   return data as ScanReport;
 }
 
 export function validateAibomJson(data: unknown): AiBillOfMaterials {
-  if (!data || typeof data !== "object") {
-    throw new Error("Invalid AIBOM: expected a JSON object");
+  const obj = assertObject(data, "AIBOM");
+  requireSchemaVersion(obj, "euconform.aibom.v1", "AIBOM");
+  requireField(obj, "generatedAt", "string", "AIBOM");
+  const project = requireField(obj, "project", "object", "AIBOM") as Record<string, unknown>;
+  if (typeof project.name !== "string") {
+    throw new Error("Invalid AIBOM: 'project' must have a 'name' string");
   }
-  const obj = data as Record<string, unknown>;
-  if (obj.schemaVersion !== "euconform.aibom.v1") {
-    throw new Error(
-      `Invalid AIBOM schema version: expected "euconform.aibom.v1", got "${String(obj.schemaVersion)}"`
-    );
-  }
-  if (!Array.isArray(obj.components)) {
-    throw new Error("Invalid AIBOM: missing 'components' array");
-  }
+  requireField(obj, "components", "array", "AIBOM");
+  requireField(obj, "complianceCapabilities", "object", "AIBOM");
   return data as AiBillOfMaterials;
 }
 
 export function validateCiJson(data: unknown): CiReport {
-  if (!data || typeof data !== "object") {
-    throw new Error("Invalid CI report: expected a JSON object");
+  const obj = assertObject(data, "CI report");
+  requireSchemaVersion(obj, "euconform.ci.v1", "CI report");
+  requireField(obj, "generatedAt", "string", "CI report");
+  requireField(obj, "target", "object", "CI report");
+  const status = requireField(obj, "status", "object", "CI report") as Record<string, unknown>;
+  const gapCounts = requireField(
+    status,
+    "gapCounts",
+    "object",
+    "CI report",
+    "status.gapCounts"
+  ) as Record<string, unknown>;
+  requireField(status, "failOn", "string", "CI report", "status.failOn");
+  requireField(status, "failing", "boolean", "CI report", "status.failing");
+  for (const key of ["critical", "high", "medium", "low"] as const) {
+    requireField(gapCounts, key, "number", "CI report", `status.gapCounts.${key}`);
   }
-  const obj = data as Record<string, unknown>;
-  if (obj.schemaVersion !== "euconform.ci.v1") {
-    throw new Error(
-      `Invalid CI report schema version: expected "euconform.ci.v1", got "${String(obj.schemaVersion)}"`
-    );
-  }
-  if (!obj.status || typeof obj.status !== "object") {
-    throw new Error("Invalid CI report: missing 'status' field");
-  }
-  const status = obj.status as Record<string, unknown>;
-  if (!status.gapCounts || typeof status.gapCounts !== "object") {
-    throw new Error("Invalid CI report: missing 'status.gapCounts' field");
-  }
-  if (typeof status.failOn !== "string") {
-    throw new Error("Invalid CI report: missing 'status.failOn' field");
-  }
-  if (typeof status.failing !== "boolean") {
-    throw new Error("Invalid CI report: missing 'status.failing' field");
-  }
+  requireField(obj, "aiDetected", "boolean", "CI report");
+  requireField(obj, "scanScope", "string", "CI report");
+  requireField(obj, "artifacts", "array", "CI report");
+  requireField(obj, "complianceOverview", "array", "CI report");
+  requireField(obj, "topGaps", "array", "CI report");
   return data as CiReport;
 }
 

@@ -47,7 +47,7 @@ const VALID_REPORT = {
   schemaVersion: "euconform.report.v1",
   generatedAt: "2026-01-01T00:00:00Z",
   tool: { name: "euconform", version: "1.0.0" },
-  target: { rootPath: "/test", name: "test-project", repoType: "single", detectedStack: [] },
+  target: { rootPath: "/test", name: "test-project", repoType: "web-app", detectedStack: [] },
   aiFootprint: { usesAI: true, inferenceModes: [], providerHints: [], ragHints: [] },
   complianceSignals: {
     disclosure: { status: "absent", confidence: "low", evidence: [] },
@@ -105,6 +105,34 @@ describe("validateReportJson", () => {
     const { recommendationSummary, ...rest } = VALID_REPORT;
     expect(() => validateReportJson(rest)).toThrow("missing 'recommendationSummary'");
   });
+
+  it("rejects non-string assessmentHints.openQuestions values", () => {
+    const report = {
+      ...VALID_REPORT,
+      assessmentHints: { ...VALID_REPORT.assessmentHints, openQuestions: ["ok", 42] },
+    };
+    expect(() => validateReportJson(report)).toThrow("must contain strings");
+  });
+
+  it("rejects non-string recommendationSummary values", () => {
+    const report = { ...VALID_REPORT, recommendationSummary: ["ok", 42] };
+    expect(() => validateReportJson(report)).toThrow("must contain strings");
+  });
+
+  it("rejects missing generatedAt", () => {
+    const { generatedAt, ...rest } = VALID_REPORT;
+    expect(() => validateReportJson(rest)).toThrow("missing 'generatedAt'");
+  });
+
+  it("rejects missing tool", () => {
+    const { tool, ...rest } = VALID_REPORT;
+    expect(() => validateReportJson(rest)).toThrow("missing 'tool'");
+  });
+
+  it("rejects tool without name", () => {
+    const report = { ...VALID_REPORT, tool: { version: "1.0.0" } };
+    expect(() => validateReportJson(report)).toThrow("'tool' must have 'name' and 'version'");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -113,6 +141,7 @@ describe("validateReportJson", () => {
 
 const VALID_AIBOM = {
   schemaVersion: "euconform.aibom.v1",
+  generatedAt: "2026-01-01T00:00:00Z",
   project: { name: "test", rootPath: "/test" },
   components: [],
   complianceCapabilities: {
@@ -139,6 +168,21 @@ describe("validateAibomJson", () => {
   it("rejects missing components", () => {
     const { components, ...rest } = VALID_AIBOM;
     expect(() => validateAibomJson(rest)).toThrow("missing 'components'");
+  });
+
+  it("rejects missing generatedAt", () => {
+    const { generatedAt, ...rest } = VALID_AIBOM;
+    expect(() => validateAibomJson(rest)).toThrow("missing 'generatedAt'");
+  });
+
+  it("rejects missing project", () => {
+    const { project, ...rest } = VALID_AIBOM;
+    expect(() => validateAibomJson(rest)).toThrow("missing 'project'");
+  });
+
+  it("rejects missing complianceCapabilities", () => {
+    const { complianceCapabilities, ...rest } = VALID_AIBOM;
+    expect(() => validateAibomJson(rest)).toThrow("missing 'complianceCapabilities'");
   });
 });
 
@@ -206,6 +250,47 @@ describe("validateCiJson", () => {
       },
     };
     expect(() => validateCiJson(ci)).toThrow("missing 'status.failing'");
+  });
+
+  it("rejects missing nested gap count fields", () => {
+    const ci = {
+      ...VALID_CI,
+      status: {
+        ...VALID_CI.status,
+        gapCounts: { critical: 0, high: 0, medium: 0 },
+      },
+    };
+    expect(() => validateCiJson(ci)).toThrow("missing 'status.gapCounts.low'");
+  });
+
+  it("rejects missing generatedAt", () => {
+    const { generatedAt, ...rest } = VALID_CI;
+    expect(() => validateCiJson(rest)).toThrow("missing 'generatedAt'");
+  });
+
+  it("rejects missing target", () => {
+    const { target, ...rest } = VALID_CI;
+    expect(() => validateCiJson(rest)).toThrow("missing 'target'");
+  });
+
+  it("rejects missing aiDetected", () => {
+    const { aiDetected, ...rest } = VALID_CI;
+    expect(() => validateCiJson(rest)).toThrow("missing 'aiDetected'");
+  });
+
+  it("rejects missing artifacts", () => {
+    const { artifacts, ...rest } = VALID_CI;
+    expect(() => validateCiJson(rest)).toThrow("missing 'artifacts'");
+  });
+
+  it("rejects missing complianceOverview", () => {
+    const { complianceOverview, ...rest } = VALID_CI;
+    expect(() => validateCiJson(rest)).toThrow("missing 'complianceOverview'");
+  });
+
+  it("rejects missing topGaps", () => {
+    const { topGaps, ...rest } = VALID_CI;
+    expect(() => validateCiJson(rest)).toThrow("missing 'topGaps'");
   });
 });
 

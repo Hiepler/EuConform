@@ -176,6 +176,16 @@ In GitHub Actions, EuConform emits:
 - a markdown step summary
 - machine-readable CI artifacts: `euconform.ci.json` and `euconform.ci-summary.md`
 
+### EuConform Evidence Format (ECEF)
+
+The scanner artifacts are defined as the **EuConform Evidence Format (ECEF)**, an open specification for offline AI Act evidence exchange.
+
+- `euconform.report.v1` captures compliance evidence, gaps, and open questions
+- `euconform.aibom.v1` is the AI Bill of Materials (AI BOM) inventory layer
+- `euconform.ci.v1` captures CI thresholds, status, and top findings
+
+Stage 1 documentation, schemas, and example artifacts live in [docs/ecef/README.md](docs/ecef/README.md).
+
 ### Bias Testing Methodology
 
 We use the **CrowS-Pairs** methodology ([Nangia et al., 2020](https://aclanthology.org/2020.emnlp-main.154)) to measure social biases in language models.

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "euconform.aibom.v1",
+  "generatedAt": "2026-04-10T12:05:00.000Z",
+  "project": {
+    "name": "example-local-ollama",
+    "rootPath": "/examples/local-ollama"
+  },
+  "components": [
+    { "id": "runtime:node-js", "kind": "runtime", "name": "Node.js", "source": "package.json" },
+    {
+      "id": "inference-provider:ollama",
+      "kind": "inference-provider",
+      "name": "Ollama",
+      "source": "code"
+    },
+    { "id": "model:llama-cpp", "kind": "model", "name": "llama.cpp", "source": "config" }
+  ],
+  "complianceCapabilities": {
+    "biasEvaluation": true,
+    "jsonExport": true,
+    "pdfExport": false,
+    "loggingInfrastructure": true,
+    "humanReviewFlow": true,
+    "incidentHandling": false
+  }
+}

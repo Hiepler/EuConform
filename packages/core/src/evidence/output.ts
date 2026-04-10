@@ -610,7 +610,8 @@ function resolveBomKind(signal: DetectedSignal, canonicalName: string): BomCompo
 
 function buildAiBom(
   scanResult: ScanResult,
-  complianceAreas: Record<keyof typeof COMPLIANCE_AREA_MAP, ComplianceAreaEvaluation>
+  complianceAreas: Record<keyof typeof COMPLIANCE_AREA_MAP, ComplianceAreaEvaluation>,
+  generatedAt: string
 ): AiBillOfMaterials {
   const components: BomComponent[] = [];
   const componentIndex = new Map<string, number>();
@@ -647,6 +648,7 @@ function buildAiBom(
 
   return {
     schemaVersion: "euconform.aibom.v1",
+    generatedAt,
     project: {
       name: scanResult.repo.name,
       rootPath: scanResult.meta.targetPath,
@@ -666,12 +668,13 @@ function buildAiBom(
 }
 
 export function generateScanOutput(scanResult: ScanResult): ScanOutput {
+  const generatedAt = new Date().toISOString();
   const aiDetected = hasAI(scanResult.signals);
   const complianceAreas = evaluateComplianceAreas(scanResult.signals, aiDetected);
 
   const report: ScanReport = {
     schemaVersion: "euconform.report.v1",
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     tool: {
       name: "euconform",
       version: scanResult.meta.toolVersion,
@@ -707,7 +710,7 @@ export function generateScanOutput(scanResult: ScanResult): ScanOutput {
     complianceAreas
   );
 
-  const aibom = buildAiBom(scanResult, complianceAreas);
+  const aibom = buildAiBom(scanResult, complianceAreas, generatedAt);
   const summaryMarkdown = generateSummaryMarkdown(report, aibom, scanResult.meta.scanScope);
 
   return { report, aibom, summaryMarkdown };

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "euconform.ci.v1",
+  "generatedAt": "2026-04-10T12:00:00.000Z",
+  "target": {
+    "name": "example-web-app",
+    "rootPath": "/examples/web-app"
+  },
+  "status": {
+    "failOn": "high",
+    "failing": false,
+    "gapCounts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 2,
+      "low": 0
+    },
+    "openQuestions": 2
+  },
+  "aiDetected": true,
+  "scanScope": "production",
+  "artifacts": ["euconform.report.json", "euconform.aibom.json", "euconform.ci.json"],
+  "complianceOverview": [
+    { "area": "Disclosure", "status": "partial", "confidence": "medium" },
+    { "area": "Bias Testing", "status": "absent", "confidence": "low" },
+    { "area": "Reporting & Exports", "status": "present", "confidence": "high" },
+    { "area": "Logging & Monitoring", "status": "partial", "confidence": "medium" },
+    { "area": "Human Oversight", "status": "partial", "confidence": "medium" },
+    { "area": "Data Governance", "status": "absent", "confidence": "low" },
+    { "area": "Incident Reporting", "status": "absent", "confidence": "low" }
+  ],
+  "topGaps": [
+    {
+      "id": "gap-bias",
+      "title": "No bias testing infrastructure detected",
+      "priority": "medium",
+      "status": "missing"
+    },
+    {
+      "id": "gap-incident",
+      "title": "No incident reporting mechanism detected",
+      "priority": "medium",
+      "status": "missing"
+    }
+  ]
+}

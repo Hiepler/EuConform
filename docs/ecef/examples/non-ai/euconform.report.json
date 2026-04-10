@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "euconform.report.v1",
+  "generatedAt": "2026-04-10T12:15:00.000Z",
+  "tool": {
+    "name": "euconform",
+    "version": "1.1.0"
+  },
+  "target": {
+    "rootPath": "/examples/non-ai",
+    "name": "example-static-site",
+    "repoType": "web-app",
+    "detectedStack": ["Next.js", "React"]
+  },
+  "aiFootprint": {
+    "usesAI": false,
+    "inferenceModes": [],
+    "providerHints": [],
+    "ragHints": []
+  },
+  "complianceSignals": {
+    "disclosure": { "status": "unknown", "confidence": "low", "evidence": [] },
+    "biasTesting": { "status": "unknown", "confidence": "low", "evidence": [] },
+    "reportingExports": { "status": "unknown", "confidence": "low", "evidence": [] },
+    "loggingMonitoring": { "status": "unknown", "confidence": "low", "evidence": [] },
+    "humanOversight": { "status": "unknown", "confidence": "low", "evidence": [] },
+    "dataGovernance": { "status": "unknown", "confidence": "low", "evidence": [] },
+    "incidentReporting": { "status": "unknown", "confidence": "low", "evidence": [] }
+  },
+  "assessmentHints": {
+    "possibleModes": [],
+    "riskIndicators": [],
+    "gpaiIndicators": [],
+    "openQuestions": []
+  },
+  "gaps": [],
+  "recommendationSummary": [
+    "No AI components detected; continue with normal application assurance practices."
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "euconform.ci.v1",
+  "generatedAt": "2026-04-10T12:10:00.000Z",
+  "target": {
+    "name": "example-rag-service",
+    "rootPath": "/examples/rag"
+  },
+  "status": {
+    "failOn": "medium",
+    "failing": true,
+    "gapCounts": {
+      "critical": 1,
+      "high": 0,
+      "medium": 0,
+      "low": 1
+    },
+    "openQuestions": 2
+  },
+  "aiDetected": true,
+  "scanScope": "production",
+  "artifacts": ["euconform.report.json", "euconform.aibom.json", "euconform.ci.json"],
+  "complianceOverview": [
+    { "area": "Disclosure", "status": "absent", "confidence": "low" },
+    { "area": "Bias Testing", "status": "partial", "confidence": "medium" },
+    { "area": "Reporting & Exports", "status": "partial", "confidence": "medium" },
+    { "area": "Logging & Monitoring", "status": "present", "confidence": "high" },
+    { "area": "Human Oversight", "status": "partial", "confidence": "medium" },
+    { "area": "Data Governance", "status": "present", "confidence": "high" },
+    { "area": "Incident Reporting", "status": "partial", "confidence": "medium" }
+  ],
+  "topGaps": [
+    {
+      "id": "gap-disclosure",
+      "title": "No AI disclosure mechanism detected",
+      "priority": "critical",
+      "status": "missing"
+    },
+    {
+      "id": "gap-bias",
+      "title": "Partial bias testing infrastructure",
+      "priority": "low",
+      "status": "partial"
+    }
+  ]
+}

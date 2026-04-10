@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "euconform.aibom.v1",
+  "generatedAt": "2026-04-10T12:00:00.000Z",
+  "project": {
+    "name": "example-web-app",
+    "rootPath": "/examples/web-app"
+  },
+  "components": [
+    { "id": "framework:next-js", "kind": "framework", "name": "Next.js", "source": "package.json" },
+    { "id": "framework:react", "kind": "framework", "name": "React", "source": "package.json" },
+    {
+      "id": "inference-provider:openai",
+      "kind": "inference-provider",
+      "name": "OpenAI",
+      "source": "code"
+    }
+  ],
+  "complianceCapabilities": {
+    "biasEvaluation": false,
+    "jsonExport": true,
+    "pdfExport": true,
+    "loggingInfrastructure": true,
+    "humanReviewFlow": true,
+    "incidentHandling": false
+  }
+}

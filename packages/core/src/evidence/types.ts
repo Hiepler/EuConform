@@ -237,6 +237,7 @@ export interface BomComponent {
 
 export interface AiBillOfMaterials {
   schemaVersion: "euconform.aibom.v1";
+  generatedAt: string;
   project: {
     name: string;
     rootPath: string;

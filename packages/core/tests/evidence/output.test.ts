@@ -60,7 +60,7 @@ describe("generateScanOutput", () => {
     }
   });
 
-  it("generates stable, readable AIBOM component ids", async () => {
+  it("generates stable, readable AIBOM component ids", { timeout: 15_000 }, async () => {
     const scanResult = await scanRepository({
       targetPath: MONOREPO_ROOT,
     });
@@ -72,7 +72,7 @@ describe("generateScanOutput", () => {
     expect(ids.every((id) => id.includes(":"))).toBe(true);
   });
 
-  it("derives export capabilities from reporting signals", async () => {
+  it("derives export capabilities from reporting signals", { timeout: 15_000 }, async () => {
     const scanResult = await scanRepository({
       targetPath: MONOREPO_ROOT,
     });

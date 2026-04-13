@@ -3,10 +3,23 @@
   "version": "0.1.0",
   "license": "MIT OR EUPL-1.2",
   "author": "Benedikt Hiepler",
-  "description": "CLI for scanning AI projects for EU AI Act compliance evidence.",
+  "description": "CLI scanner and bundle verifier for the EuConform Evidence Format and offline EU AI Act evidence.",
   "type": "module",
-  "keywords": ["eu-ai-act", "compliance", "scanner", "ai-bom", "ecef", "cli"],
-  "homepage": "https://github.com/Hiepler/EuConform#cli-scanner",
+  "keywords": [
+    "eu-ai-act",
+    "ai-act",
+    "euconform",
+    "ai-bom",
+    "ai-compliance",
+    "ai-governance",
+    "compliance-evidence",
+    "scanner",
+    "verify",
+    "cli",
+    "ollama",
+    "rag"
+  ],
+  "homepage": "https://github.com/Hiepler/EuConform/tree/main/packages/cli",
   "bugs": {
     "url": "https://github.com/Hiepler/EuConform/issues"
   },

@@ -1,6 +1,6 @@
 # RAG Assistant Reference Project
 
-A minimal retrieval-augmented generation service that acts as a EuConform and ECEF
+A minimal retrieval-augmented generation service that acts as a EuConform and EuConform Evidence Format
 reference project for local/private RAG systems.
 
 ## What this example demonstrates
@@ -22,9 +22,9 @@ From the repo root:
 
 ```bash
 pnpm --filter @euconform/cli build
-node packages/cli/dist/index.js scan examples/rag-assistant --scope production --output examples/rag-assistant/ecef
-node packages/cli/dist/index.js verify examples/rag-assistant/ecef/euconform.bundle.json
+node packages/cli/dist/index.js scan examples/rag-assistant --scope production --output examples/rag-assistant/.euconform
+node packages/cli/dist/index.js verify examples/rag-assistant/.euconform/euconform.bundle.json
 ```
 
-The canonical public ECEF artifact set for this scenario lives under
-`docs/ecef/examples/rag/`.
+The canonical public EuConform Evidence Format artifact set for this scenario lives under
+`docs/spec/examples/rag/`.

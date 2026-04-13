@@ -265,6 +265,6 @@ export function validateEcefJsonDocument(
     case "euconform.bundle.v1":
       return validateScanBundle(data);
     default:
-      throw new Error(`Unsupported ECEF schemaVersion '${schemaVersion}'`);
+      throw new Error(`Unsupported EuConform Evidence Format schemaVersion '${schemaVersion}'`);
   }
 }

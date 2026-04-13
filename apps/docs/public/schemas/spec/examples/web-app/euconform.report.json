@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "euconform.report.v1",
+  "generatedAt": "2026-04-10T12:00:00.000Z",
+  "tool": {
+    "name": "euconform",
+    "version": "0.1.0"
+  },
+  "target": {
+    "rootPath": "/examples/web-app",
+    "name": "example-web-app",
+    "repoType": "web-app",
+    "detectedStack": ["Next.js", "React", "OpenAI SDK"]
+  },
+  "aiFootprint": {
+    "usesAI": true,
+    "inferenceModes": ["cloud-openai"],
+    "providerHints": ["openai"],
+    "ragHints": []
+  },
+  "complianceSignals": {
+    "disclosure": {
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": "app/page.tsx",
+          "line": 18,
+          "snippet": "AI-generated output may contain errors",
+          "provenance": "runtime"
+        }
+      ]
+    },
+    "biasTesting": {
+      "status": "absent",
+      "confidence": "low",
+      "evidence": []
+    },
+    "reportingExports": {
+      "status": "present",
+      "confidence": "high",
+      "evidence": [
+        {
+          "file": "lib/report.ts",
+          "line": 9,
+          "snippet": "generateComplianceReport()",
+          "provenance": "runtime"
+        }
+      ]
+    },
+    "loggingMonitoring": {
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": "lib/logging.ts",
+          "line": 4,
+          "snippet": "logAiDecision",
+          "provenance": "runtime"
+        }
+      ]
+    },
+    "humanOversight": {
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": "lib/review.ts",
+          "line": 6,
+          "snippet": "requireHumanApproval",
+          "provenance": "runtime"
+        }
+      ]
+    },
+    "dataGovernance": {
+      "status": "absent",
+      "confidence": "low",
+      "evidence": []
+    },
+    "incidentReporting": {
+      "status": "absent",
+      "confidence": "low",
+      "evidence": []
+    }
+  },
+  "assessmentHints": {
+    "possibleModes": ["gpai-user", "annex-iii-unclear"],
+    "riskIndicators": [
+      {
+        "hint": "Cloud AI usage detected in a user-facing web application.",
+        "articleRef": "Art. 52",
+        "confidence": "medium"
+      }
+    ],
+    "gpaiIndicators": [
+      {
+        "hint": "Provider obligations depend on your role and downstream distribution.",
+        "articleRef": "Art. 53",
+        "confidence": "medium"
+      }
+    ],
+    "openQuestions": [
+      "Does the application make consequential decisions about natural persons?",
+      "Are users explicitly informed that outputs are AI-generated?"
+    ]
+  },
+  "gaps": [
+    {
+      "id": "gap-bias",
+      "title": "No bias testing infrastructure detected",
+      "description": "No production-grade bias evaluation tooling was found.",
+      "priority": "medium",
+      "status": "missing",
+      "basis": "scanner-rule",
+      "evidence": []
+    },
+    {
+      "id": "gap-incident",
+      "title": "No incident reporting mechanism detected",
+      "description": "No production incident reporting infrastructure was found.",
+      "priority": "medium",
+      "status": "missing",
+      "basis": "scanner-rule",
+      "evidence": []
+    }
+  ],
+  "recommendationSummary": [
+    "[MEDIUM] Implement: No bias testing infrastructure detected",
+    "[MEDIUM] Implement: No incident reporting mechanism detected",
+    "Review the generated artifacts and complete role/risk classification in the EuConform web app"
+  ]
+}

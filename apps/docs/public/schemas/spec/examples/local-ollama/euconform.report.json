@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "euconform.report.v1",
+  "generatedAt": "2026-04-10T12:05:00.000Z",
+  "tool": {
+    "name": "euconform",
+    "version": "0.1.0"
+  },
+  "target": {
+    "rootPath": "/examples/ollama-chatbot",
+    "name": "ollama-chatbot-example",
+    "repoType": "chatbot",
+    "detectedStack": ["Node.js", "Ollama", "llama.cpp"]
+  },
+  "aiFootprint": {
+    "usesAI": true,
+    "inferenceModes": ["local-ollama", "local-llama"],
+    "providerHints": [],
+    "ragHints": []
+  },
+  "complianceSignals": {
+    "disclosure": {
+      "status": "present",
+      "confidence": "high",
+      "evidence": [
+        {
+          "file": "ui/chat.tsx",
+          "line": 21,
+          "snippet": "You are interacting with an AI assistant.",
+          "provenance": "runtime"
+        }
+      ]
+    },
+    "biasTesting": {
+      "status": "present",
+      "confidence": "high",
+      "evidence": [
+        {
+          "file": "tests/bias.ts",
+          "line": 5,
+          "snippet": "runCrowsPairsLogProbTest()",
+          "provenance": "test"
+        }
+      ]
+    },
+    "reportingExports": {
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": "lib/export.ts",
+          "line": 12,
+          "snippet": "writeJsonReport",
+          "provenance": "runtime"
+        }
+      ]
+    },
+    "loggingMonitoring": {
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": "lib/audit.ts",
+          "line": 7,
+          "snippet": "auditLog.append",
+          "provenance": "runtime"
+        }
+      ]
+    },
+    "humanOversight": {
+      "status": "present",
+      "confidence": "high",
+      "evidence": [
+        {
+          "file": "lib/review.ts",
+          "line": 9,
+          "snippet": "requireHumanApproval",
+          "provenance": "runtime"
+        }
+      ]
+    },
+    "dataGovernance": {
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 3,
+          "snippet": "TRAINING_DATA_SOURCE=internal",
+          "provenance": "config"
+        }
+      ]
+    },
+    "incidentReporting": {
+      "status": "absent",
+      "confidence": "low",
+      "evidence": []
+    }
+  },
+  "assessmentHints": {
+    "possibleModes": ["annex-iii-unclear"],
+    "riskIndicators": [
+      {
+        "hint": "Local deployment reduces some provider-side exposure but not deployer obligations.",
+        "articleRef": "Art. 53",
+        "confidence": "low"
+      }
+    ],
+    "gpaiIndicators": [],
+    "openQuestions": ["Is this assistant used in a regulated or safety-critical workflow?"]
+  },
+  "gaps": [
+    {
+      "id": "gap-incident",
+      "title": "No incident reporting mechanism detected",
+      "description": "No production incident reporting infrastructure was found.",
+      "priority": "medium",
+      "status": "missing",
+      "basis": "scanner-rule",
+      "evidence": []
+    }
+  ],
+  "recommendationSummary": [
+    "[MEDIUM] Implement: No incident reporting mechanism detected",
+    "Resolve 1 open question(s) that require human context",
+    "Review the generated artifacts and complete role/risk classification in the EuConform web app"
+  ]
+}

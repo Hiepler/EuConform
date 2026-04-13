@@ -2,21 +2,175 @@
 @import "@euconform/tailwind-config";
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --docs-ink: #14171c;
+  --docs-muted: #4a5260;
+  --docs-paper: #f7f4ed;
+  --docs-panel: #fdfbf6;
+  --docs-panel-strong: #ffffff;
+  --docs-line: rgba(20, 23, 28, 0.09);
+  --docs-line-strong: rgba(20, 23, 28, 0.16);
+  --docs-accent: #17345c;
+  --docs-grid: rgba(42, 50, 67, 0.06);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+html {
+  background-color: var(--docs-paper);
+  color-scheme: light;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb)))
-    rgb(var(--background-start-rgb));
+  min-height: 100vh;
+  color: var(--docs-ink);
+  background-color: var(--docs-paper);
+  background-image: radial-gradient(circle at 12% 8%, rgba(199, 188, 234, 0.28), transparent 32%),
+    radial-gradient(circle at 88% 14%, rgba(192, 215, 236, 0.32), transparent 30%),
+    radial-gradient(circle at 50% 100%, rgba(228, 211, 188, 0.28), transparent 34%);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(to right, var(--docs-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--docs-grid) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(circle at center, black 45%, transparent 100%);
+  opacity: 0.65;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--docs-accent) 24%, transparent);
+}
+
+a {
+  text-underline-offset: 0.18em;
+}
+
+.font-editorial {
+  font-family: "Iowan Old Style", "Palatino Linotype", "URW Palladio L", "Book Antiqua", Baskerville,
+    Georgia, serif;
+  letter-spacing: -0.04em;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--docs-muted);
+}
+
+.eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 1.5rem;
+  height: 1px;
+  background-color: var(--docs-muted);
+  opacity: 0.5;
+}
+
+.surface-panel {
+  border-radius: 1.4rem;
+  border: 1px solid var(--docs-line);
+  background: var(--docs-panel);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 1px 2px rgba(20, 23, 28, 0.04), 0 18px 40px
+    -20px rgba(20, 23, 28, 0.12);
+  transition: transform 240ms cubic-bezier(0.2, 0.65, 0.3, 1), box-shadow 240ms
+    cubic-bezier(0.2, 0.65, 0.3, 1), border-color 240ms ease;
+}
+
+.surface-panel:hover {
+  border-color: var(--docs-line-strong);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 2px 6px rgba(20, 23, 28, 0.05), 0 28px 60px
+    -28px rgba(20, 23, 28, 0.18);
+}
+
+.surface-panel-strong {
+  border-radius: 1.4rem;
+  border: 1px solid var(--docs-line);
+  background: var(--docs-panel-strong);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 3px rgba(20, 23, 28, 0.04), 0 24px 56px
+    -24px rgba(20, 23, 28, 0.16);
+}
+
+.docs-grid {
+  background-image: linear-gradient(to right, var(--docs-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--docs-grid) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+@keyframes floatSlow {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--float-rotation, 0deg));
+  }
+  50% {
+    transform: translateY(-10px) rotate(var(--float-rotation, 0deg));
+  }
+}
+
+@keyframes floatDelay {
+  0%,
+  100% {
+    transform: translateY(-4px) rotate(var(--float-rotation, 0deg));
+  }
+  50% {
+    transform: translateY(8px) rotate(var(--float-rotation, 0deg));
+  }
+}
+
+@keyframes floatFast {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--float-rotation, 0deg));
+  }
+  50% {
+    transform: translateY(-14px) rotate(var(--float-rotation, 0deg));
+  }
+}
+
+@keyframes floatReverse {
+  0%,
+  100% {
+    transform: translateY(6px) rotate(var(--float-rotation, 0deg));
+  }
+  50% {
+    transform: translateY(-6px) rotate(var(--float-rotation, 0deg));
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 13s ease-in-out infinite;
+}
+
+.animate-float-delay {
+  animation: floatDelay 12s ease-in-out infinite;
+}
+
+.animate-float-fast {
+  animation: floatFast 11s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: floatReverse 14s ease-in-out infinite;
+}
+
+@media (max-width: 767px) {
+  body::before {
+    background-size: 44px 44px;
+  }
+
+  .surface-panel {
+    box-shadow: 0 16px 36px rgba(20, 29, 44, 0.06);
+  }
 }

@@ -25,56 +25,67 @@ interface ValidatedArgs {
   excludeGlobs: string[] | undefined;
 }
 
-async function validateAndParseArgs(args: Record<string, unknown>): Promise<ValidatedArgs> {
-  const targetPath = resolve(args.path as string);
+function exitWithError(message: string): never {
+  consola.error(message);
+  process.exit(1);
+}
 
+async function assertDirectoryExists(targetPath: string): Promise<void> {
   try {
     const info = await stat(targetPath);
     if (!info.isDirectory()) {
-      consola.error(`Not a directory: ${targetPath}`);
-      process.exit(1);
+      exitWithError(`Not a directory: ${targetPath}`);
     }
   } catch {
-    consola.error(`Path does not exist: ${targetPath}`);
-    process.exit(1);
+    exitWithError(`Path does not exist: ${targetPath}`);
   }
+}
+
+function validateEnumArgs(args: {
+  format: string;
+  scope: ScanScope;
+  failOn: FailOnLevel;
+  ciMode: CiMode;
+  zip: unknown;
+}): void {
+  if (!VALID_FORMATS.has(args.format)) {
+    exitWithError(`Invalid format: ${args.format}. Use one of: json, md, all.`);
+  }
+  if (!VALID_SCOPES.has(args.scope)) {
+    exitWithError(`Invalid scope: ${args.scope}. Use one of: production, all.`);
+  }
+  if (!FAIL_ON_LEVELS.includes(args.failOn)) {
+    exitWithError(
+      `Invalid fail-on level: ${args.failOn}. Use one of: ${FAIL_ON_LEVELS.join(", ")}.`
+    );
+  }
+  if (!VALID_CI_MODES.has(args.ciMode)) {
+    exitWithError(`Invalid ci mode: ${args.ciMode}. Use one of: off, github.`);
+  }
+  if (args.zip && args.format === "md") {
+    exitWithError('Cannot create euconform.bundle.zip when format is "md" only.');
+  }
+}
+
+function parseExcludeGlobs(raw: unknown): string[] | undefined {
+  if (!raw) return undefined;
+  return Array.isArray(raw) ? (raw as string[]) : [raw as string];
+}
+
+async function validateAndParseArgs(args: Record<string, unknown>): Promise<ValidatedArgs> {
+  const targetPath = resolve(args.path as string);
+  await assertDirectoryExists(targetPath);
 
   const format = (args.format as string) ?? "all";
   const scope = ((args.scope as string) ?? "production") as ScanScope;
   const failOn = ((args["fail-on"] as string) ?? "none") as FailOnLevel;
   const ciMode = ((args.ci as string) ?? "off") as CiMode;
 
-  if (!VALID_FORMATS.has(format)) {
-    consola.error(`Invalid format: ${format}. Use one of: json, md, all.`);
-    process.exit(1);
-  }
-  if (!VALID_SCOPES.has(scope)) {
-    consola.error(`Invalid scope: ${scope}. Use one of: production, all.`);
-    process.exit(1);
-  }
-  if (!FAIL_ON_LEVELS.includes(failOn)) {
-    consola.error(`Invalid fail-on level: ${failOn}. Use one of: ${FAIL_ON_LEVELS.join(", ")}.`);
-    process.exit(1);
-  }
-  if (!VALID_CI_MODES.has(ciMode)) {
-    consola.error(`Invalid ci mode: ${ciMode}. Use one of: off, github.`);
-    process.exit(1);
-  }
-  if (args.zip && format === "md") {
-    consola.error('Cannot create euconform.bundle.zip when format is "md" only.');
-    process.exit(1);
-  }
+  validateEnumArgs({ format, scope, failOn, ciMode, zip: args.zip });
 
   if (args.verbose) {
     consola.level = 4;
   }
-
-  const rawExclude = args["exclude-glob"];
-  const excludeGlobs = rawExclude
-    ? Array.isArray(rawExclude)
-      ? (rawExclude as string[])
-      : [rawExclude as string]
-    : undefined;
 
   return {
     targetPath,
@@ -83,7 +94,7 @@ async function validateAndParseArgs(args: Record<string, unknown>): Promise<Vali
     scope,
     failOn,
     ciMode,
-    excludeGlobs,
+    excludeGlobs: parseExcludeGlobs(args["exclude-glob"]),
   };
 }
 

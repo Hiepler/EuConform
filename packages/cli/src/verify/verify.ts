@@ -142,88 +142,94 @@ async function loadBundleInput(inputPath: string): Promise<LoadedBundleInput> {
 }
 
 type JsonArtifact = ScanReport | AiBillOfMaterials | CiReport;
+type MetadataIssue = Omit<VerifyIssue, "severity">;
+
+function mismatchIssue(fileName: string, code: string, field: string): MetadataIssue {
+  return {
+    artifact: fileName,
+    code,
+    message: `${fileName} ${field} does not match bundle manifest`,
+  };
+}
+
+function compareReportMetadata(
+  bundle: ScanBundle,
+  fileName: string,
+  report: ScanReport
+): MetadataIssue[] {
+  const issues: MetadataIssue[] = [];
+  if (report.tool.name !== bundle.tool.name) {
+    issues.push(mismatchIssue(fileName, "metadata.tool.name", "tool.name"));
+  }
+  if (report.tool.version !== bundle.tool.version) {
+    issues.push(mismatchIssue(fileName, "metadata.tool.version", "tool.version"));
+  }
+  if (report.target.name !== bundle.target.name) {
+    issues.push(mismatchIssue(fileName, "metadata.target.name", "target.name"));
+  }
+  if (report.target.rootPath !== bundle.target.rootPath) {
+    issues.push(mismatchIssue(fileName, "metadata.target.rootPath", "target.rootPath"));
+  }
+  return issues;
+}
+
+function compareAibomMetadata(
+  bundle: ScanBundle,
+  fileName: string,
+  aibom: AiBillOfMaterials
+): MetadataIssue[] {
+  const issues: MetadataIssue[] = [];
+  if (aibom.project.name !== bundle.target.name) {
+    issues.push({
+      artifact: fileName,
+      code: "metadata.project.name",
+      message: `${fileName} project.name does not match bundle target.name`,
+    });
+  }
+  if (aibom.project.rootPath !== bundle.target.rootPath) {
+    issues.push({
+      artifact: fileName,
+      code: "metadata.project.rootPath",
+      message: `${fileName} project.rootPath does not match bundle target.rootPath`,
+    });
+  }
+  return issues;
+}
+
+function compareCiMetadata(bundle: ScanBundle, fileName: string, ci: CiReport): MetadataIssue[] {
+  const issues: MetadataIssue[] = [];
+  if (ci.target.name !== bundle.target.name) {
+    issues.push(mismatchIssue(fileName, "metadata.target.name", "target.name"));
+  }
+  if (ci.target.rootPath !== bundle.target.rootPath) {
+    issues.push(mismatchIssue(fileName, "metadata.target.rootPath", "target.rootPath"));
+  }
+  return issues;
+}
 
 function compareJsonMetadata(
   bundle: ScanBundle,
   artifact: ScanBundle["artifacts"][number],
   document: JsonArtifact
-): Omit<VerifyIssue, "severity">[] {
-  const issues: Array<Omit<VerifyIssue, "severity">> = [];
+): MetadataIssue[] {
+  const issues: MetadataIssue[] = [];
 
   if (document.generatedAt !== bundle.generatedAt) {
-    issues.push({
-      artifact: artifact.fileName,
-      code: "metadata.generatedAt",
-      message: `${artifact.fileName} generatedAt does not match bundle manifest`,
-    });
+    issues.push(mismatchIssue(artifact.fileName, "metadata.generatedAt", "generatedAt"));
   }
 
-  if (artifact.role === "report") {
-    const report = document as ScanReport;
-    if (report.tool.name !== bundle.tool.name) {
-      issues.push({
-        artifact: artifact.fileName,
-        code: "metadata.tool.name",
-        message: `${artifact.fileName} tool.name does not match bundle manifest`,
-      });
-    }
-    if (report.tool.version !== bundle.tool.version) {
-      issues.push({
-        artifact: artifact.fileName,
-        code: "metadata.tool.version",
-        message: `${artifact.fileName} tool.version does not match bundle manifest`,
-      });
-    }
-    if (report.target.name !== bundle.target.name) {
-      issues.push({
-        artifact: artifact.fileName,
-        code: "metadata.target.name",
-        message: `${artifact.fileName} target.name does not match bundle manifest`,
-      });
-    }
-    if (report.target.rootPath !== bundle.target.rootPath) {
-      issues.push({
-        artifact: artifact.fileName,
-        code: "metadata.target.rootPath",
-        message: `${artifact.fileName} target.rootPath does not match bundle manifest`,
-      });
-    }
-  }
-
-  if (artifact.role === "aibom") {
-    const aibom = document as AiBillOfMaterials;
-    if (aibom.project.name !== bundle.target.name) {
-      issues.push({
-        artifact: artifact.fileName,
-        code: "metadata.project.name",
-        message: `${artifact.fileName} project.name does not match bundle target.name`,
-      });
-    }
-    if (aibom.project.rootPath !== bundle.target.rootPath) {
-      issues.push({
-        artifact: artifact.fileName,
-        code: "metadata.project.rootPath",
-        message: `${artifact.fileName} project.rootPath does not match bundle target.rootPath`,
-      });
-    }
-  }
-
-  if (artifact.role === "ci") {
-    const ci = document as CiReport;
-    if (ci.target.name !== bundle.target.name) {
-      issues.push({
-        artifact: artifact.fileName,
-        code: "metadata.target.name",
-        message: `${artifact.fileName} target.name does not match bundle manifest`,
-      });
-    }
-    if (ci.target.rootPath !== bundle.target.rootPath) {
-      issues.push({
-        artifact: artifact.fileName,
-        code: "metadata.target.rootPath",
-        message: `${artifact.fileName} target.rootPath does not match bundle manifest`,
-      });
-    }
+  switch (artifact.role) {
+    case "report":
+      issues.push(...compareReportMetadata(bundle, artifact.fileName, document as ScanReport));
+      break;
+    case "aibom":
+      issues.push(
+        ...compareAibomMetadata(bundle, artifact.fileName, document as AiBillOfMaterials)
+      );
+      break;
+    case "ci":
+      issues.push(...compareCiMetadata(bundle, artifact.fileName, document as CiReport));
+      break;
   }
 
   return issues;
@@ -249,6 +255,195 @@ function metadataSeverity(strict: boolean): VerifySeverity {
   return strict ? "error" : "warning";
 }
 
+interface ArtifactContext {
+  artifact: ScanBundle["artifacts"][number];
+  bundle: ScanBundle;
+  content: string;
+  report: VerifyBundleReport;
+  result: VerifiedArtifact;
+  strict: boolean;
+}
+
+function parseBundleManifest(
+  report: VerifyBundleReport,
+  manifestContent: string
+): ScanBundle | null {
+  let parsedManifest: unknown;
+  try {
+    parsedManifest = JSON.parse(manifestContent);
+  } catch {
+    addIssue(report, "error", {
+      code: "bundle.parse",
+      message: "Failed to parse euconform.bundle.json as JSON",
+    });
+    return null;
+  }
+
+  try {
+    return validateScanBundle(parsedManifest);
+  } catch (error) {
+    addIssue(report, "error", {
+      code: "bundle.invalid",
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
+
+function createArtifactResult(
+  artifact: ScanBundle["artifacts"][number],
+  overrides: Partial<VerifiedArtifact> = {}
+): VerifiedArtifact {
+  return {
+    role: artifact.role,
+    fileName: artifact.fileName,
+    required: artifact.required,
+    schemaVersion: artifact.schemaVersion,
+    hashStatus: "missing",
+    schemaStatus: artifact.role === "summary" ? "skipped" : "invalid",
+    metadataStatus: "skipped",
+    ...overrides,
+  };
+}
+
+function checkHash(ctx: ArtifactContext): void {
+  if (sha256Hex(ctx.content) === ctx.artifact.sha256) {
+    ctx.result.hashStatus = "match";
+  } else {
+    ctx.result.hashStatus = "mismatch";
+    addIssue(ctx.report, metadataSeverity(ctx.strict), {
+      artifact: ctx.artifact.fileName,
+      code: "artifact.sha256",
+      message: `${ctx.artifact.fileName} does not match the SHA-256 recorded in the bundle`,
+    });
+  }
+}
+
+function handleSummaryArtifact(ctx: ArtifactContext): void {
+  ctx.result.schemaStatus = "skipped";
+  ctx.result.metadataStatus = "skipped";
+  if (ctx.artifact.mimeType && ctx.artifact.mimeType !== "text/markdown") {
+    addIssue(ctx.report, metadataSeverity(ctx.strict), {
+      artifact: ctx.artifact.fileName,
+      code: "artifact.mimeType",
+      message: `${ctx.artifact.fileName} has unexpected mimeType '${ctx.artifact.mimeType}'`,
+    });
+  }
+}
+
+function extractSchemaVersion(parsed: unknown): string | undefined {
+  if (!parsed || typeof parsed !== "object") return undefined;
+  const candidate = (parsed as Record<string, unknown>).schemaVersion;
+  return typeof candidate === "string" ? candidate : undefined;
+}
+
+function checkSchemaVersionConsistency(ctx: ArtifactContext, actualSchemaVersion: string): void {
+  if (ctx.artifact.schemaVersion && ctx.artifact.schemaVersion !== actualSchemaVersion) {
+    addIssue(ctx.report, "error", {
+      artifact: ctx.artifact.fileName,
+      code: "artifact.schemaVersion.mismatch",
+      message: `${ctx.artifact.fileName} schemaVersion '${actualSchemaVersion}' does not match manifest '${ctx.artifact.schemaVersion}'`,
+    });
+  }
+
+  const bundleMajor = getSchemaMajorVersion(ctx.bundle.schemaVersion);
+  if (bundleMajor && getSchemaMajorVersion(actualSchemaVersion) !== bundleMajor) {
+    addIssue(ctx.report, "error", {
+      artifact: ctx.artifact.fileName,
+      code: "artifact.schemaVersion.major",
+      message: `${ctx.artifact.fileName} uses schemaVersion '${actualSchemaVersion}' with a different major than the bundle`,
+    });
+  }
+}
+
+function recordMetadataIssues(ctx: ArtifactContext, validatedDocument: JsonArtifact): void {
+  const metadataIssues = compareJsonMetadata(ctx.bundle, ctx.artifact, validatedDocument);
+  if (metadataIssues.length === 0) {
+    ctx.result.metadataStatus = "match";
+    return;
+  }
+  ctx.result.metadataStatus = "mismatch";
+  for (const issue of metadataIssues) {
+    addIssue(ctx.report, metadataSeverity(ctx.strict), issue);
+  }
+}
+
+function verifyJsonArtifact(ctx: ArtifactContext): void {
+  let parsedArtifact: unknown;
+  try {
+    parsedArtifact = JSON.parse(ctx.content);
+  } catch {
+    ctx.result.schemaStatus = "invalid";
+    addIssue(ctx.report, "error", {
+      artifact: ctx.artifact.fileName,
+      code: "artifact.parse",
+      message: `${ctx.artifact.fileName} is not valid JSON`,
+    });
+    return;
+  }
+
+  const actualSchemaVersion = extractSchemaVersion(parsedArtifact);
+  if (!actualSchemaVersion) {
+    ctx.result.schemaStatus = "invalid";
+    addIssue(ctx.report, "error", {
+      artifact: ctx.artifact.fileName,
+      code: "artifact.schemaVersion",
+      message: `${ctx.artifact.fileName} is missing a string schemaVersion`,
+    });
+    return;
+  }
+
+  ctx.result.schemaVersion = actualSchemaVersion;
+  checkSchemaVersionConsistency(ctx, actualSchemaVersion);
+
+  let validatedDocument: JsonArtifact;
+  try {
+    validatedDocument = validateJsonArtifactForRole(ctx.artifact, parsedArtifact);
+    ctx.result.schemaStatus = "valid";
+  } catch (error) {
+    ctx.result.schemaStatus = "invalid";
+    addIssue(ctx.report, "error", {
+      artifact: ctx.artifact.fileName,
+      code: "artifact.invalid",
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
+
+  recordMetadataIssues(ctx, validatedDocument);
+}
+
+async function verifyArtifact(
+  artifact: ScanBundle["artifacts"][number],
+  bundle: ScanBundle,
+  loaded: LoadedBundleInput,
+  report: VerifyBundleReport,
+  strict: boolean
+): Promise<VerifiedArtifact> {
+  const result = createArtifactResult(artifact);
+  const content = await loaded.artifactLoader(artifact.fileName);
+
+  if (content === null) {
+    addIssue(report, "error", {
+      artifact: artifact.fileName,
+      code: "artifact.missing",
+      message: `Referenced artifact '${artifact.fileName}' is missing`,
+    });
+    return result;
+  }
+
+  const ctx: ArtifactContext = { artifact, bundle, content, report, result, strict };
+  checkHash(ctx);
+
+  if (artifact.role === "summary") {
+    handleSummaryArtifact(ctx);
+    return result;
+  }
+
+  verifyJsonArtifact(ctx);
+  return result;
+}
+
 export async function verifyBundleInput(
   inputPath: string,
   options: { strict?: boolean } = {}
@@ -256,25 +451,8 @@ export async function verifyBundleInput(
   const loaded = await loadBundleInput(inputPath);
   const report = createReport(loaded.bundlePath, loaded.inputType);
 
-  let parsedManifest: unknown;
-  try {
-    parsedManifest = JSON.parse(loaded.manifestContent);
-  } catch {
-    addIssue(report, "error", {
-      code: "bundle.parse",
-      message: "Failed to parse euconform.bundle.json as JSON",
-    });
-    return finalizeReport(report);
-  }
-
-  let bundle: ScanBundle;
-  try {
-    bundle = validateScanBundle(parsedManifest);
-  } catch (error) {
-    addIssue(report, "error", {
-      code: "bundle.invalid",
-      message: error instanceof Error ? error.message : String(error),
-    });
+  const bundle = parseBundleManifest(report, loaded.manifestContent);
+  if (!bundle) {
     return finalizeReport(report);
   }
 
@@ -285,133 +463,10 @@ export async function verifyBundleInput(
     target: bundle.target,
   };
 
-  const bundleMajor = getSchemaMajorVersion(bundle.schemaVersion);
+  const strict = Boolean(options.strict);
 
   for (const artifact of bundle.artifacts) {
-    const result: VerifiedArtifact = {
-      role: artifact.role,
-      fileName: artifact.fileName,
-      required: artifact.required,
-      schemaVersion: artifact.schemaVersion,
-      hashStatus: "missing",
-      schemaStatus: artifact.role === "summary" ? "skipped" : "invalid",
-      metadataStatus: "skipped",
-    };
-
-    const content = await loaded.artifactLoader(artifact.fileName);
-    if (content === null) {
-      result.hashStatus = "missing";
-      result.schemaStatus = artifact.role === "summary" ? "skipped" : "invalid";
-      result.metadataStatus = "skipped";
-      report.artifacts.push(result);
-      addIssue(report, "error", {
-        artifact: artifact.fileName,
-        code: "artifact.missing",
-        message: `Referenced artifact '${artifact.fileName}' is missing`,
-      });
-      continue;
-    }
-
-    if (sha256Hex(content) === artifact.sha256) {
-      result.hashStatus = "match";
-    } else {
-      result.hashStatus = "mismatch";
-      addIssue(report, metadataSeverity(Boolean(options.strict)), {
-        artifact: artifact.fileName,
-        code: "artifact.sha256",
-        message: `${artifact.fileName} does not match the SHA-256 recorded in the bundle`,
-      });
-    }
-
-    if (artifact.role === "summary") {
-      result.schemaStatus = "skipped";
-      result.metadataStatus = "skipped";
-      if (artifact.mimeType && artifact.mimeType !== "text/markdown") {
-        addIssue(report, metadataSeverity(Boolean(options.strict)), {
-          artifact: artifact.fileName,
-          code: "artifact.mimeType",
-          message: `${artifact.fileName} has unexpected mimeType '${artifact.mimeType}'`,
-        });
-      }
-      report.artifacts.push(result);
-      continue;
-    }
-
-    let parsedArtifact: unknown;
-    try {
-      parsedArtifact = JSON.parse(content);
-    } catch {
-      result.schemaStatus = "invalid";
-      result.metadataStatus = "skipped";
-      report.artifacts.push(result);
-      addIssue(report, "error", {
-        artifact: artifact.fileName,
-        code: "artifact.parse",
-        message: `${artifact.fileName} is not valid JSON`,
-      });
-      continue;
-    }
-
-    const actualSchemaVersion =
-      parsedArtifact && typeof parsedArtifact === "object"
-        ? ((parsedArtifact as Record<string, unknown>).schemaVersion as string | undefined)
-        : undefined;
-    if (typeof actualSchemaVersion !== "string") {
-      result.schemaStatus = "invalid";
-      result.metadataStatus = "skipped";
-      report.artifacts.push(result);
-      addIssue(report, "error", {
-        artifact: artifact.fileName,
-        code: "artifact.schemaVersion",
-        message: `${artifact.fileName} is missing a string schemaVersion`,
-      });
-      continue;
-    }
-
-    result.schemaVersion = actualSchemaVersion;
-
-    if (artifact.schemaVersion && artifact.schemaVersion !== actualSchemaVersion) {
-      addIssue(report, "error", {
-        artifact: artifact.fileName,
-        code: "artifact.schemaVersion.mismatch",
-        message: `${artifact.fileName} schemaVersion '${actualSchemaVersion}' does not match manifest '${artifact.schemaVersion}'`,
-      });
-    }
-
-    if (bundleMajor && getSchemaMajorVersion(actualSchemaVersion) !== bundleMajor) {
-      addIssue(report, "error", {
-        artifact: artifact.fileName,
-        code: "artifact.schemaVersion.major",
-        message: `${artifact.fileName} uses schemaVersion '${actualSchemaVersion}' with a different major than the bundle`,
-      });
-    }
-
-    let validatedDocument: JsonArtifact;
-    try {
-      validatedDocument = validateJsonArtifactForRole(artifact, parsedArtifact);
-      result.schemaStatus = "valid";
-    } catch (error) {
-      result.schemaStatus = "invalid";
-      result.metadataStatus = "skipped";
-      report.artifacts.push(result);
-      addIssue(report, "error", {
-        artifact: artifact.fileName,
-        code: "artifact.invalid",
-        message: error instanceof Error ? error.message : String(error),
-      });
-      continue;
-    }
-
-    const metadataIssues = compareJsonMetadata(bundle, artifact, validatedDocument);
-    if (metadataIssues.length === 0) {
-      result.metadataStatus = "match";
-    } else {
-      result.metadataStatus = "mismatch";
-      for (const issue of metadataIssues) {
-        addIssue(report, metadataSeverity(Boolean(options.strict)), issue);
-      }
-    }
-
+    const result = await verifyArtifact(artifact, bundle, loaded, report, strict);
     report.artifacts.push(result);
   }
 

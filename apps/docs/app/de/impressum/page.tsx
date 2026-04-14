@@ -12,25 +12,31 @@ export default function ImprintPage() {
     <LegalPage
       locale="de"
       title="Impressum"
-      intro="Pflichtangaben für die Informations- und Projektseite von EuConform. Bitte ersetze die markierten Platzhalter vor einer öffentlichen Veröffentlichung."
+      intro="Pflichtangaben gemäß § 5 DDG für die Informations- und Projektseite von EuConform."
       type="imprint"
     >
       <LegalSection title="Angaben gemäß § 5 DDG">
-        <p>{siteConfig.legal.controllerName}</p>
-        <p>{siteConfig.legal.street}</p>
-        <p>{siteConfig.legal.city}</p>
-        <p>{siteConfig.legal.country}</p>
+        <p>
+          {siteConfig.legal.controllerName}
+          <br />
+          {siteConfig.legal.street}
+          <br />
+          {siteConfig.legal.city}
+        </p>
       </LegalSection>
 
       <LegalSection title="Kontakt">
         <p>E-Mail: {siteConfig.legal.email}</p>
       </LegalSection>
 
-      <LegalSection title="Verantwortlich nach § 18 Abs. 2 MStV">
-        <p>{siteConfig.legal.controllerName}</p>
-        <p>{siteConfig.legal.street}</p>
-        <p>{siteConfig.legal.city}</p>
-        <p>{siteConfig.legal.country}</p>
+      <LegalSection title="Redaktionell verantwortlich">
+        <p>
+          {siteConfig.legal.controllerName}
+          <br />
+          {siteConfig.legal.street}
+          <br />
+          {siteConfig.legal.city}
+        </p>
       </LegalSection>
 
       <LegalSection title="Projektbezug">
@@ -59,6 +65,18 @@ export default function ImprintPage() {
           Rechtsberatung dar.
         </p>
       </LegalSection>
+
+      <p>
+        Quelle:{" "}
+        <a
+          href="https://www.e-recht24.de"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline"
+        >
+          https://www.e-recht24.de
+        </a>
+      </p>
     </LegalPage>
   );
 }

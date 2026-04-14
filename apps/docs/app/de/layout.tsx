@@ -14,6 +14,25 @@ export const metadata: Metadata = {
     template: `%s — ${siteConfig.name}`,
   },
   description: de.meta.description,
+  keywords: [
+    "AI Act",
+    "EU AI Act",
+    "KI-Verordnung",
+    "AI Act Compliance",
+    "KI-Compliance",
+    "Evidence-Engine",
+    "AI BOM",
+    "Open Source",
+    "EuConform",
+    "Structured Data",
+    "KI-Dokumentation",
+  ],
+  robots: {
+    index: true,
+    follow: true,
+    "max-image-preview": "large",
+    "max-snippet": -1,
+  },
   alternates: {
     canonical: "/de",
     languages: {

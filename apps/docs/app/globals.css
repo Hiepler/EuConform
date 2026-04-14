@@ -171,6 +171,71 @@ a {
   }
 
   .surface-panel {
-    box-shadow: 0 16px 36px rgba(20, 29, 44, 0.06);
+    border-radius: 1.1rem;
+    box-shadow: 0 12px 28px rgba(20, 29, 44, 0.06);
+  }
+
+  .surface-panel:hover {
+    transform: none;
+  }
+
+  .mobile-code-block {
+    font-size: 0.68rem;
+    line-height: 1.6;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Reduce float animation amplitude on mobile to prevent clipping */
+  .animate-float-slow {
+    animation: floatSlowMobile 13s ease-in-out infinite;
+  }
+  .animate-float-delay {
+    animation: floatDelayMobile 12s ease-in-out infinite;
+  }
+  .animate-float-fast {
+    animation: floatFastMobile 11s ease-in-out infinite;
+  }
+  .animate-float-reverse {
+    animation: floatReverseMobile 14s ease-in-out infinite;
+  }
+}
+
+@keyframes floatSlowMobile {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--float-rotation, 0deg));
+  }
+  50% {
+    transform: translateY(-5px) rotate(var(--float-rotation, 0deg));
+  }
+}
+
+@keyframes floatDelayMobile {
+  0%,
+  100% {
+    transform: translateY(-2px) rotate(var(--float-rotation, 0deg));
+  }
+  50% {
+    transform: translateY(4px) rotate(var(--float-rotation, 0deg));
+  }
+}
+
+@keyframes floatFastMobile {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--float-rotation, 0deg));
+  }
+  50% {
+    transform: translateY(-7px) rotate(var(--float-rotation, 0deg));
+  }
+}
+
+@keyframes floatReverseMobile {
+  0%,
+  100% {
+    transform: translateY(3px) rotate(var(--float-rotation, 0deg));
+  }
+  50% {
+    transform: translateY(-3px) rotate(var(--float-rotation, 0deg));
   }
 }

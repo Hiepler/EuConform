@@ -76,13 +76,6 @@ export function LegalPage({
             <p className="max-w-3xl text-lg leading-8 text-slate-700">{intro}</p>
           </div>
 
-          <div className="surface-panel border-amber-300/70 bg-[rgba(255,250,239,0.92)] p-5 text-sm leading-7 text-slate-700">
-            <p className="font-semibold text-slate-950">
-              {locale === "de" ? "Vor Veröffentlichung ergänzen" : "Complete before publishing"}
-            </p>
-            <p>{siteConfig.legal.placeholderNotice}</p>
-          </div>
-
           <div className="surface-panel space-y-10 p-8 md:p-10">{children}</div>
 
           <footer className="flex flex-wrap items-center gap-5 border-t border-slate-300/70 pt-8 text-sm text-slate-700">

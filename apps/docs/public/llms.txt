@@ -1,0 +1,39 @@
+# EuConform
+
+> Open infrastructure for AI Act evidence. Offline-first, structured, verifiable.
+
+EuConform is an open-source evidence engine for European AI systems. It generates structured, machine-readable compliance evidence for the EU AI Act — without cloud dependencies, vendor lock-in, or opaque dashboards.
+
+## Core Concept
+
+EuConform scans real codebases and produces verifiable evidence bundles. The workflow is: scan → verify → view. Everything stays local and offline-first.
+
+## The EuConform Evidence Format
+
+The format is a protocol stack with four layers:
+
+- **AI BOM** (`euconform.aibom.v1`): Machine-readable AI inventory — models, runtimes, providers, capabilities.
+- **Report** (`euconform.report.v1`): Compliance signals, gaps, open questions, and recommendations for human review.
+- **CI** (`euconform.ci.v1`): Lightweight enforcement for CI/CD pipelines — fail or warn on evidence thresholds.
+- **Bundle** (`euconform.bundle.v1`): Verifiable manifest with SHA-256 hashes for portable, integrity-aware evidence transport.
+
+## Key Facts
+
+- License: Open source (MIT)
+- Language: TypeScript
+- CLI: `npx @euconform/cli scan ./your-project --zip`
+- No cookies, no analytics, no tracking
+- Designed for providers, deployers, importers, and distributors under the EU AI Act
+
+## Links
+
+- Website: https://euconform.eu
+- GitHub: https://github.com/Hiepler/EuConform
+- Specification: https://euconform.eu/spec
+- German version: https://euconform.eu/de
+
+## Contact
+
+- Benedikt Hiepler
+- Email: info@euconform.eu
+- Gelsenkirchen, Germany

@@ -1,23 +1,27 @@
+function env(key: string, fallback: string): string {
+  return process.env[key] || fallback;
+}
+
+const locales = ["en", "de"] as const;
+
+export type Locale = (typeof locales)[number];
+
 export const siteConfig = {
   url: "https://euconform.eu",
   name: "EuConform",
-  defaultLocale: "en",
-  locales: ["en", "de"],
+  defaultLocale: "en" as Locale,
+  locales,
   githubUrl: "https://github.com/Hiepler/EuConform",
   twitter: "@euconform",
   legal: {
-    controllerName: "Benedikt Hiepler",
-    street: "[Street and number / Straße und Hausnummer ergänzen]",
-    city: "[Postal code and city / PLZ und Ort ergänzen]",
-    country: "Germany",
-    email: "[Email address ergänzen]",
-    hostingProvider: "[Hosting provider ergänzen]",
-    placeholderNotice:
-      "Replace the marked placeholder fields before public deployment. The current values are structure-only, not publish-ready legal information.",
+    controllerName: env("LEGAL_CONTROLLER_NAME", "[LEGAL_CONTROLLER_NAME]"),
+    street: env("LEGAL_STREET", "[LEGAL_STREET]"),
+    city: env("LEGAL_CITY", "[LEGAL_CITY]"),
+    country: env("LEGAL_COUNTRY", "[LEGAL_COUNTRY]"),
+    email: env("LEGAL_EMAIL", "[LEGAL_EMAIL]"),
+    hostingProvider: env("LEGAL_HOSTING_PROVIDER", "[LEGAL_HOSTING_PROVIDER]"),
   },
-} as const;
-
-export type Locale = (typeof siteConfig.locales)[number];
+};
 
 export function legalNoticePath(locale: Locale): string {
   return locale === "de" ? "/de/impressum" : "/legal-notice";

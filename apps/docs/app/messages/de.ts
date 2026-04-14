@@ -13,6 +13,8 @@ export const de: Messages = {
       ecef: "Spec",
       principles: "Prinzipien",
       references: "Referenzprojekte",
+      close: "Menü schließen",
+      openMenu: "Menü öffnen",
     },
     readSpec: "Spec lesen",
     viewGithub: "GitHub öffnen",

@@ -11,6 +11,8 @@ export const en = {
       ecef: "Spec",
       principles: "Principles",
       references: "Reference projects",
+      close: "Close menu",
+      openMenu: "Open menu",
     },
     readSpec: "Read the spec",
     viewGithub: "View on GitHub",

@@ -1,6 +1,12 @@
+import { JsonLd } from "../_components/JsonLd";
 import { LandingPage } from "../_components/LandingPage";
 import { en } from "../messages/en";
 
 export default function Page() {
-  return <LandingPage messages={en} locale="en" />;
+  return (
+    <>
+      <JsonLd locale="en" />
+      <LandingPage messages={en} locale="en" />
+    </>
+  );
 }

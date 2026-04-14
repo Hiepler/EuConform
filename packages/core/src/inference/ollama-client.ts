@@ -54,6 +54,12 @@ export interface OllamaLogProbsResponse extends OllamaGenerateResponse {
   }>;
 }
 
+/** Abstraction for capability caching — localStorage in browser, file-based in CLI */
+export interface CapabilityCache {
+  get(key: string): string | null;
+  set(key: string, value: string): void;
+}
+
 const OLLAMA_BASE_URL = "http://localhost:11434";
 
 /**
@@ -217,11 +223,13 @@ export class OllamaClient {
   private baseUrl: string;
   public readonly model: string;
   private capabilityCache: Map<string, ModelCapabilityCache>;
+  private externalCache: CapabilityCache | null;
 
-  constructor(model: string, baseUrl = OLLAMA_BASE_URL) {
+  constructor(model: string, baseUrl = OLLAMA_BASE_URL, cache?: CapabilityCache) {
     this.baseUrl = baseUrl;
     this.model = model;
     this.capabilityCache = new Map();
+    this.externalCache = cache ?? null;
   }
 
   private isCloudModel(): boolean {
@@ -344,33 +352,36 @@ export class OllamaClient {
   }
 
   /**
-   * Get cached capability result from localStorage
+   * Get cached capability result from localStorage or external cache
    */
   private getCachedCapability(): ModelCapabilityCache | null {
     try {
       const cacheKey = `ollama_supports_logprobs_${this.model}`;
-      const cached = localStorage.getItem(cacheKey);
+      let cached: string | null = null;
+
+      if (this.externalCache) {
+        cached = this.externalCache.get(cacheKey);
+      } else if (typeof localStorage !== "undefined") {
+        cached = localStorage.getItem(cacheKey);
+      }
 
       if (cached) {
         const capability: ModelCapabilityCache = JSON.parse(cached);
-
-        // Check if cache is still valid (24 hours)
         const cacheAge = Date.now() - new Date(capability.testedAt).getTime();
-        const maxAge = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-
-        if (cacheAge < maxAge) {
+        const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+        if (cacheAge < CACHE_TTL) {
           return capability;
         }
       }
-    } catch (error) {
-      console.warn("Failed to read capability cache:", error);
-    }
 
-    return null;
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   /**
-   * Cache capability result in localStorage
+   * Cache capability result in localStorage or external cache
    */
   private setCachedCapability(supports: boolean): void {
     try {
@@ -381,7 +392,12 @@ export class OllamaClient {
         testedAt: new Date().toISOString(),
       };
 
-      localStorage.setItem(cacheKey, JSON.stringify(capability));
+      if (this.externalCache) {
+        this.externalCache.set(cacheKey, JSON.stringify(capability));
+      } else if (typeof localStorage !== "undefined") {
+        localStorage.setItem(cacheKey, JSON.stringify(capability));
+      }
+
       this.capabilityCache.set(this.model, capability);
     } catch (error) {
       console.warn("Failed to cache capability result:", error);

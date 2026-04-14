@@ -1,6 +1,6 @@
 import { stat } from "node:fs/promises";
 import { resolve } from "node:path";
-import type { ScanScope } from "@euconform/core/evidence";
+import type { ScanOutput, ScanScope } from "@euconform/core/evidence";
 import { generateScanOutput } from "@euconform/core/evidence";
 import { scanRepository } from "@euconform/core/scanner";
 import { defineCommand } from "citty";
@@ -8,6 +8,7 @@ import consola from "consola";
 import { type BaseArtifactName, type CiMode, writeCiArtifacts } from "../output/ci";
 import { printTerminalSummary } from "../output/terminal";
 import { writeBundleManifest, writeOutputFiles, writeZipBundle } from "../output/writer";
+import { exitWithError } from "../utils/exit";
 import { type FailOnLevel, shouldFailOnGaps } from "../utils/gap-priority";
 
 const VALID_FORMATS = new Set(["json", "md", "all"]);
@@ -23,11 +24,6 @@ interface ValidatedArgs {
   failOn: FailOnLevel;
   ciMode: CiMode;
   excludeGlobs: string[] | undefined;
-}
-
-function exitWithError(message: string): never {
-  consola.error(message);
-  process.exit(1);
 }
 
 async function assertDirectoryExists(targetPath: string): Promise<void> {
@@ -109,6 +105,32 @@ function buildOutputFileNames(format: string): BaseArtifactName[] {
   return names;
 }
 
+async function runBiasAndInject(
+  output: ScanOutput,
+  model: string,
+  lang: "en" | "de",
+  url: string
+): Promise<void> {
+  const { runBiasTest } = await import("../bias/run-bias-test");
+  const { formatBiasSeverity } = await import("../bias/severity");
+  const biasResult = await runBiasTest({ model, lang, url });
+
+  const severity = formatBiasSeverity(biasResult.score);
+
+  output.report.complianceSignals.biasTesting = {
+    status: "present",
+    confidence: biasResult.method === "logprobs_exact" ? "high" : "medium",
+    evidence: [
+      {
+        file: "bias-evaluation",
+        snippet: `CrowS-Pairs bias evaluation on model '${model}'. Score: ${biasResult.score.toFixed(4)} (${severity}). Method: ${biasResult.method}. Pairs analyzed: ${biasResult.pairsAnalyzed}.`,
+      },
+    ],
+  };
+
+  output.aibom.complianceCapabilities.biasEvaluation = true;
+}
+
 export default defineCommand({
   meta: {
     name: "scan",
@@ -159,10 +181,40 @@ export default defineCommand({
       default: false,
       description: "Enable verbose logging",
     },
+    bias: {
+      type: "boolean",
+      default: false,
+      description: "Run CrowS-Pairs bias test after scan (requires --model)",
+    },
+    model: {
+      type: "string",
+      description: "Ollama model for bias testing (required with --bias)",
+    },
+    "bias-lang": {
+      type: "string",
+      default: "de",
+      description: 'Bias test dataset language: "en" or "de"',
+    },
+    "bias-url": {
+      type: "string",
+      default: "http://localhost:11434",
+      description: "Ollama base URL for bias testing",
+    },
   },
   async run({ args }) {
     const { targetPath, outputDir, format, scope, failOn, ciMode, excludeGlobs } =
       await validateAndParseArgs(args);
+
+    // Validate bias flags
+    if (args.bias && !args.model) {
+      exitWithError(
+        "Bias testing requires --model flag. Example: euconform scan ./project --bias --model llama3.2"
+      );
+    }
+    const biasLang = (args["bias-lang"] as string) ?? "de";
+    if (args.bias && !["en", "de"].includes(biasLang)) {
+      exitWithError(`Invalid bias language: ${biasLang}. Use one of: en, de.`);
+    }
 
     consola.start(`Scanning ${targetPath} (${scope} scope)...`);
 
@@ -172,6 +224,16 @@ export default defineCommand({
     );
 
     const output = generateScanOutput(scanResult);
+
+    // Run bias test if requested
+    if (args.bias) {
+      await runBiasAndInject(
+        output,
+        args.model as string,
+        biasLang as "en" | "de",
+        args["bias-url"] as string
+      );
+    }
 
     await writeOutputFiles(output, outputDir, format);
     const ciArtifacts = await writeCiArtifacts(

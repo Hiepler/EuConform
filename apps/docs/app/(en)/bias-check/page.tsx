@@ -214,6 +214,18 @@ export default function BiasCheckPage() {
               </article>
             ))}
           </div>
+          <div className="mt-8 sm:mt-10 md:mt-12">
+            <div className="rounded-2xl border border-slate-300/80 bg-[linear-gradient(180deg,#fbfaf7_0%,#f0ece3_100%)] p-4 shadow-[0_24px_70px_rgba(20,29,44,0.08)] sm:rounded-[2rem] sm:p-6">
+              <div className="flex items-center gap-2 pb-4 sm:pb-5">
+                <span className="h-2 w-2 rounded-full bg-[#d48b7e] sm:h-2.5 sm:w-2.5" />
+                <span className="h-2 w-2 rounded-full bg-[#d9b861] sm:h-2.5 sm:w-2.5" />
+                <span className="h-2 w-2 rounded-full bg-[#80ad7c] sm:h-2.5 sm:w-2.5" />
+              </div>
+              <pre className="overflow-x-auto font-mono text-xs leading-6 text-slate-900 sm:text-sm sm:leading-7">
+                {m.cta.cliCommand}
+              </pre>
+            </div>
+          </div>
           <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
             <ButtonLink href={siteConfig.githubUrl} external>
               {m.cta.links.webapp}

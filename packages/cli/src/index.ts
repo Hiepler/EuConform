@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { defineCommand, runMain } from "citty";
+import biasCommand from "./commands/bias";
 import scanCommand from "./commands/scan";
 import verifyCommand from "./commands/verify";
 
@@ -12,6 +13,7 @@ const main = defineCommand({
   subCommands: {
     scan: scanCommand,
     verify: verifyCommand,
+    bias: biasCommand,
   },
 });
 

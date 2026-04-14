@@ -7,4 +7,5 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   noExternal: ["@euconform/core"],
+  external: ["sharp", "@xenova/transformers", "onnxruntime-node"],
 });

@@ -197,20 +197,25 @@ export const en = {
     },
     cta: {
       eyebrow: "Try it yourself",
-      headline: "Run bias testing in the compliance wizard",
-      body: "Bias testing runs inside the EuConform web app as part of the compliance wizard. Choose between browser-based inference (Transformers.js, zero setup) or connect a local Ollama instance for larger models. Results flow directly into your PDF export and Annex IV JSON report.",
+      headline: "Two ways to run bias testing",
+      body: "Use the CLI for headless and CI workflows, or the web app for an interactive compliance wizard. Both use the same CrowS-Pairs engine and produce auditable results.",
       engines: [
         {
-          title: "Browser Inference",
+          title: "CLI + Ollama",
           description:
-            "Runs directly in your browser via Transformers.js. No installation, no server — open the app and start testing.",
+            "Run bias tests from the terminal against any local Ollama model. Results are written as structured JSON and Markdown — ready for CI pipelines and evidence bundles.",
         },
         {
-          title: "Ollama (Local LLM)",
+          title: "Web App",
           description:
-            "Connect to a local Ollama instance for testing larger models like Llama 3.2+ or Mistral 7B+. Supports log-probability scoring for gold-standard accuracy.",
+            "Interactive compliance wizard with browser-based inference (Transformers.js) or Ollama. Results flow into PDF exports and Annex IV JSON reports.",
         },
       ],
+      cliCommand: `# Standalone bias test
+euconform bias llama3.2 --lang de
+
+# Or integrated into a scan
+euconform scan ./your-project --bias --model llama3.2`,
       links: {
         webapp: "Open the web app",
         spec: "Read the spec",

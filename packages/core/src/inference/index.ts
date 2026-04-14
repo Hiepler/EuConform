@@ -132,7 +132,12 @@ export async function createAutoInferenceClient(preferredModel?: string): Promis
 }
 
 // Re-export types and utilities
-export { detectOllama, listOllamaModels, OllamaClient } from "./ollama-client";
+export {
+  detectOllama,
+  listOllamaModels,
+  OllamaClient,
+  type CapabilityCache,
+} from "./ollama-client";
 export { BrowserInference, checkWebGPU, BROWSER_MODELS } from "./browser-inference";
 export {
   InferenceFactory,

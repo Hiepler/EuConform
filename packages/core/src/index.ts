@@ -147,6 +147,7 @@ export {
   type UserPreferences,
   type EnhancedModelSelectionState,
   type CapabilityDetectionStatus,
+  type CapabilityCache,
 } from "./inference";
 
 // Inference Factory
@@ -173,3 +174,6 @@ export {
   calculateLatencyBias,
   validateCrowsPairsDataset,
 } from "./metrics";
+
+// Datasets
+export { loadCrowsPairsDataset } from "./datasets/crows-pairs";

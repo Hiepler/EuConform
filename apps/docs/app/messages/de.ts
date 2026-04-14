@@ -200,20 +200,25 @@ export const de: Messages = {
     },
     cta: {
       eyebrow: "Selbst ausprobieren",
-      headline: "Bias-Testing im Compliance-Wizard ausführen",
-      body: "Bias-Testing läuft in der EuConform Web-App als Teil des Compliance-Wizards. Wähle zwischen Browser-basierter Inferenz (Transformers.js, kein Setup) oder verbinde eine lokale Ollama-Instanz für größere Modelle. Ergebnisse fließen direkt in deinen PDF-Export und Annex-IV-JSON-Report.",
+      headline: "Zwei Wege für Bias-Testing",
+      body: "Nutze das CLI für headless- und CI-Workflows oder die Web-App für einen interaktiven Compliance-Wizard. Beide verwenden dieselbe CrowS-Pairs-Engine und produzieren auditierbare Ergebnisse.",
       engines: [
         {
-          title: "Browser-Inferenz",
+          title: "CLI + Ollama",
           description:
-            "Läuft direkt im Browser über Transformers.js. Keine Installation, kein Server — App öffnen und testen.",
+            "Bias-Tests direkt vom Terminal gegen jedes lokale Ollama-Modell ausführen. Ergebnisse als strukturiertes JSON und Markdown — bereit für CI-Pipelines und Evidence-Bundles.",
         },
         {
-          title: "Ollama (Lokales LLM)",
+          title: "Web-App",
           description:
-            "Verbinde eine lokale Ollama-Instanz zum Testen größerer Modelle wie Llama 3.2+ oder Mistral 7B+. Unterstützt Log-Probability-Scoring für Gold-Standard-Genauigkeit.",
+            "Interaktiver Compliance-Wizard mit Browser-basierter Inferenz (Transformers.js) oder Ollama. Ergebnisse fließen in PDF-Exporte und Annex-IV-JSON-Reports.",
         },
       ],
+      cliCommand: `# Standalone Bias-Test
+euconform bias llama3.2 --lang de
+
+# Oder integriert in einen Scan
+euconform scan ./your-project --bias --model llama3.2`,
       links: {
         webapp: "Web-App öffnen",
         spec: "Spec lesen",

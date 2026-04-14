@@ -61,6 +61,9 @@ export function LandingPage({ messages, locale }: { messages: Messages; locale: 
             <a href="#principles" className="transition hover:text-slate-950">
               {messages.header.nav.principles}
             </a>
+            <a href="#bias-check" className="transition hover:text-slate-950">
+              {messages.header.nav.biasCheck}
+            </a>
             <a href="#reference-projects" className="transition hover:text-slate-950">
               {messages.header.nav.references}
             </a>
@@ -171,6 +174,26 @@ export function LandingPage({ messages, locale }: { messages: Messages; locale: 
                 </p>
               </article>
             ))}
+          </div>
+        </section>
+
+        {/* --- Bias Check --- */}
+        <section id="bias-check" className="py-16 sm:py-20 md:py-24">
+          <SectionIntro label={messages.biasCheck.eyebrow} title={messages.biasCheck.title}>
+            <p>{messages.biasCheck.body}</p>
+          </SectionIntro>
+          <div className="mt-8 grid gap-4 sm:mt-10 sm:gap-6 md:mt-12 md:grid-cols-3">
+            {messages.biasCheck.cards.map((card) => (
+              <article key={card.title} className="surface-panel flex flex-col gap-3 p-5 sm:p-6">
+                <h3 className="text-base font-semibold text-slate-950 sm:text-lg">{card.title}</h3>
+                <p className="text-[13px] leading-7 text-slate-700 sm:text-sm">{card.body}</p>
+              </article>
+            ))}
+          </div>
+          <div className="mt-6 sm:mt-8">
+            <ButtonLink href="/bias-check" secondary>
+              {messages.biasCheck.cta}
+            </ButtonLink>
           </div>
         </section>
 
@@ -362,6 +385,9 @@ export function LandingPage({ messages, locale }: { messages: Messages; locale: 
               />
               <Link href={ecefHref} className="transition hover:text-slate-950">
                 {messages.footer.links.ecef}
+              </Link>
+              <Link href="/bias-check" className="transition hover:text-slate-950">
+                {messages.footer.links.biasCheck}
               </Link>
               <a
                 href={`${siteConfig.githubUrl}/tree/main/examples`}

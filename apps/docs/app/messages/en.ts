@@ -11,6 +11,7 @@ export const en = {
       ecef: "Spec",
       principles: "Principles",
       references: "Reference projects",
+      biasCheck: "Bias Check",
       close: "Close menu",
       openMenu: "Open menu",
     },
@@ -78,6 +79,144 @@ export const en = {
           "Inspect the same artifacts in the browser and continue with human classification where legal interpretation still matters.",
       },
     ],
+  },
+  biasCheck: {
+    eyebrow: "Bias Testing",
+    title: "The open-source bias testing pipeline built for the AI Act.",
+    body: "EuConform includes a CrowS-Pairs bias testing pipeline that runs entirely offline. Measure social bias in language models with log-probability scoring — no proprietary tool, no cloud dependency, auditable results.",
+    cards: [
+      {
+        title: "CrowS-Pairs",
+        body: "Scientifically grounded methodology (Nangia et al., 2020) for measuring stereotypical bias in language models.",
+      },
+      {
+        title: "~100 German Pairs",
+        body: "Culturally adapted for the German and European context — filling a gap that US-centric benchmarks leave open.",
+      },
+      {
+        title: "Log-Probability Scoring",
+        body: "Gold-standard metric comparing token probabilities between stereotypical and anti-stereotypical sentences.",
+      },
+    ],
+    cta: "Learn more about bias testing",
+  },
+  biasCheckPage: {
+    meta: {
+      title: "Bias Testing — EuConform",
+      description:
+        "Measure social bias in language models with CrowS-Pairs — offline, open-source, and built for the EU AI Act. Log-probability scoring, German-adapted pairs, and auditable evidence.",
+    },
+    hero: {
+      eyebrow: "Bias Testing",
+      headline: "Bias testing built for European AI systems.",
+      body: "The only open-source bias testing pipeline with culturally adapted European sentence pairs. Based on CrowS-Pairs (Nangia et al., 2020) with ~100 German-adapted pairs covering gender, religion, nationality, and socioeconomic bias. Runs locally on your infrastructure — no cloud dependency, auditable AI Act evidence.",
+    },
+    methodology: {
+      eyebrow: "How it works",
+      headline: "CrowS-Pairs methodology",
+      body: "CrowS-Pairs (Nangia et al., 2020) measures social bias by comparing how a language model scores stereotypical vs. anti-stereotypical sentence pairs. EuConform calculates the mean log-probability difference across all pairs to produce a single, interpretable bias score.",
+      metric: "Score = mean(logprob_stereo − logprob_anti)",
+      thresholds: [
+        { label: "> 0.1", description: "Light Bias" },
+        { label: "> 0.3", description: "Strong Bias" },
+      ],
+      methods: [
+        {
+          method: "Log-Probability",
+          indicator: "Gold Standard",
+          description:
+            "Direct token probability comparison via browser inference or Ollama with logprobs support.",
+        },
+        {
+          method: "Latency Fallback",
+          indicator: "Approximation",
+          description: "Timing-based heuristic for Ollama instances without logprobs support.",
+        },
+      ],
+    },
+    germanAdaptation: {
+      eyebrow: "European context",
+      headline: "~100 pairs adapted for German culture",
+      body: "The original CrowS-Pairs dataset reflects US-centric stereotypes. EuConform includes ~100 sentence pairs adapted for the German and European cultural context — covering gender, religion, nationality, and socioeconomic bias categories relevant to EU deployment scenarios.",
+      highlight:
+        "No other open-source bias testing tool offers culturally adapted European sentence pairs.",
+    },
+    integration: {
+      eyebrow: "Compliance integration",
+      headline: "From bias scores to auditable evidence",
+      body: "Bias test results are not standalone metrics — they flow into the EuConform evidence stack, connecting measurable bias data to AI Act obligations.",
+      items: [
+        {
+          title: "AI BOM",
+          description:
+            "The biasEvaluation capability flag in the AIBOM schema records whether bias testing was performed and is verifiable.",
+        },
+        {
+          title: "Report",
+          description:
+            "Bias methodology, scores, and thresholds appear in the compliance report with full traceability to the test run.",
+        },
+        {
+          title: "CI Gate",
+          description:
+            "CI thresholds can fail pipelines when bias scores exceed acceptable levels — enforcement before deployment.",
+        },
+      ],
+      aiActNote:
+        "AI Act Article 10 requires providers to examine training data for biases. Article 15 mandates accuracy and robustness testing. Without structured bias evidence, these obligations create audit gaps that are difficult to close retroactively. EuConform makes bias testing auditable from the start.",
+    },
+    exampleOutput: {
+      eyebrow: "What you get",
+      headline: "Structured bias evidence in your compliance report",
+      body: "Bias test results are captured as structured JSON in your EuConform report — machine-readable, diffable, and ready for auditors.",
+      json: `{
+  "biasTesting": {
+    "status": "assessed",
+    "confidence": "medium",
+    "evidence": [
+      "CrowS-Pairs bias evaluation performed",
+      "Score: 0.08 (below light-bias threshold)",
+      "Method: log-probability (gold standard)",
+      "Dataset: 100 German-adapted pairs"
+    ],
+    "biasMethodology": {
+      "method": "logprobs_exact",
+      "dataset": "crows_pairs_de",
+      "score": 0.08,
+      "threshold": 0.1
+    }
+  }
+}`,
+    },
+    ethics: {
+      eyebrow: "Ethics statement",
+      body: "The stereotype pairs in the CrowS-Pairs dataset are used solely for scientific evaluation and do not reflect the opinions of the developers. Individual pairs are not displayed in the UI to avoid reinforcing harmful stereotypes — only aggregated metrics are shown.",
+      citation:
+        "Nangia, N., Vania, C., Bhalerao, R., & Bowman, S. R. (2020). CrowS-Pairs: A Challenge Dataset for Measuring Social Biases in Masked Language Models.",
+      license: "Dataset licensed under CC BY-SA 4.0.",
+    },
+    cta: {
+      eyebrow: "Try it yourself",
+      headline: "Run bias testing in the compliance wizard",
+      body: "Bias testing runs inside the EuConform web app as part of the compliance wizard. Choose between browser-based inference (Transformers.js, zero setup) or connect a local Ollama instance for larger models. Results flow directly into your PDF export and Annex IV JSON report.",
+      engines: [
+        {
+          title: "Browser Inference",
+          description:
+            "Runs directly in your browser via Transformers.js. No installation, no server — open the app and start testing.",
+        },
+        {
+          title: "Ollama (Local LLM)",
+          description:
+            "Connect to a local Ollama instance for testing larger models like Llama 3.2+ or Mistral 7B+. Supports log-probability scoring for gold-standard accuracy.",
+        },
+      ],
+      links: {
+        webapp: "Open the web app",
+        spec: "Read the spec",
+        github: "View on GitHub",
+      },
+    },
   },
   ecef: {
     eyebrow: "The Format",
@@ -218,6 +357,7 @@ export const en = {
     trustNote: "No cookies. No analytics. No tracking.",
     links: {
       ecef: "Spec",
+      biasCheck: "Bias Check",
       examples: "Examples",
       github: "GitHub",
       legalNotice: "Legal Notice",

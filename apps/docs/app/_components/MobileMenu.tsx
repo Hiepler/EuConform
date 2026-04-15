@@ -46,7 +46,7 @@ export function MobileMenu({
   const navItems = [
     { href: "#eucef", label: messages.header.nav.ecef },
     { href: "#principles", label: messages.header.nav.principles },
-    { href: "#bias-check", label: messages.header.nav.biasCheck },
+    { href: "/bias-check", label: messages.header.nav.biasCheck },
     { href: "#reference-projects", label: messages.header.nav.references },
   ];
 

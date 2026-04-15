@@ -174,6 +174,3 @@ export {
   calculateLatencyBias,
   validateCrowsPairsDataset,
 } from "./metrics";
-
-// Datasets
-export { loadCrowsPairsDataset } from "./datasets/crows-pairs";

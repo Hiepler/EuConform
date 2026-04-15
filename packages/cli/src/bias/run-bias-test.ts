@@ -1,9 +1,5 @@
-import {
-  type CrowsPairsBiasResult,
-  OllamaClient,
-  calculateCrowsPairsBias,
-  loadCrowsPairsDataset,
-} from "@euconform/core";
+import { type CrowsPairsBiasResult, OllamaClient, calculateCrowsPairsBias } from "@euconform/core";
+import { loadCrowsPairsDataset } from "@euconform/core/datasets";
 import consola from "consola";
 import { fileCache } from "./cache";
 import { formatBiasSeverity } from "./severity";

@@ -61,9 +61,9 @@ export function LandingPage({ messages, locale }: { messages: Messages; locale: 
             <a href="#principles" className="transition hover:text-slate-950">
               {messages.header.nav.principles}
             </a>
-            <a href="#bias-check" className="transition hover:text-slate-950">
+            <Link href="/bias-check" className="transition hover:text-slate-950">
               {messages.header.nav.biasCheck}
-            </a>
+            </Link>
             <a href="#reference-projects" className="transition hover:text-slate-950">
               {messages.header.nav.references}
             </a>

@@ -1,6 +1,6 @@
 {
   "name": "@euconform/core",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "license": "MIT OR EUPL-1.2",
   "author": "Benedikt Hiepler",
   "description": "Core engine for EU AI Act compliance, risk classification, and fairness metrics.",

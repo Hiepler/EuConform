@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3000",
-    "sync-ecef": "mkdir -p public/schemas/ecef && cp ../../docs/ecef/schemas/*.schema.json public/schemas/ecef/ && rm -rf public/schemas/ecef/examples && cp -r ../../docs/ecef/examples public/schemas/ecef/examples",
-    "build": "pnpm sync-ecef && next build",
+    "sync-spec": "mkdir -p public/schemas/spec && cp ../../docs/spec/schemas/*.schema.json public/schemas/spec/ && rm -rf public/schemas/spec/examples && cp -r ../../docs/spec/examples public/schemas/spec/examples",
+    "build": "pnpm sync-spec && next build",
     "start": "next start",
     "check-types": "next typegen && tsc --noEmit"
   },

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "euconform.bundle.v1",
+  "generatedAt": "2026-04-10T12:10:00.000Z",
+  "tool": {
+    "name": "euconform",
+    "version": "0.1.0"
+  },
+  "target": {
+    "name": "rag-assistant-example",
+    "rootPath": "/examples/rag-assistant"
+  },
+  "artifacts": [
+    {
+      "role": "report",
+      "fileName": "euconform.report.json",
+      "sha256": "f2adb537bab75b84d6a5219f8018c87ca721cd985c4075c826804a531f7e6f59",
+      "schemaVersion": "euconform.report.v1",
+      "required": true
+    },
+    {
+      "role": "aibom",
+      "fileName": "euconform.aibom.json",
+      "sha256": "50fd2a4ef2a392a8eff7ddf4b9d2a6d389b0b12d6d94da864095c222e35eaf3d",
+      "schemaVersion": "euconform.aibom.v1",
+      "required": false
+    },
+    {
+      "role": "ci",
+      "fileName": "euconform.ci.json",
+      "sha256": "dec5f06f9e0ba1efd60778ea217293acaa626944d3e3678cd40c97fddf47128d",
+      "schemaVersion": "euconform.ci.v1",
+      "required": false
+    }
+  ]
+}

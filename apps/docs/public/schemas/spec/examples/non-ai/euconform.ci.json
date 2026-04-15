@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "euconform.ci.v1",
+  "generatedAt": "2026-04-10T12:15:00.000Z",
+  "target": {
+    "name": "example-static-site",
+    "rootPath": "/examples/non-ai"
+  },
+  "status": {
+    "failOn": "none",
+    "failing": false,
+    "gapCounts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "openQuestions": 0
+  },
+  "aiDetected": false,
+  "scanScope": "production",
+  "artifacts": ["euconform.report.json", "euconform.aibom.json", "euconform.ci.json"],
+  "complianceOverview": [
+    { "area": "Disclosure", "status": "unknown", "confidence": "low" },
+    { "area": "Bias Testing", "status": "unknown", "confidence": "low" },
+    { "area": "Reporting & Exports", "status": "unknown", "confidence": "low" },
+    { "area": "Logging & Monitoring", "status": "unknown", "confidence": "low" },
+    { "area": "Human Oversight", "status": "unknown", "confidence": "low" },
+    { "area": "Data Governance", "status": "unknown", "confidence": "low" },
+    { "area": "Incident Reporting", "status": "unknown", "confidence": "low" }
+  ],
+  "topGaps": []
+}

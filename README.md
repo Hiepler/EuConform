@@ -133,7 +133,7 @@ Verify a bundle manifest, extracted bundle directory, or ZIP archive:
 node packages/cli/dist/index.js verify .euconform/euconform.bundle.json
 ```
 
-### Try ECEF In 10 Minutes
+### Try The Format In 10 Minutes
 
 If you want to evaluate the current adoption path as an OSS builder, use one of the
 reference projects in [`examples/`](examples/README.md):
@@ -145,10 +145,10 @@ pnpm --filter @euconform/cli build
 # 2. Scan a reference project
 node packages/cli/dist/index.js scan examples/ollama-chatbot \
   --scope production \
-  --output /tmp/ecef-ollama
+  --output /tmp/euconform-ollama
 
 # 3. Verify the generated bundle
-node packages/cli/dist/index.js verify /tmp/ecef-ollama/euconform.bundle.json
+node packages/cli/dist/index.js verify /tmp/euconform-ollama/euconform.bundle.json
 
 # 4. Open the web app and import the generated artifacts
 pnpm dev
@@ -213,16 +213,16 @@ In GitHub Actions, EuConform emits:
 - a markdown step summary
 - machine-readable CI artifacts: `euconform.ci.json` and `euconform.ci-summary.md`
 
-### EuConform Evidence Format (ECEF)
+### EuConform Evidence Format
 
-The scanner artifacts are defined as the **EuConform Evidence Format (ECEF)**, an open specification for offline AI Act evidence exchange.
+The scanner artifacts are defined as the **EuConform Evidence Format**, an open specification for offline AI Act evidence exchange.
 
 - `euconform.report.v1` captures compliance evidence, gaps, and open questions
 - `euconform.aibom.v1` is the AI Bill of Materials (AI BOM) inventory layer
 - `euconform.ci.v1` captures CI thresholds, status, and top findings
 - `euconform.bundle.v1` binds artifact sets into a portable, integrity-aware manifest
 
-Stage 1 documentation, schemas, and example artifacts live in [docs/ecef/README.md](docs/ecef/README.md).
+Stage 1 documentation, schemas, and example artifacts live in [docs/spec/README.md](docs/spec/README.md).
 Reference source projects for OSS builders live in [examples/README.md](examples/README.md).
 
 ### Bias Testing Methodology

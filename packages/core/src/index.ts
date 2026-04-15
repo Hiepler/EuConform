@@ -147,6 +147,7 @@ export {
   type UserPreferences,
   type EnhancedModelSelectionState,
   type CapabilityDetectionStatus,
+  type CapabilityCache,
 } from "./inference";
 
 // Inference Factory

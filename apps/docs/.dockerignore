@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+*.md
+!README.md
+.env.local
+.env.*.local
+.DS_Store
+coverage
+playwright-report

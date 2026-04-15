@@ -1,6 +1,6 @@
 import { stat } from "node:fs/promises";
 import { resolve } from "node:path";
-import type { ScanScope } from "@euconform/core/evidence";
+import type { ScanOutput, ScanScope } from "@euconform/core/evidence";
 import { generateScanOutput } from "@euconform/core/evidence";
 import { scanRepository } from "@euconform/core/scanner";
 import { defineCommand } from "citty";
@@ -8,6 +8,7 @@ import consola from "consola";
 import { type BaseArtifactName, type CiMode, writeCiArtifacts } from "../output/ci";
 import { printTerminalSummary } from "../output/terminal";
 import { writeBundleManifest, writeOutputFiles, writeZipBundle } from "../output/writer";
+import { exitWithError } from "../utils/exit";
 import { type FailOnLevel, shouldFailOnGaps } from "../utils/gap-priority";
 
 const VALID_FORMATS = new Set(["json", "md", "all"]);
@@ -25,56 +26,62 @@ interface ValidatedArgs {
   excludeGlobs: string[] | undefined;
 }
 
-async function validateAndParseArgs(args: Record<string, unknown>): Promise<ValidatedArgs> {
-  const targetPath = resolve(args.path as string);
-
+async function assertDirectoryExists(targetPath: string): Promise<void> {
   try {
     const info = await stat(targetPath);
     if (!info.isDirectory()) {
-      consola.error(`Not a directory: ${targetPath}`);
-      process.exit(1);
+      exitWithError(`Not a directory: ${targetPath}`);
     }
   } catch {
-    consola.error(`Path does not exist: ${targetPath}`);
-    process.exit(1);
+    exitWithError(`Path does not exist: ${targetPath}`);
   }
+}
+
+function validateEnumArgs(args: {
+  format: string;
+  scope: ScanScope;
+  failOn: FailOnLevel;
+  ciMode: CiMode;
+  zip: unknown;
+}): void {
+  if (!VALID_FORMATS.has(args.format)) {
+    exitWithError(`Invalid format: ${args.format}. Use one of: json, md, all.`);
+  }
+  if (!VALID_SCOPES.has(args.scope)) {
+    exitWithError(`Invalid scope: ${args.scope}. Use one of: production, all.`);
+  }
+  if (!FAIL_ON_LEVELS.includes(args.failOn)) {
+    exitWithError(
+      `Invalid fail-on level: ${args.failOn}. Use one of: ${FAIL_ON_LEVELS.join(", ")}.`
+    );
+  }
+  if (!VALID_CI_MODES.has(args.ciMode)) {
+    exitWithError(`Invalid ci mode: ${args.ciMode}. Use one of: off, github.`);
+  }
+  if (args.zip && args.format === "md") {
+    exitWithError('Cannot create euconform.bundle.zip when format is "md" only.');
+  }
+}
+
+function parseExcludeGlobs(raw: unknown): string[] | undefined {
+  if (!raw) return undefined;
+  return Array.isArray(raw) ? (raw as string[]) : [raw as string];
+}
+
+async function validateAndParseArgs(args: Record<string, unknown>): Promise<ValidatedArgs> {
+  const targetPath = resolve(args.path as string);
+  await assertDirectoryExists(targetPath);
 
   const format = (args.format as string) ?? "all";
   const scope = ((args.scope as string) ?? "production") as ScanScope;
   const failOn = ((args["fail-on"] as string) ?? "none") as FailOnLevel;
   const ciMode = ((args.ci as string) ?? "off") as CiMode;
 
-  if (!VALID_FORMATS.has(format)) {
-    consola.error(`Invalid format: ${format}. Use one of: json, md, all.`);
-    process.exit(1);
-  }
-  if (!VALID_SCOPES.has(scope)) {
-    consola.error(`Invalid scope: ${scope}. Use one of: production, all.`);
-    process.exit(1);
-  }
-  if (!FAIL_ON_LEVELS.includes(failOn)) {
-    consola.error(`Invalid fail-on level: ${failOn}. Use one of: ${FAIL_ON_LEVELS.join(", ")}.`);
-    process.exit(1);
-  }
-  if (!VALID_CI_MODES.has(ciMode)) {
-    consola.error(`Invalid ci mode: ${ciMode}. Use one of: off, github.`);
-    process.exit(1);
-  }
-  if (args.zip && format === "md") {
-    consola.error('Cannot create euconform.bundle.zip when format is "md" only.');
-    process.exit(1);
-  }
+  validateEnumArgs({ format, scope, failOn, ciMode, zip: args.zip });
 
   if (args.verbose) {
     consola.level = 4;
   }
-
-  const rawExclude = args["exclude-glob"];
-  const excludeGlobs = rawExclude
-    ? Array.isArray(rawExclude)
-      ? (rawExclude as string[])
-      : [rawExclude as string]
-    : undefined;
 
   return {
     targetPath,
@@ -83,7 +90,7 @@ async function validateAndParseArgs(args: Record<string, unknown>): Promise<Vali
     scope,
     failOn,
     ciMode,
-    excludeGlobs,
+    excludeGlobs: parseExcludeGlobs(args["exclude-glob"]),
   };
 }
 
@@ -96,6 +103,32 @@ function buildOutputFileNames(format: string): BaseArtifactName[] {
     names.push("euconform.summary.md");
   }
   return names;
+}
+
+async function runBiasAndInject(
+  output: ScanOutput,
+  model: string,
+  lang: "en" | "de",
+  url: string
+): Promise<void> {
+  const { runBiasTest } = await import("../bias/run-bias-test");
+  const { formatBiasSeverity } = await import("../bias/severity");
+  const biasResult = await runBiasTest({ model, lang, url });
+
+  const severity = formatBiasSeverity(biasResult.score);
+
+  output.report.complianceSignals.biasTesting = {
+    status: "present",
+    confidence: biasResult.method === "logprobs_exact" ? "high" : "medium",
+    evidence: [
+      {
+        file: "bias-evaluation",
+        snippet: `CrowS-Pairs bias evaluation on model '${model}'. Score: ${biasResult.score.toFixed(4)} (${severity}). Method: ${biasResult.method}. Pairs analyzed: ${biasResult.pairsAnalyzed}.`,
+      },
+    ],
+  };
+
+  output.aibom.complianceCapabilities.biasEvaluation = true;
 }
 
 export default defineCommand({
@@ -148,10 +181,40 @@ export default defineCommand({
       default: false,
       description: "Enable verbose logging",
     },
+    bias: {
+      type: "boolean",
+      default: false,
+      description: "Run CrowS-Pairs bias test after scan (requires --model)",
+    },
+    model: {
+      type: "string",
+      description: "Ollama model for bias testing (required with --bias)",
+    },
+    "bias-lang": {
+      type: "string",
+      default: "de",
+      description: 'Bias test dataset language: "en" or "de"',
+    },
+    "bias-url": {
+      type: "string",
+      default: "http://localhost:11434",
+      description: "Ollama base URL for bias testing",
+    },
   },
   async run({ args }) {
     const { targetPath, outputDir, format, scope, failOn, ciMode, excludeGlobs } =
       await validateAndParseArgs(args);
+
+    // Validate bias flags
+    if (args.bias && !args.model) {
+      exitWithError(
+        "Bias testing requires --model flag. Example: euconform scan ./project --bias --model llama3.2"
+      );
+    }
+    const biasLang = (args["bias-lang"] as string) ?? "de";
+    if (args.bias && !["en", "de"].includes(biasLang)) {
+      exitWithError(`Invalid bias language: ${biasLang}. Use one of: en, de.`);
+    }
 
     consola.start(`Scanning ${targetPath} (${scope} scope)...`);
 
@@ -161,6 +224,16 @@ export default defineCommand({
     );
 
     const output = generateScanOutput(scanResult);
+
+    // Run bias test if requested
+    if (args.bias) {
+      await runBiasAndInject(
+        output,
+        args.model as string,
+        biasLang as "en" | "de",
+        args["bias-url"] as string
+      );
+    }
 
     await writeOutputFiles(output, outputDir, format);
     const ciArtifacts = await writeCiArtifacts(

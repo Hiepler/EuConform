@@ -1,10 +1,11 @@
 {
   "name": "@euconform/core",
-  "version": "1.3.0",
+  "version": "1.2.0",
   "license": "MIT OR EUPL-1.2",
   "author": "Benedikt Hiepler",
   "description": "Core engine for EU AI Act compliance, risk classification, and fairness metrics.",
   "type": "module",
+  "sideEffects": false,
   "keywords": ["eu-ai-act", "compliance", "ai-risk", "fairness", "responsible-ai", "audit"],
   "homepage": "https://github.com/Hiepler/EuConform#readme",
   "bugs": {
@@ -21,7 +22,8 @@
     "./fairness-metrics": "./src/fairness-metrics.ts",
     "./types": "./src/types.ts",
     "./scanner": "./src/scanner/index.ts",
-    "./evidence": "./src/evidence/index.ts"
+    "./evidence": "./src/evidence/index.ts",
+    "./datasets": "./src/datasets/crows-pairs.ts"
   },
   "scripts": {
     "build": "tsc",

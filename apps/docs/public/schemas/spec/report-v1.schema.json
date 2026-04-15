@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://euconform.eu/schemas/spec/report-v1.schema.json",
+  "title": "EuConform Evidence Format Report v1",
+  "description": "Stage 1 compliance evidence document produced by EuConform scan.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "tool",
+    "target",
+    "aiFootprint",
+    "complianceSignals",
+    "assessmentHints",
+    "gaps",
+    "recommendationSummary"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "euconform.report.v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tool": {
+      "type": "object",
+      "required": ["name", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "required": ["rootPath", "name", "repoType", "detectedStack"],
+      "additionalProperties": false,
+      "properties": {
+        "rootPath": { "type": "string" },
+        "name": { "type": "string" },
+        "repoType": {
+          "enum": [
+            "web-app",
+            "api-server",
+            "cli-tool",
+            "library",
+            "chatbot",
+            "ml-pipeline",
+            "unknown"
+          ]
+        },
+        "detectedStack": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "aiFootprint": {
+      "type": "object",
+      "required": ["usesAI", "inferenceModes", "providerHints", "ragHints"],
+      "additionalProperties": false,
+      "properties": {
+        "usesAI": { "type": "boolean" },
+        "inferenceModes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "providerHints": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "ragHints": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "complianceSignals": {
+      "type": "object",
+      "required": [
+        "disclosure",
+        "biasTesting",
+        "reportingExports",
+        "loggingMonitoring",
+        "humanOversight",
+        "dataGovernance",
+        "incidentReporting"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "disclosure": { "$ref": "#/$defs/complianceSignalGroup" },
+        "biasTesting": { "$ref": "#/$defs/complianceSignalGroup" },
+        "reportingExports": { "$ref": "#/$defs/complianceSignalGroup" },
+        "loggingMonitoring": { "$ref": "#/$defs/complianceSignalGroup" },
+        "humanOversight": { "$ref": "#/$defs/complianceSignalGroup" },
+        "dataGovernance": { "$ref": "#/$defs/complianceSignalGroup" },
+        "incidentReporting": { "$ref": "#/$defs/complianceSignalGroup" }
+      }
+    },
+    "assessmentHints": {
+      "type": "object",
+      "required": ["possibleModes", "riskIndicators", "gpaiIndicators", "openQuestions"],
+      "additionalProperties": false,
+      "properties": {
+        "possibleModes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "riskIndicators": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/assessmentHint" }
+        },
+        "gpaiIndicators": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/assessmentHint" }
+        },
+        "openQuestions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/scanGap" }
+    },
+    "recommendationSummary": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "signalEvidence": {
+      "type": "object",
+      "required": ["file", "snippet"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string" },
+        "line": { "type": "integer" },
+        "snippet": { "type": "string" },
+        "provenance": {
+          "enum": [
+            "runtime",
+            "config",
+            "root-docs",
+            "docs",
+            "test",
+            "fixture",
+            "example",
+            "generated",
+            "tooling"
+          ]
+        }
+      }
+    },
+    "complianceSignalGroup": {
+      "type": "object",
+      "required": ["status", "confidence", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "enum": ["present", "partial", "absent", "unknown"] },
+        "confidence": { "enum": ["high", "medium", "low"] },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/signalEvidence" }
+        }
+      }
+    },
+    "assessmentHint": {
+      "type": "object",
+      "required": ["hint", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "hint": { "type": "string" },
+        "articleRef": { "type": "string" },
+        "confidence": { "enum": ["high", "medium", "low"] }
+      }
+    },
+    "scanGap": {
+      "type": "object",
+      "required": ["id", "title", "description", "priority", "status", "basis", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "priority": { "enum": ["critical", "high", "medium", "low"] },
+        "status": { "enum": ["missing", "partial"] },
+        "basis": { "const": "scanner-rule" },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/signalEvidence" }
+        }
+      }
+    }
+  }
+}

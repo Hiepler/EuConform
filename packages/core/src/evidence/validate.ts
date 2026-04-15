@@ -152,8 +152,89 @@ export function validateCiReport(data: unknown): CiReport {
 const VALID_BUNDLE_ROLES = new Set(["report", "aibom", "ci", "summary"]);
 const SHA256_HEX = /^[a-f0-9]{64}$/;
 
-export function validateScanBundle(data: unknown): ScanBundle {
-  const obj = assertObject(data, "bundle");
+interface BundleArtifactFields {
+  role: string;
+  fileName: string;
+  sha256: string;
+  required: boolean;
+  declaredSchemaVersion: string | undefined;
+  mimeType: string | undefined;
+}
+
+function readBundleArtifactFields(
+  raw: Record<string, unknown>,
+  index: number
+): BundleArtifactFields {
+  const scope = "bundle artifact";
+  const role = requireField(raw, "role", "string", scope, `artifacts[${index}].role`) as string;
+  const fileName = requireField(
+    raw,
+    "fileName",
+    "string",
+    scope,
+    `artifacts[${index}].fileName`
+  ) as string;
+  const sha256 = requireField(
+    raw,
+    "sha256",
+    "string",
+    scope,
+    `artifacts[${index}].sha256`
+  ) as string;
+  const required = requireField(
+    raw,
+    "required",
+    "boolean",
+    scope,
+    `artifacts[${index}].required`
+  ) as boolean;
+
+  const declaredSchemaVersion = raw.schemaVersion;
+  if (declaredSchemaVersion !== undefined && typeof declaredSchemaVersion !== "string") {
+    throw new Error(`Invalid bundle artifact: '${fileName}' has non-string schemaVersion`);
+  }
+  if (raw.mimeType !== undefined && typeof raw.mimeType !== "string") {
+    throw new Error(`Invalid bundle artifact: '${fileName}' has non-string mimeType`);
+  }
+
+  return {
+    role,
+    fileName,
+    sha256,
+    required,
+    declaredSchemaVersion: declaredSchemaVersion as string | undefined,
+    mimeType: raw.mimeType as string | undefined,
+  };
+}
+
+function assertBundleArtifactIntegrity(
+  fields: BundleArtifactFields,
+  seenRoles: Set<string>,
+  seenFiles: Set<string>,
+  bundleMajor: string | null
+): void {
+  const { role, fileName, sha256, declaredSchemaVersion } = fields;
+
+  if (!VALID_BUNDLE_ROLES.has(role)) {
+    throw new Error(`Invalid bundle artifact: unsupported role '${role}'`);
+  }
+  if (!SHA256_HEX.test(sha256)) {
+    throw new Error(`Invalid bundle artifact: '${fileName}' has invalid sha256`);
+  }
+  if (seenRoles.has(role)) {
+    throw new Error(`Invalid bundle artifact: duplicate role '${role}'`);
+  }
+  if (seenFiles.has(fileName)) {
+    throw new Error(`Invalid bundle artifact: duplicate fileName '${fileName}'`);
+  }
+  if (declaredSchemaVersion && bundleMajor && majorVersion(declaredSchemaVersion) !== bundleMajor) {
+    throw new Error(
+      `Invalid bundle artifact: '${fileName}' uses schemaVersion '${declaredSchemaVersion}' with a different major than the bundle`
+    );
+  }
+}
+
+function validateBundleHeader(obj: Record<string, unknown>): void {
   requireSchemaVersion(obj, "euconform.bundle.v1", "bundle");
   requireField(obj, "generatedAt", "string", "bundle");
 
@@ -164,6 +245,11 @@ export function validateScanBundle(data: unknown): ScanBundle {
   const target = requireField(obj, "target", "object", "bundle") as Record<string, unknown>;
   requireField(target, "name", "string", "bundle", "target.name");
   requireField(target, "rootPath", "string", "bundle", "target.rootPath");
+}
+
+export function validateScanBundle(data: unknown): ScanBundle {
+  const obj = assertObject(data, "bundle");
+  validateBundleHeader(obj);
 
   const artifacts = requireField(obj, "artifacts", "array", "bundle") as unknown[];
   if (artifacts.length === 0) {
@@ -176,71 +262,15 @@ export function validateScanBundle(data: unknown): ScanBundle {
   let hasRequiredReport = false;
 
   for (let index = 0; index < artifacts.length; index++) {
-    const artifact = assertObject(artifacts[index], "bundle artifact");
-    const role = requireField(
-      artifact,
-      "role",
-      "string",
-      "bundle artifact",
-      `artifacts[${index}].role`
-    ) as string;
-    const fileName = requireField(
-      artifact,
-      "fileName",
-      "string",
-      "bundle artifact",
-      `artifacts[${index}].fileName`
-    ) as string;
-    const sha256 = requireField(
-      artifact,
-      "sha256",
-      "string",
-      "bundle artifact",
-      `artifacts[${index}].sha256`
-    ) as string;
-    const required = requireField(
-      artifact,
-      "required",
-      "boolean",
-      "bundle artifact",
-      `artifacts[${index}].required`
-    ) as boolean;
+    const raw = assertObject(artifacts[index], "bundle artifact");
+    const fields = readBundleArtifactFields(raw, index);
+    assertBundleArtifactIntegrity(fields, seenRoles, seenFiles, bundleMajor);
 
-    if (!VALID_BUNDLE_ROLES.has(role)) {
-      throw new Error(`Invalid bundle artifact: unsupported role '${role}'`);
-    }
-    if (!SHA256_HEX.test(sha256)) {
-      throw new Error(`Invalid bundle artifact: '${fileName}' has invalid sha256`);
-    }
-    if (seenRoles.has(role)) {
-      throw new Error(`Invalid bundle artifact: duplicate role '${role}'`);
-    }
-    if (seenFiles.has(fileName)) {
-      throw new Error(`Invalid bundle artifact: duplicate fileName '${fileName}'`);
-    }
-    seenRoles.add(role);
-    seenFiles.add(fileName);
+    seenRoles.add(fields.role);
+    seenFiles.add(fields.fileName);
 
-    const declaredSchemaVersion = artifact.schemaVersion;
-    if (declaredSchemaVersion !== undefined && typeof declaredSchemaVersion !== "string") {
-      throw new Error(`Invalid bundle artifact: '${fileName}' has non-string schemaVersion`);
-    }
-    if (artifact.mimeType !== undefined && typeof artifact.mimeType !== "string") {
-      throw new Error(`Invalid bundle artifact: '${fileName}' has non-string mimeType`);
-    }
-
-    if (
-      declaredSchemaVersion &&
-      bundleMajor &&
-      majorVersion(declaredSchemaVersion) !== bundleMajor
-    ) {
-      throw new Error(
-        `Invalid bundle artifact: '${fileName}' uses schemaVersion '${declaredSchemaVersion}' with a different major than the bundle`
-      );
-    }
-
-    if (role === "report") {
-      hasRequiredReport = required;
+    if (fields.role === "report") {
+      hasRequiredReport = fields.required;
     }
   }
 
@@ -265,6 +295,6 @@ export function validateEcefJsonDocument(
     case "euconform.bundle.v1":
       return validateScanBundle(data);
     default:
-      throw new Error(`Unsupported ECEF schemaVersion '${schemaVersion}'`);
+      throw new Error(`Unsupported EuConform Evidence Format schemaVersion '${schemaVersion}'`);
   }
 }

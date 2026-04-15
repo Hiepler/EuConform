@@ -1,5 +1,12 @@
 # @euconform/cli
 
+## 1.1.1
+
+### Patch Changes
+
+- Updated dependencies [24bff85]
+  - @euconform/core@1.4.0
+
 ## 1.1.0
 
 ### Minor Changes

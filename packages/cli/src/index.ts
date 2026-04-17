@@ -2,6 +2,7 @@
 
 import { defineCommand, runMain } from "citty";
 import biasCommand from "./commands/bias";
+import importCommand from "./commands/import";
 import scanCommand from "./commands/scan";
 import validateCommand from "./commands/validate";
 import verifyCommand from "./commands/verify";
@@ -16,6 +17,7 @@ const main = defineCommand({
     validate: validateCommand,
     verify: verifyCommand,
     bias: biasCommand,
+    import: importCommand,
   },
 });
 

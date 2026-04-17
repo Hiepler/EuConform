@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import addFormats from "ajv-formats";
@@ -24,10 +24,15 @@ export interface ValidateOptions {
   strict?: boolean;
 }
 
-// Resolve schema directory relative to this file at runtime
+// Resolve schema directory relative to this file at runtime.
+// When bundled into packages/cli/dist, schemas are copied to dist/schemas/.
+// When running from source at packages/core/src/validation/, schemas are at ../../../../docs/spec/schemas.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const schemasDir = resolve(__dirname, "../../../../docs/spec/schemas");
+const _bundledSchemasDir = resolve(__dirname, "schemas");
+const schemasDir = existsSync(_bundledSchemasDir)
+  ? _bundledSchemasDir
+  : resolve(__dirname, "../../../../docs/spec/schemas");
 
 function loadSchema(filename: string): object {
   const content = readFileSync(resolve(schemasDir, filename), "utf-8");

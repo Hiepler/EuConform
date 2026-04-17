@@ -232,7 +232,7 @@ export interface BomComponent {
   kind: BomComponentKind;
   name: string;
   version?: string;
-  source: "package.json" | "lock-file" | "code" | "config" | "docs";
+  source: "package.json" | "lock-file" | "code" | "config" | "docs" | "sbom-import";
 }
 
 export interface AiBillOfMaterials {

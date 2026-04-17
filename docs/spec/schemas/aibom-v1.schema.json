@@ -47,7 +47,7 @@
           "name": { "type": "string" },
           "version": { "type": "string" },
           "source": {
-            "enum": ["package.json", "lock-file", "code", "config", "docs"]
+            "enum": ["package.json", "lock-file", "code", "config", "docs", "sbom-import"]
           }
         }
       }

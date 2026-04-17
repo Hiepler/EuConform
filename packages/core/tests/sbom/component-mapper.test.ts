@@ -42,8 +42,8 @@ describe("component-mapper", () => {
       };
       const result = mapComponent(comp);
       expect(result).not.toBeNull();
-      expect(result!.kind).toBe("model");
-      expect(result!.confidence).toBe("high");
+      expect(result?.kind).toBe("model");
+      expect(result?.confidence).toBe("high");
     });
 
     it("maps component with data array containing ml type to dataset", () => {
@@ -54,8 +54,8 @@ describe("component-mapper", () => {
       };
       const result = mapComponent(comp);
       expect(result).not.toBeNull();
-      expect(result!.kind).toBe("dataset");
-      expect(result!.confidence).toBe("high");
+      expect(result?.kind).toBe("dataset");
+      expect(result?.confidence).toBe("high");
     });
   });
 
@@ -67,8 +67,8 @@ describe("component-mapper", () => {
       };
       const result = mapComponent(comp);
       expect(result).not.toBeNull();
-      expect(result!.kind).toBe("model");
-      expect(result!.confidence).toBe("high");
+      expect(result?.kind).toBe("model");
+      expect(result?.confidence).toBe("high");
     });
 
     it("maps data type to dataset", () => {
@@ -78,8 +78,8 @@ describe("component-mapper", () => {
       };
       const result = mapComponent(comp);
       expect(result).not.toBeNull();
-      expect(result!.kind).toBe("dataset");
-      expect(result!.confidence).toBe("medium");
+      expect(result?.kind).toBe("dataset");
+      expect(result?.confidence).toBe("medium");
     });
 
     it("maps platform type to inference-provider", () => {
@@ -89,8 +89,8 @@ describe("component-mapper", () => {
       };
       const result = mapComponent(comp);
       expect(result).not.toBeNull();
-      expect(result!.kind).toBe("inference-provider");
-      expect(result!.confidence).toBe("medium");
+      expect(result?.kind).toBe("inference-provider");
+      expect(result?.confidence).toBe("medium");
     });
 
     it("maps service type to inference-provider", () => {
@@ -100,8 +100,8 @@ describe("component-mapper", () => {
       };
       const result = mapComponent(comp);
       expect(result).not.toBeNull();
-      expect(result!.kind).toBe("inference-provider");
-      expect(result!.confidence).toBe("medium");
+      expect(result?.kind).toBe("inference-provider");
+      expect(result?.confidence).toBe("medium");
     });
   });
 
@@ -114,8 +114,8 @@ describe("component-mapper", () => {
       };
       const result = mapComponent(comp);
       expect(result).not.toBeNull();
-      expect(result!.kind).toBe("ai-framework");
-      expect(result!.confidence).toBe("high");
+      expect(result?.kind).toBe("ai-framework");
+      expect(result?.confidence).toBe("high");
     });
 
     it("maps known library-type package", () => {
@@ -126,8 +126,8 @@ describe("component-mapper", () => {
       };
       const result = mapComponent(comp);
       expect(result).not.toBeNull();
-      expect(result!.kind).toBe("inference-provider");
-      expect(result!.confidence).toBe("high");
+      expect(result?.kind).toBe("inference-provider");
+      expect(result?.confidence).toBe("high");
     });
   });
 
@@ -158,7 +158,7 @@ describe("component-mapper", () => {
         name: "test-model",
       };
       const result = mapComponent(comp);
-      expect(result!.source).toBe("sbom-import");
+      expect(result?.source).toBe("sbom-import");
     });
   });
 });

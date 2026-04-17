@@ -1,0 +1,17 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "components": [
+    { "type": "library", "name": "express", "version": "4.18.2" },
+    { "type": "library", "name": "lodash", "version": "4.17.21" },
+    { "type": "library", "name": "openai", "version": "1.12.0" },
+    { "type": "framework", "name": "transformers", "version": "4.38.0" },
+    { "type": "library", "name": "chromadb", "version": "0.4.22" },
+    { "type": "library", "name": "langchain", "version": "0.1.0" },
+    { "type": "machine-learning-model", "name": "whisper-large-v3", "version": "1.0.0" },
+    { "type": "library", "name": "typescript", "version": "5.3.0" },
+    { "type": "library", "name": "react", "version": "18.2.0" },
+    { "type": "library", "name": "axios", "version": "1.6.0" }
+  ]
+}

@@ -182,3 +182,10 @@ export {
   type ValidationError,
   type SchemaType,
 } from "./validation";
+
+// SBOM
+export {
+  importCycloneDx,
+  type CycloneDxImportResult,
+  type ImportSummary,
+} from "./sbom";

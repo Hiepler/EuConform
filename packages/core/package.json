@@ -24,7 +24,8 @@
     "./scanner": "./src/scanner/index.ts",
     "./evidence": "./src/evidence/index.ts",
     "./datasets": "./src/datasets/crows-pairs.ts",
-    "./validation": "./src/validation/index.ts"
+    "./validation": "./src/validation/index.ts",
+    "./sbom": "./src/sbom/index.ts"
   },
   "scripts": {
     "build": "tsc",

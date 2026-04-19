@@ -48,7 +48,6 @@ export const KNOWN_AI_PACKAGES: Record<string, BomComponentKind> = {
   mistralai: "inference-provider",
   cohere: "inference-provider",
   "google-generativeai": "inference-provider",
-  "@google/generative-ai": "inference-provider",
   ai21: "inference-provider",
 
   // Vector Stores
@@ -86,12 +85,58 @@ export const KNOWN_AI_PACKAGES: Record<string, BomComponentKind> = {
   "guardrails-ai": "tool",
   lmql: "tool",
   outlines: "tool",
+
+  // Scoped packages (npm)
+  "@langchain/core": "tool",
+  "@langchain/openai": "tool",
+  "@langchain/community": "tool",
+  "@langchain/anthropic": "tool",
+  "@huggingface/transformers": "ai-framework",
+  "@huggingface/inference": "inference-provider",
+  "@google/generative-ai": "inference-provider",
+  "@anthropic-ai/sdk": "inference-provider",
+  "@pinecone-database/pinecone": "vector-store",
+  "@qdrant/js-client-rest": "vector-store",
+};
+
+export const KNOWN_AI_SCOPES: Record<string, BomComponentKind> = {
+  "@langchain": "tool",
+  "@huggingface": "ai-framework",
+  "@tensorflow": "ai-framework",
+  "@anthropic-ai": "inference-provider",
+  "@pinecone-database": "vector-store",
+  "@qdrant": "vector-store",
 };
 
 /**
  * Look up a package name in the known AI packages registry.
+ * For scoped packages, tries:
+ *   1. Exact match (e.g. @langchain/core)
+ *   2. Scope match via KNOWN_AI_SCOPES (e.g. @langchain -> tool)
+ *   3. Strip scope, check bare name (e.g. @huggingface/transformers -> transformers)
  * Returns the BomComponentKind if found, null otherwise.
  */
 export function lookupKnownPackage(name: string): BomComponentKind | null {
-  return KNOWN_AI_PACKAGES[name.toLowerCase()] ?? null;
+  const lower = name.toLowerCase();
+
+  // 1. Exact match
+  const exact = KNOWN_AI_PACKAGES[lower];
+  if (exact) return exact;
+
+  // Scoped package handling
+  if (lower.startsWith("@") && lower.includes("/")) {
+    const scopeEnd = lower.indexOf("/");
+    const scope = lower.slice(0, scopeEnd);
+    const bareName = lower.slice(scopeEnd + 1);
+
+    // 2. Known AI scope
+    const scopeKind = KNOWN_AI_SCOPES[scope];
+    if (scopeKind) return scopeKind;
+
+    // 3. Strip scope, check bare name
+    const bareKind = KNOWN_AI_PACKAGES[bareName];
+    if (bareKind) return bareKind;
+  }
+
+  return null;
 }

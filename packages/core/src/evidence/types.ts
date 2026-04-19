@@ -235,6 +235,12 @@ export interface BomComponent {
   source: "package.json" | "lock-file" | "code" | "config" | "docs" | "sbom-import";
 }
 
+export interface AibomMetadata {
+  importSource: "cyclonedx" | "spdx" | "manual";
+  importTool?: string;
+  originalTimestamp?: string;
+}
+
 export interface AiBillOfMaterials {
   schemaVersion: "euconform.aibom.v1";
   generatedAt: string;
@@ -251,6 +257,7 @@ export interface AiBillOfMaterials {
     humanReviewFlow: boolean;
     incidentHandling: boolean;
   };
+  metadata?: AibomMetadata;
 }
 
 // ---------------------------------------------------------------------------

@@ -20,7 +20,7 @@ export default defineCommand({
       type: "string",
       default: "all",
       description:
-        'Component scope filter: "all" includes everything, "production" excludes optional-scope components',
+        'Component scope filter: "all" includes everything, "production" excludes optional and excluded-scope components',
     },
     json: {
       type: "boolean",
@@ -50,7 +50,7 @@ export default defineCommand({
 
     let result: ReturnType<typeof importCycloneDx>;
     try {
-      result = importCycloneDx(data, { scope });
+      result = importCycloneDx(data, { scope, sourcePath: inputPath });
     } catch (error) {
       consola.error(error instanceof Error ? error.message : String(error));
       process.exit(1);
@@ -62,10 +62,7 @@ export default defineCommand({
           {
             aibom: result.aibom,
             summary: result.summary,
-            validation: {
-              valid: result.validation.valid,
-              errors: result.validation.errors,
-            },
+            validation: { valid: result.validation.valid, errors: result.validation.errors },
           },
           null,
           2
@@ -76,13 +73,25 @@ export default defineCommand({
 
     // Human-readable output
     const fileName = basename(inputPath);
+    const src = result.summary.source;
+    const sourceLabel = src.importTool
+      ? `${fileName} (CycloneDX ${src.specVersion}, ${src.importTool})`
+      : `${fileName} (CycloneDX ${src.specVersion})`;
+
     consola.log("");
     consola.log("CycloneDX Import");
     consola.log("\u2500".repeat(40));
-    consola.log(`Source:      ${fileName} (CycloneDX)`);
-    consola.log(
-      `Components:  ${result.summary.totalComponents} total \u2192 ${result.summary.aiRelevant} AI-relevant, ${result.summary.skipped} skipped`
-    );
+    consola.log(`Source:      ${sourceLabel}`);
+    consola.log(`Project:     ${result.aibom.project.name}`);
+
+    let componentsLine = `Components:  ${result.summary.totalComponents} total \u2192 ${result.summary.aiRelevant} AI-relevant, ${result.summary.skipped} skipped`;
+    if (result.summary.filteredByScope > 0) {
+      componentsLine += `, ${result.summary.filteredByScope} scope-filtered`;
+    }
+    if (result.summary.duplicatesRemoved > 0) {
+      componentsLine += `, ${result.summary.duplicatesRemoved} duplicates removed`;
+    }
+    consola.log(componentsLine);
     consola.log("");
 
     for (const [kind, count] of Object.entries(result.summary.byKind).sort((a, b) => b[1] - a[1])) {

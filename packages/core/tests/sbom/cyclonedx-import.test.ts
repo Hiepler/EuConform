@@ -114,6 +114,43 @@ describe("cyclonedx-import", () => {
       expect(result.aibom.components).toHaveLength(1);
       expect(result.aibom.components[0].name).toBe("prod-model");
     });
+
+    it("excludes excluded-scope components when scope is production", () => {
+      const bom = {
+        bomFormat: "CycloneDX",
+        specVersion: "1.5",
+        components: [
+          { type: "machine-learning-model", name: "prod-model", scope: "required" },
+          { type: "machine-learning-model", name: "excluded-model", scope: "excluded" },
+        ],
+      };
+      const result = importCycloneDx(bom, { scope: "production" });
+      expect(result.aibom.components).toHaveLength(1);
+      expect(result.aibom.components[0].name).toBe("prod-model");
+    });
+
+    it("includes components without scope in production mode", () => {
+      const bom = {
+        bomFormat: "CycloneDX",
+        specVersion: "1.5",
+        components: [{ type: "machine-learning-model", name: "no-scope-model" }],
+      };
+      const result = importCycloneDx(bom, { scope: "production" });
+      expect(result.aibom.components).toHaveLength(1);
+    });
+  });
+
+  describe("complianceCapabilities", () => {
+    it("sets all capabilities to false for imports", () => {
+      const result = importCycloneDx(minimalBom);
+      const caps = result.aibom.complianceCapabilities;
+      expect(caps.biasEvaluation).toBe(false);
+      expect(caps.jsonExport).toBe(false);
+      expect(caps.pdfExport).toBe(false);
+      expect(caps.loggingInfrastructure).toBe(false);
+      expect(caps.humanReviewFlow).toBe(false);
+      expect(caps.incidentHandling).toBe(false);
+    });
   });
 
   describe("component ID generation", () => {

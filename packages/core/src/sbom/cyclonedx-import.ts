@@ -38,7 +38,7 @@ export function importCycloneDx(sbom: unknown, options?: ImportOptions): Cyclone
   const byKind: Record<string, number> = {};
 
   for (const comp of components) {
-    if (scope === "production" && comp.scope === "optional") {
+    if (scope === "production" && (comp.scope === "optional" || comp.scope === "excluded")) {
       continue;
     }
 
@@ -66,7 +66,7 @@ export function importCycloneDx(sbom: unknown, options?: ImportOptions): Cyclone
 
   const totalAfterScope =
     scope === "production"
-      ? components.filter((c) => c.scope !== "optional").length
+      ? components.filter((c) => c.scope !== "optional" && c.scope !== "excluded").length
       : components.length;
 
   const aibom: AiBillOfMaterials = {
@@ -79,7 +79,7 @@ export function importCycloneDx(sbom: unknown, options?: ImportOptions): Cyclone
     components: mapped,
     complianceCapabilities: {
       biasEvaluation: false,
-      jsonExport: true,
+      jsonExport: false,
       pdfExport: false,
       loggingInfrastructure: false,
       humanReviewFlow: false,

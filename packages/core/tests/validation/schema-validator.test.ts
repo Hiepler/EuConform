@@ -157,6 +157,29 @@ describe("schema-validator", () => {
       });
       expect(result.valid).toBe(true);
     });
+
+    it("accepts aibom with metadata field", () => {
+      const result = validate({
+        schemaVersion: "euconform.aibom.v1",
+        generatedAt: "2026-01-01T00:00:00Z",
+        project: { name: "test", rootPath: "/test" },
+        components: [],
+        complianceCapabilities: {
+          biasEvaluation: false,
+          jsonExport: false,
+          pdfExport: false,
+          loggingInfrastructure: false,
+          humanReviewFlow: false,
+          incidentHandling: false,
+        },
+        metadata: {
+          importSource: "cyclonedx",
+          importTool: "cdxgen 10.0.0",
+          originalTimestamp: "2026-04-19T10:00:00Z",
+        },
+      });
+      expect(result.valid).toBe(true);
+    });
   });
 
   describe("ValidationResult structure", () => {

@@ -127,7 +127,7 @@ export function importCycloneDx(sbom: unknown, options?: ImportOptions): Cyclone
       humanReviewFlow: false,
       incidentHandling: false,
     },
-    ...(metadata ? { metadata } : {}),
+    metadata,
   };
 
   const validation = validate(aibom);
@@ -165,18 +165,17 @@ function resolveProjectName(
   return { projectName: "sbom-import", projectNameSource: "fallback" };
 }
 
-function extractMetadata(bom: CycloneDxBom): AibomMetadata | undefined {
-  const meta: AibomMetadata = { importSource: "cyclonedx" };
-
+function extractToolString(bom: CycloneDxBom): string | undefined {
   const tool = bom.metadata?.tools?.[0];
-  if (tool?.name) {
-    meta.importTool = tool.version ? `${tool.name} ${tool.version}` : tool.name;
-  }
+  if (!tool?.name) return undefined;
+  return tool.version ? `${tool.name} ${tool.version}` : tool.name;
+}
 
-  if (bom.metadata?.timestamp) {
-    meta.originalTimestamp = bom.metadata.timestamp;
-  }
-
+function extractMetadata(bom: CycloneDxBom): AibomMetadata {
+  const meta: AibomMetadata = { importSource: "cyclonedx" };
+  const importTool = extractToolString(bom);
+  if (importTool) meta.importTool = importTool;
+  if (bom.metadata?.timestamp) meta.originalTimestamp = bom.metadata.timestamp;
   return meta;
 }
 
@@ -189,16 +188,9 @@ function extractSourceInfo(
     specVersion: bom.specVersion,
     projectNameSource,
   };
-
-  const tool = bom.metadata?.tools?.[0];
-  if (tool?.name) {
-    info.importTool = tool.version ? `${tool.name} ${tool.version}` : tool.name;
-  }
-
-  if (bom.metadata?.timestamp) {
-    info.originalTimestamp = bom.metadata.timestamp;
-  }
-
+  const importTool = extractToolString(bom);
+  if (importTool) info.importTool = importTool;
+  if (bom.metadata?.timestamp) info.originalTimestamp = bom.metadata.timestamp;
   return info;
 }
 

@@ -81,6 +81,7 @@ const SOURCE_PRIORITY: Record<BomComponent["source"], number> = {
   config: 4,
   code: 3,
   "lock-file": 2,
+  "sbom-import": 2,
   docs: 1,
 };
 

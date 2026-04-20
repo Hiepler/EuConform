@@ -1,12 +1,12 @@
 <h1 align="center">EuConform</h1>
 
 <p align="center">
-  <strong>🇪🇺 Open-Source EU AI Act Compliance Tool</strong>
+  <strong>🇪🇺 Open-Source Evidence Toolkit For AI Compliance</strong>
 </p>
 
 <p align="center">
-  Classify risk levels • Detect algorithmic bias • Generate compliance reports<br>
-  <em>100% offline • GDPR-by-design • WCAG 2.2 AA accessible</em>
+  Open evidence format • Local bias evaluation • Schema validation • CycloneDX interoperability<br>
+  <em>Offline-first • Privacy-preserving • Reusable artifacts • WCAG 2.2 AA accessible</em>
 </p>
 
 <p align="center">
@@ -34,6 +34,10 @@
   </a>
 </p>
 
+<p align="center">
+  EuConform defines an open evidence format for AI compliance and provides the tools to produce, validate, and empirically evaluate it — offline and vendor-independent.
+</p>
+
 ---
 
 > [!IMPORTANT]
@@ -59,16 +63,28 @@
 
 | Feature | Description |
 |---------|-------------|
-| 🎯 **Risk Classification** | Interactive quiz implementing EU AI Act Article 5 (prohibited), Article 6 + Annex III (high-risk) |
-| 📊 **Bias Detection** | CrowS-Pairs methodology with log-probability analysis for scientific bias measurement |
-| 📄 **PDF Reports** | Generate Annex IV-compliant technical documentation entirely in-browser |
+| 🧾 **Open Evidence Format** | Produce portable `report`, `aibom`, `ci`, and `bundle` artifacts as inspectable JSON documents |
+| 🧪 **Local Bias Evaluation** | CrowS-Pairs-based model evaluation with log-probability and latency fallback — reproducible, offline, no vendor dependency |
+| ✅ **Schema Validation** | Validate EuConform JSON documents against the published schemas with `euconform validate` |
+| 📦 **Bundle Verification** | Verify manifest, directory, or ZIP bundle integrity before handing artifacts to CI, reviewers, or auditors |
 | 🚦 **Compliance CI Gate** | Turn `euconform scan` into GitHub-native annotations, CI summaries, and machine-readable artifacts |
-| 🌐 **100% Offline** | All processing happens client-side using transformers.js (WebGPU) |
-| 🔒 **Privacy-First** | Zero tracking, no cookies, no external fonts – your data never leaves your browser |
-| 📤 **Custom Test Suites** | Upload your own CSV/JSON test cases for domain-specific bias evaluation |
+| 🎯 **Risk Classification** | Interactive quiz implementing EU AI Act Article 5 (prohibited), Article 6 + Annex III (high-risk) |
+| 🔄 **CycloneDX Interoperability** | Import external CycloneDX SBOMs into the EuConform AI BOM layer as an interoperability bridge |
+| 🌐 **Offline-First** | Core evidence workflows stay local and inspectable instead of depending on vendor dashboards |
+| 🔒 **Privacy-Preserving** | Zero tracking, no cookies, no external fonts – your data stays under your control |
 | 🌙 **Dark Mode** | Beautiful glassmorphism design with full dark mode support |
 | ♿ **Accessible** | WCAG 2.2 AA compliant with full keyboard navigation |
 | 🌍 **Multilingual** | English and German interface |
+
+## 🧰 CLI At A Glance
+
+| Command | Primary output | Use case |
+|---------|----------------|----------|
+| `scan` | Native EuConform artifacts | Generate structured evidence from a real repository |
+| `bias` | Bias report JSON and/or Markdown | Run reproducible local model evaluation with Ollama — EuConform's distinctive empirical layer |
+| `validate` | Valid/invalid status per JSON file | Check EuConform JSON files against published schemas |
+| `verify` | Bundle integrity status | Check a manifest, extracted bundle, or ZIP archive |
+| `import` | `euconform.aibom.json` | Map an external CycloneDX SBOM into the EuConform AI BOM layer |
 
 ## 🚀 Quick Start
  
@@ -97,15 +113,20 @@ pnpm dev
 # Open http://localhost:3001
 ```
 
-### CLI Scanner
+### Build The CLI
 
-The local scanner turns EuConform into a reproducible evidence tool for real repositories:
+The repo-local examples below use the built CLI directly:
 
 ```bash
 # Build the CLI
 pnpm --filter @euconform/cli build
+```
 
-# Scan the current project
+### Workflow 1: Scan A Repository
+
+Generate native EuConform artifacts from a real codebase:
+
+```bash
 node packages/cli/dist/index.js scan . --scope production
 ```
 
@@ -114,6 +135,11 @@ This writes:
 - `.euconform/euconform.aibom.json`
 - `.euconform/euconform.summary.md`
 - `.euconform/euconform.bundle.json`
+
+Typical use:
+- evidence collection for local OSS or internal AI projects
+- CI gating and reviewer handoff
+- portable artifact generation without a vendor platform
 
 For CI usage, add GitHub-native annotations and fail thresholds:
 
@@ -127,11 +153,64 @@ For portable artifact exchange, create a bundle archive:
 node packages/cli/dist/index.js scan . --scope production --zip true
 ```
 
+### Workflow 2: Validate And Verify Existing Artifacts
+
+Validate individual EuConform JSON documents against the published schemas:
+
+```bash
+node packages/cli/dist/index.js validate .euconform
+```
+
+Typical output:
+- one line per file such as `euconform.aibom.json — valid (euconform.aibom.v1)`
+- exit code `0` for fully valid input, `1` for schema errors, `2` when no EuConform JSON files are found
+
 Verify a bundle manifest, extracted bundle directory, or ZIP archive:
 
 ```bash
 node packages/cli/dist/index.js verify .euconform/euconform.bundle.json
 ```
+
+Typical use:
+- reviewer-side schema checking before manual analysis
+- CI sanity checks for artifact sets already produced elsewhere
+- portability checks before sharing bundles with downstream tools
+
+### Workflow 3: Evaluate Model Bias Locally
+
+Run a reproducible CrowS-Pairs bias evaluation against a local Ollama model:
+
+```bash
+node packages/cli/dist/index.js bias llama3.2 --lang de --output all
+```
+
+This is EuConform's distinctive empirical evidence layer. It produces model-behavior data that no other open-source compliance tool currently offers — completely offline, reproducible, and independent of any vendor API.
+
+Typical use:
+- empirical model-behavior evidence for Art. 10 bias/fairness documentation
+- reproducible local evaluation before and after model updates
+- adding a behavioral evidence layer on top of structural evidence from `scan`
+
+### Workflow 4: Import An External CycloneDX SBOM
+
+Map an external CycloneDX JSON file into the EuConform AI BOM layer:
+
+```bash
+node packages/cli/dist/index.js import ./third-party.cdx.json \
+  --scope production \
+  --output /tmp/euconform-import
+
+node packages/cli/dist/index.js validate /tmp/euconform-import/euconform.aibom.json
+```
+
+This writes:
+- `/tmp/euconform-import/euconform.aibom.json`
+
+Important notes:
+- `import` accepts CycloneDX JSON and maps only the AI-relevant subset into `euconform.aibom.v1`
+- `--scope production` excludes `optional` and `excluded` components
+- the importer is intentionally conservative and does **not** infer compliance capabilities from an SBOM
+- project naming may come from BOM metadata or the source filename, depending on the input
 
 ### Try The Format In 10 Minutes
 
@@ -193,10 +272,14 @@ Supports Llama, Mistral, and Qwen variants with automatic log-probability detect
 
 ### CLI Scanner & CI
 
-`euconform scan` is designed to complement the web wizard:
-- The **scanner** gathers technical evidence from a real codebase.
-- The **web app** remains the place for role and risk classification with human context.
-- The **bias evaluation tooling** adds empirical model-behavior evidence on top.
+EuConform's CLI is designed as reusable evidence infrastructure:
+- `euconform scan` produces native EuConform artifacts from a repository.
+- `euconform bias` provides EuConform's distinctive empirical model-behavior evidence layer.
+- `euconform validate` checks individual EuConform JSON files against the published schemas.
+- `euconform verify` checks artifact-set integrity for manifests, directories, and ZIP bundles.
+- `euconform import` bridges external CycloneDX JSON into the EuConform AI BOM layer.
+
+The **web app** remains the place for role and risk classification with human context.
 
 #### GitHub Actions Example
 
@@ -215,12 +298,18 @@ In GitHub Actions, EuConform emits:
 
 ### EuConform Evidence Format
 
-The scanner artifacts are defined as the **EuConform Evidence Format**, an open specification for offline AI Act evidence exchange.
+EuConform implements the **EuConform Evidence Format**, an open specification for portable, machine-readable AI compliance evidence.
 
 - `euconform.report.v1` captures compliance evidence, gaps, and open questions
 - `euconform.aibom.v1` is the AI Bill of Materials (AI BOM) inventory layer
 - `euconform.ci.v1` captures CI thresholds, status, and top findings
 - `euconform.bundle.v1` binds artifact sets into a portable, integrity-aware manifest
+
+Current workflow boundaries:
+- `scan` **produces** native EuConform artifacts from source repositories
+- `import` can **ingest** external CycloneDX JSON into the current AIBOM layer for interoperability workflows
+- `validate` makes the schema and compatibility story inspectable at the JSON-document level
+- `verify` checks portable bundle integrity before exchange or automation
 
 Stage 1 documentation, schemas, and example artifacts live in [docs/spec/README.md](docs/spec/README.md).
 Reference source projects for OSS builders live in [examples/README.md](examples/README.md).

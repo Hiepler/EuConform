@@ -1,5 +1,5 @@
 import { readFile, readdir, stat } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { validate } from "@euconform/core/validation";
 import type { ValidationResult } from "@euconform/core/validation";
 import { defineCommand } from "citty";
@@ -44,7 +44,7 @@ function printJsonResults(results: FileResult[]): void {
 
 function printHumanResults(results: FileResult[]): void {
   for (const { file, result } of results) {
-    const shortName = file.split("/").pop() ?? file;
+    const shortName = basename(file);
     if (result.valid) {
       consola.success(`${shortName} \u2014 valid (euconform.${result.schemaType})`);
     } else {

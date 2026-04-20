@@ -47,77 +47,63 @@ export function importCycloneDx(sbom: unknown, options?: ImportOptions): Cyclone
 
   const allComponents = bom.components ?? [];
   const warnings: ImportWarning[] = [];
-
-  // Step 1: Count raw total
   const totalComponents = allComponents.length;
 
-  // Step 2: Scope filtering
   const inScope =
     scope === "production"
       ? allComponents.filter((c) => c.scope !== "optional" && c.scope !== "excluded")
       : allComponents;
   const filteredByScope = totalComponents - inScope.length;
 
-  // Step 3: Map components
   const mapped: BomComponent[] = [];
   for (const comp of inScope) {
-    if (!comp.name || comp.name.trim() === "") {
-      warnings.push({ component: "(empty)", message: "Skipped: missing or empty name" });
+    const mapping = mapComponent(comp);
+    if (!mapping) {
+      if (!comp.name || comp.name.trim() === "") {
+        warnings.push({ component: "(empty)", message: "Skipped: missing or empty name" });
+      }
       continue;
     }
-
-    const mapping = mapComponent(comp);
-    if (!mapping) continue;
 
     const version = comp.version || mapping.purlVersion;
     if (!version) {
       warnings.push({ component: comp.name, message: "Missing version field" });
     }
 
-    const bomComponent: BomComponent = {
+    mapped.push({
       id: version ? `${mapping.kind}:${comp.name}:${version}` : `${mapping.kind}:${comp.name}`,
       kind: mapping.kind,
       name: comp.name,
       ...(version ? { version } : {}),
       source: "sbom-import",
-    };
-
-    mapped.push(bomComponent);
+    });
   }
 
-  // Step 4: Deduplicate (by kind+name+version)
   const seen = new Set<string>();
   let duplicatesRemoved = 0;
   const deduped: BomComponent[] = [];
   for (const comp of mapped) {
-    const key = `${comp.kind}:${comp.name}:${comp.version ?? ""}`;
-    if (seen.has(key)) {
+    if (seen.has(comp.id)) {
       duplicatesRemoved++;
       continue;
     }
-    seen.add(key);
+    seen.add(comp.id);
     deduped.push(comp);
   }
 
-  // Step 5: Compute byKind
   const byKind: Record<string, number> = {};
   for (const comp of deduped) {
     byKind[comp.kind] = (byKind[comp.kind] ?? 0) + 1;
   }
 
-  // Step 6: Extract provenance
   const { projectName, projectNameSource } = resolveProjectName(bom, options?.sourcePath);
-  const metadata = extractMetadata(bom);
-  const sourceInfo = extractSourceInfo(bom, projectNameSource);
+  const importTool = extractToolString(bom);
+  const originalTimestamp = bom.metadata?.timestamp;
 
-  // Step 7: Build aibom
   const aibom: AiBillOfMaterials = {
     schemaVersion: "euconform.aibom.v1",
     generatedAt: new Date().toISOString(),
-    project: {
-      name: projectName,
-      rootPath: ".",
-    },
+    project: { name: projectName, rootPath: "." },
     components: deduped,
     complianceCapabilities: {
       biasEvaluation: false,
@@ -127,7 +113,7 @@ export function importCycloneDx(sbom: unknown, options?: ImportOptions): Cyclone
       humanReviewFlow: false,
       incidentHandling: false,
     },
-    metadata,
+    metadata: buildMetadata(importTool, originalTimestamp),
   };
 
   const validation = validate(aibom);
@@ -142,7 +128,7 @@ export function importCycloneDx(sbom: unknown, options?: ImportOptions): Cyclone
       duplicatesRemoved,
       byKind,
       warnings,
-      source: sourceInfo,
+      source: buildSourceInfo(bom.specVersion, projectNameSource, importTool, originalTimestamp),
     },
     validation,
   };
@@ -171,26 +157,22 @@ function extractToolString(bom: CycloneDxBom): string | undefined {
   return tool.version ? `${tool.name} ${tool.version}` : tool.name;
 }
 
-function extractMetadata(bom: CycloneDxBom): AibomMetadata {
+function buildMetadata(importTool?: string, originalTimestamp?: string): AibomMetadata {
   const meta: AibomMetadata = { importSource: "cyclonedx" };
-  const importTool = extractToolString(bom);
   if (importTool) meta.importTool = importTool;
-  if (bom.metadata?.timestamp) meta.originalTimestamp = bom.metadata.timestamp;
+  if (originalTimestamp) meta.originalTimestamp = originalTimestamp;
   return meta;
 }
 
-function extractSourceInfo(
-  bom: CycloneDxBom,
-  projectNameSource: ImportSourceInfo["projectNameSource"]
+function buildSourceInfo(
+  specVersion: string,
+  projectNameSource: ImportSourceInfo["projectNameSource"],
+  importTool?: string,
+  originalTimestamp?: string
 ): ImportSourceInfo {
-  const info: ImportSourceInfo = {
-    bomFormat: "CycloneDX",
-    specVersion: bom.specVersion,
-    projectNameSource,
-  };
-  const importTool = extractToolString(bom);
+  const info: ImportSourceInfo = { bomFormat: "CycloneDX", specVersion, projectNameSource };
   if (importTool) info.importTool = importTool;
-  if (bom.metadata?.timestamp) info.originalTimestamp = bom.metadata.timestamp;
+  if (originalTimestamp) info.originalTimestamp = originalTimestamp;
   return info;
 }
 

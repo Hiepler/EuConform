@@ -10,6 +10,7 @@ EuConform implements the **EuConform Evidence Format**, an open specification fo
 |----------|---------|
 | `euconform.report.v1` | Compliance-oriented evidence, open questions, gaps, and recommendations |
 | `euconform.aibom.v1` | AI Bill of Materials (AI BOM) inventory for runtimes, providers, models, and supporting components |
+| `euconform.aibom.v1.1` | AI BOM v1 plus optional import provenance metadata |
 | `euconform.ci.v1` | CI gate status, fail threshold, gap counts, and top findings |
 
 ### Stage 2 — Available
@@ -31,7 +32,7 @@ EuConform supports native artifact generation, empirical model evaluation, and e
 - `bias` produces reproducible model-behavior evidence via local CrowS-Pairs evaluation — EuConform's distinctive empirical layer
 - `validate` checks EuConform JSON documents against the published schemas
 - `verify` checks bundle integrity for manifests, extracted directories, and ZIP archives
-- `import` maps external CycloneDX JSON into the current `euconform.aibom.v1` layer as an interoperability bridge
+- `import` maps external CycloneDX JSON into the AIBOM layer (emits `euconform.aibom.v1.1`) as an interoperability bridge
 
 Important boundaries:
 - `bias` is independent of `scan` and can be used standalone for model evaluation
@@ -50,6 +51,7 @@ Important boundaries:
 
 - [Report schema](./schemas/report-v1.schema.json)
 - [AI BOM schema](./schemas/aibom-v1.schema.json)
+- [AI BOM v1.1 schema](./schemas/aibom-v1.1.schema.json)
 - [CI schema](./schemas/ci-v1.schema.json)
 - [Bundle schema](./schemas/bundle-v1.schema.json)
 

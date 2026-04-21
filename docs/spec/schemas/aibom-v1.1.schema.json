@@ -1,14 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://euconform.eu/schemas/spec/aibom-v1.schema.json",
-  "title": "EuConform Evidence Format AI BOM v1",
-  "description": "Stage 1 inventory document for AI-relevant components and compliance capabilities.",
+  "$id": "https://euconform.eu/schemas/spec/aibom-v1.1.schema.json",
+  "title": "EuConform Evidence Format AI BOM v1.1",
+  "description": "Stage 1 inventory document for AI-relevant components and compliance capabilities. Adds optional import provenance metadata.",
   "type": "object",
   "required": ["schemaVersion", "generatedAt", "project", "components", "complianceCapabilities"],
   "additionalProperties": false,
   "properties": {
     "schemaVersion": {
-      "const": "euconform.aibom.v1"
+      "const": "euconform.aibom.v1.1"
     },
     "generatedAt": {
       "type": "string",
@@ -70,6 +70,22 @@
         "loggingInfrastructure": { "type": "boolean" },
         "humanReviewFlow": { "type": "boolean" },
         "incidentHandling": { "type": "boolean" }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "importSource": {
+          "enum": ["cyclonedx", "spdx", "manual"]
+        },
+        "importTool": {
+          "type": "string"
+        },
+        "originalTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     }
   }

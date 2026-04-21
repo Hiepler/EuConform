@@ -28,8 +28,11 @@ export function parsePurl(purl: string): ParsedPurl | null {
   const type = rest.slice(0, slashIdx);
   let remainder = rest.slice(slashIdx + 1);
 
-  // Decode percent-encoding
-  remainder = decodeURIComponent(remainder);
+  try {
+    remainder = decodeURIComponent(remainder);
+  } catch {
+    return null;
+  }
 
   // Extract version
   let version: string | undefined;

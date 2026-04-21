@@ -242,7 +242,7 @@ export interface AibomMetadata {
 }
 
 export interface AiBillOfMaterials {
-  schemaVersion: "euconform.aibom.v1";
+  schemaVersion: "euconform.aibom.v1" | "euconform.aibom.v1.1";
   generatedAt: string;
   project: {
     name: string;

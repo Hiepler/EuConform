@@ -8,7 +8,7 @@ describe("cyclonedx-import", () => {
   describe("basic import", () => {
     it("imports a minimal CycloneDX BOM", () => {
       const result = importCycloneDx(minimalBom);
-      expect(result.aibom.schemaVersion).toBe("euconform.aibom.v1");
+      expect(result.aibom.schemaVersion).toBe("euconform.aibom.v1.1");
       expect(result.aibom.components).toHaveLength(1);
       expect(result.aibom.components[0].kind).toBe("model");
       expect(result.aibom.components[0].name).toBe("llama-3.2-1b");

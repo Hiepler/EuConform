@@ -91,4 +91,12 @@ describe("parsePurl", () => {
     expect(parsePurl("pkg:")).toBeNull();
     expect(parsePurl("pkg:/")).toBeNull();
   });
+
+  it("returns null for malformed percent-encoding", () => {
+    expect(parsePurl("pkg:npm/%ZZ/bad-encoding@1.0.0")).toBeNull();
+  });
+
+  it("returns null for truncated percent-encoding", () => {
+    expect(parsePurl("pkg:npm/foo%2")).toBeNull();
+  });
 });

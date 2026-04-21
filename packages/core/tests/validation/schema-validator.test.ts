@@ -158,9 +158,9 @@ describe("schema-validator", () => {
       expect(result.valid).toBe(true);
     });
 
-    it("accepts aibom with metadata field", () => {
+    it("accepts aibom v1.1 with metadata field", () => {
       const result = validate({
-        schemaVersion: "euconform.aibom.v1",
+        schemaVersion: "euconform.aibom.v1.1",
         generatedAt: "2026-01-01T00:00:00Z",
         project: { name: "test", rootPath: "/test" },
         components: [],
@@ -179,6 +179,27 @@ describe("schema-validator", () => {
         },
       });
       expect(result.valid).toBe(true);
+    });
+
+    it("rejects aibom v1 with metadata field", () => {
+      const result = validate({
+        schemaVersion: "euconform.aibom.v1",
+        generatedAt: "2026-01-01T00:00:00Z",
+        project: { name: "test", rootPath: "/test" },
+        components: [],
+        complianceCapabilities: {
+          biasEvaluation: false,
+          jsonExport: false,
+          pdfExport: false,
+          loggingInfrastructure: false,
+          humanReviewFlow: false,
+          incidentHandling: false,
+        },
+        metadata: {
+          importSource: "cyclonedx",
+        },
+      });
+      expect(result.valid).toBe(false);
     });
   });
 

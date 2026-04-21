@@ -12,7 +12,7 @@ The CLI is also the first public producer and consumer of the **EuConform Eviden
 - `bias` runs a reproducible local CrowS-Pairs evaluation against an Ollama model — EuConform's distinctive empirical layer
 - `validate` checks EuConform JSON files against the published schemas
 - `verify` validates an EuConform Evidence Format bundle manifest, directory, or ZIP archive
-- `import` maps a CycloneDX JSON SBOM into `euconform.aibom.v1` as an interoperability bridge
+- `import` maps a CycloneDX JSON SBOM into `euconform.aibom.v1.1` as an interoperability bridge
 - outputs stay local and can be reviewed in the EuConform web viewer
 
 This package is designed for teams that want **technical evidence for human review**, not automated legal verdicts.

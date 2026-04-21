@@ -101,7 +101,7 @@ export function importCycloneDx(sbom: unknown, options?: ImportOptions): Cyclone
   const originalTimestamp = bom.metadata?.timestamp;
 
   const aibom: AiBillOfMaterials = {
-    schemaVersion: "euconform.aibom.v1",
+    schemaVersion: "euconform.aibom.v1.1",
     generatedAt: new Date().toISOString(),
     project: { name: projectName, rootPath: "." },
     components: deduped,

@@ -7,10 +7,16 @@ function assertObject(data: unknown, label: string): Record<string, unknown> {
   return data as Record<string, unknown>;
 }
 
-function requireSchemaVersion(obj: Record<string, unknown>, expected: string, label: string): void {
-  if (obj.schemaVersion !== expected) {
+function requireSchemaVersion(
+  obj: Record<string, unknown>,
+  expected: string | string[],
+  label: string
+): void {
+  const allowed = Array.isArray(expected) ? expected : [expected];
+  if (!allowed.includes(obj.schemaVersion as string)) {
+    const quoted = allowed.map((v) => `"${v}"`).join(" or ");
     throw new Error(
-      `Invalid ${label} schema version: expected "${expected}", got "${String(obj.schemaVersion)}"`
+      `Invalid ${label} schema version: expected ${quoted}, got "${String(obj.schemaVersion)}"`
     );
   }
 }
@@ -102,7 +108,7 @@ export function validateScanReport(data: unknown): ScanReport {
 
 export function validateAiBillOfMaterials(data: unknown): AiBillOfMaterials {
   const obj = assertObject(data, "AIBOM");
-  requireSchemaVersion(obj, "euconform.aibom.v1", "AIBOM");
+  requireSchemaVersion(obj, ["euconform.aibom.v1", "euconform.aibom.v1.1"], "AIBOM");
   requireField(obj, "generatedAt", "string", "AIBOM");
 
   const project = requireField(obj, "project", "object", "AIBOM") as Record<string, unknown>;
@@ -289,6 +295,7 @@ export function validateEcefJsonDocument(
     case "euconform.report.v1":
       return validateScanReport(data);
     case "euconform.aibom.v1":
+    case "euconform.aibom.v1.1":
       return validateAiBillOfMaterials(data);
     case "euconform.ci.v1":
       return validateCiReport(data);

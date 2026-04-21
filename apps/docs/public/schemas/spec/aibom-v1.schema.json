@@ -71,22 +71,6 @@
         "humanReviewFlow": { "type": "boolean" },
         "incidentHandling": { "type": "boolean" }
       }
-    },
-    "metadata": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "importSource": {
-          "enum": ["cyclonedx", "spdx", "manual"]
-        },
-        "importTool": {
-          "type": "string"
-        },
-        "originalTimestamp": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
     }
   }
 }

@@ -207,7 +207,7 @@ This writes:
 - `/tmp/euconform-import/euconform.aibom.json`
 
 Important notes:
-- `import` accepts CycloneDX JSON and maps only the AI-relevant subset into `euconform.aibom.v1`
+- `import` accepts CycloneDX JSON and maps only the AI-relevant subset into `euconform.aibom.v1.1`
 - `--scope production` excludes `optional` and `excluded` components
 - the importer is intentionally conservative and does **not** infer compliance capabilities from an SBOM
 - project naming may come from BOM metadata or the source filename, depending on the input

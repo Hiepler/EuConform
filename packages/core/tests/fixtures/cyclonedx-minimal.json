@@ -1,0 +1,13 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "components": [
+    {
+      "type": "machine-learning-model",
+      "name": "llama-3.2-1b",
+      "version": "1.0.0",
+      "purl": "pkg:generic/llama-3.2-1b@1.0.0"
+    }
+  ]
+}

@@ -232,11 +232,17 @@ export interface BomComponent {
   kind: BomComponentKind;
   name: string;
   version?: string;
-  source: "package.json" | "lock-file" | "code" | "config" | "docs";
+  source: "package.json" | "lock-file" | "code" | "config" | "docs" | "sbom-import";
+}
+
+export interface AibomMetadata {
+  importSource: "cyclonedx" | "spdx" | "manual";
+  importTool?: string;
+  originalTimestamp?: string;
 }
 
 export interface AiBillOfMaterials {
-  schemaVersion: "euconform.aibom.v1";
+  schemaVersion: "euconform.aibom.v1" | "euconform.aibom.v1.1";
   generatedAt: string;
   project: {
     name: string;
@@ -251,6 +257,7 @@ export interface AiBillOfMaterials {
     humanReviewFlow: boolean;
     incidentHandling: boolean;
   };
+  metadata?: AibomMetadata;
 }
 
 // ---------------------------------------------------------------------------

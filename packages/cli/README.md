@@ -154,7 +154,7 @@ euconform import third-party.cdx.json --scope production
 
 What it does:
 - accepts CycloneDX JSON as input
-- maps AI-relevant components into `euconform.aibom.v1`
+- maps AI-relevant components into `euconform.aibom.v1.1`
 - writes `euconform.aibom.json` to `.euconform/` by default
 - excludes `optional` and `excluded` components when `--scope production` is used
 - can derive the project name from BOM metadata or the source filename

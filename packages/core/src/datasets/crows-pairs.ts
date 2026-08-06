@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -61,4 +62,72 @@ export function loadCrowsPairsDataset(language: "en" | "de"): CrowsPairsEntry[] 
     sent_less: pair.antiStereotype,
     bias_type: pair.biasType,
   }));
+}
+
+export interface CustomDatasetMetadata {
+  name: string;
+  version: string;
+  sha256: string;
+  path: string;
+  pairCount: number;
+}
+
+/**
+ * Load a user-supplied question catalog.
+ *
+ * Deliberately separate from loadCrowsPairsDataset: that one resolves a bundled
+ * asset by language code, this one takes a path the caller chose. The hash goes
+ * into the evidence artifact so "Fragekatalog + Version" is verifiable rather
+ * than merely stated.
+ */
+export function loadCustomDataset(filePath: string): {
+  pairs: CrowsPairsEntry[];
+  metadata: CustomDatasetMetadata;
+} {
+  const resolved = resolve(filePath);
+  if (!existsSync(resolved)) {
+    throw new Error(`Fragekatalog nicht gefunden: ${resolved}`);
+  }
+
+  const raw = readFileSync(resolved, "utf-8");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(`Fragekatalog ist kein gültiges JSON: ${resolved}`);
+  }
+
+  const doc = parsed as { metadata?: Record<string, unknown>; pairs?: unknown[] };
+  if (!Array.isArray(doc.pairs) || doc.pairs.length === 0) {
+    throw new Error(`Fragekatalog enthält keine Paare: ${resolved}`);
+  }
+
+  const pairs: CrowsPairsEntry[] = doc.pairs.map((entry, index) => {
+    const p = entry as Record<string, unknown>;
+    const stereotype = typeof p.stereotype === "string" ? p.stereotype : undefined;
+    const antiStereotype = typeof p.antiStereotype === "string" ? p.antiStereotype : undefined;
+    if (!stereotype || !antiStereotype) {
+      throw new Error(
+        `Fragekatalog: Paar ${p.id ?? index} braucht 'stereotype' und 'antiStereotype' (${resolved})`
+      );
+    }
+    return {
+      id: typeof p.id === "number" ? p.id : index + 1,
+      sent_more: stereotype,
+      sent_less: antiStereotype,
+      bias_type: typeof p.biasType === "string" ? p.biasType : "unspecified",
+    };
+  });
+
+  const meta = doc.metadata ?? {};
+  return {
+    pairs,
+    metadata: {
+      name: typeof meta.name === "string" ? meta.name : "unbenannter Katalog",
+      version: typeof meta.version === "string" ? meta.version : "unversioniert",
+      sha256: createHash("sha256").update(raw).digest("hex"),
+      path: resolved,
+      pairCount: pairs.length,
+    },
+  };
 }

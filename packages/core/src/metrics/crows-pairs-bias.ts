@@ -11,6 +11,7 @@ import type {
   BiasTestConfig,
   CrowsPairsBiasResult,
   CrowsPairsEntry,
+  CrowsPairsPairResult,
 } from "../types";
 
 /**
@@ -45,7 +46,7 @@ export async function calculateCrowsPairsBias(
   }
 
   const method = await determineCalculationMethod(engine, inferenceClient);
-  const { biasScores, stereotypicalCount, finalMethod } = await processDataset(
+  const { biasScores, stereotypicalCount, finalMethod, pairResults } = await processDataset(
     dataset,
     engine,
     inferenceClient,
@@ -64,6 +65,7 @@ export async function calculateCrowsPairsBias(
     method: finalMethod,
     pairsAnalyzed: biasScores.length,
     stereotypicalPreference: Number(stereotypicalPreference.toFixed(2)),
+    pairResults,
     metadata: {
       engine,
       model,
@@ -90,8 +92,7 @@ async function processDataset(
   inferenceClient: BrowserInference | OllamaClient,
   initialMethod: BiasCalculationMethod
 ) {
-  const biasScores: number[] = [];
-  let stereotypicalCount = 0;
+  const pairResults: CrowsPairsPairResult[] = [];
   let finalMethod = initialMethod;
 
   for (const entry of dataset) {
@@ -104,32 +105,59 @@ async function processDataset(
         engine,
         inferenceClient
       );
-
       if (actualMethod) finalMethod = actualMethod;
 
-      const pairBias = logprobStereo - logprobAnti;
-      biasScores.push(pairBias);
-      if (pairBias > 0) stereotypicalCount++;
+      const biasScore = logprobStereo - logprobAnti;
+      pairResults.push({
+        pairId: pair.id,
+        stereotype: pair.stereo,
+        antiStereotype: pair.anti,
+        biasType: pair.biasType,
+        stereotypeLogProb: logprobStereo,
+        antiStereotypeLogProb: logprobAnti,
+        biasScore,
+        biasDirection: biasScore > 0 ? "stereotype" : biasScore < 0 ? "anti-stereotype" : "neutral",
+        method: actualMethod ?? initialMethod,
+      });
     } catch (error) {
       console.warn("Failed to process entry:", error);
     }
   }
 
-  return { biasScores, stereotypicalCount, finalMethod };
+  const biasScores = pairResults.map((p) => p.biasScore);
+  const stereotypicalCount = pairResults.filter((p) => p.biasDirection === "stereotype").length;
+  return { biasScores, stereotypicalCount, finalMethod, pairResults };
 }
 
-function extractSentences(entry: RawCrowsPairsEntry): { stereo: string; anti: string } | null {
+function extractSentences(
+  entry: RawCrowsPairsEntry
+): { stereo: string; anti: string; id: number | null; biasType: string | null } | null {
   const stereo = entry.sent_more || entry.stereotype;
   const anti = entry.sent_less || entry.antiStereotype;
   if (!stereo || !anti) return null;
-  return { stereo, anti };
+  const raw = entry as unknown as Record<string, unknown>;
+  return {
+    stereo,
+    anti,
+    id: typeof raw.id === "number" ? raw.id : null,
+    biasType:
+      typeof raw.bias_type === "string"
+        ? raw.bias_type
+        : typeof raw.biasType === "string"
+          ? raw.biasType
+          : null,
+  };
 }
 
 async function getLogProbsForPair(
   pair: { stereo: string; anti: string },
   engine: string,
   inferenceClient: BrowserInference | OllamaClient
-) {
+): Promise<{
+  logprobStereo: number;
+  logprobAnti: number;
+  actualMethod?: BiasCalculationMethod;
+}> {
   if (engine === "browser" && inferenceClient instanceof BrowserInference) {
     const logprobStereo = await inferenceClient.getLogProb(pair.stereo);
     const logprobAnti = await inferenceClient.getLogProb(pair.anti);
@@ -142,7 +170,11 @@ async function getLogProbsForPair(
     return {
       logprobStereo: stereoResult.logprob,
       logprobAnti: antiResult.logprob,
-      actualMethod: stereoResult.method,
+      // Fällt auch nur einer der beiden Aufrufe zurück, ist das Paar nicht exakt gemessen.
+      actualMethod:
+        stereoResult.method === "logprobs_exact" && antiResult.method === "logprobs_exact"
+          ? "logprobs_exact"
+          : "logprobs_fallback_latency",
     };
   }
 

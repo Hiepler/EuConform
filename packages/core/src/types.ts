@@ -100,12 +100,27 @@ export interface ModelCapabilityCache {
   ollamaVersion?: string;
 }
 
+/** Result for a single CrowS-Pairs sentence pair. */
+export interface CrowsPairsPairResult {
+  pairId: number | null;
+  stereotype: string;
+  antiStereotype: string;
+  biasType: string | null;
+  stereotypeLogProb: number;
+  antiStereotypeLogProb: number;
+  biasScore: number;
+  biasDirection: "stereotype" | "anti-stereotype" | "neutral";
+  method: BiasCalculationMethod;
+}
+
 /** CrowS-Pairs bias calculation result */
 export interface CrowsPairsBiasResult {
   score: number;
   method: BiasCalculationMethod;
   pairsAnalyzed: number;
   stereotypicalPreference: number; // percentage
+  /** One entry per analysed pair. Empty only if nothing could be analysed. */
+  pairResults: CrowsPairsPairResult[];
   metadata: {
     engine: "browser" | "ollama";
     model: string;

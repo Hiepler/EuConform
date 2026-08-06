@@ -76,6 +76,63 @@
       "type": "array",
       "items": { "type": "string" },
       "description": "Known constraints of this measurement, recorded alongside the number."
+    },
+    "catalog": {
+      "type": "object",
+      "description": "Provenance of a user-supplied question catalog. Absent when a bundled dataset was used — there is no catalog to attribute.",
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "pairCount": { "type": "integer", "minimum": 1 }
+      },
+      "required": ["name", "version", "sha256", "pairCount"],
+      "additionalProperties": false
+    },
+    "byBiasType": {
+      "type": "array",
+      "description": "Per-category aggregates over pairResults. The overall score hides these.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "biasType": { "type": "string" },
+          "pairsCount": { "type": "integer", "minimum": 1 },
+          "stereotypePreferenceCount": { "type": "integer", "minimum": 0 },
+          "stereotypePreferencePercent": { "type": "number", "minimum": 0, "maximum": 100 },
+          "averageBiasScore": { "type": "number" }
+        },
+        "required": [
+          "biasType",
+          "pairsCount",
+          "stereotypePreferenceCount",
+          "stereotypePreferencePercent",
+          "averageBiasScore"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "pairResults": {
+      "type": "array",
+      "description": "One entry per analysed sentence pair, enabling third-party recomputation of the aggregate score.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pairId": { "type": ["integer", "null"] },
+          "stereotype": { "type": "string" },
+          "antiStereotype": { "type": "string" },
+          "biasType": { "type": ["string", "null"] },
+          "stereotypeLogProb": { "type": "number" },
+          "antiStereotypeLogProb": { "type": "number" },
+          "biasScore": { "type": "number" },
+          "biasDirection": {
+            "type": "string",
+            "enum": ["stereotype", "anti-stereotype", "neutral"]
+          },
+          "method": { "type": "string" }
+        },
+        "required": ["stereotype", "antiStereotype", "biasScore", "biasDirection", "method"],
+        "additionalProperties": false
+      }
     }
   }
 }

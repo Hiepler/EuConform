@@ -334,6 +334,33 @@ export interface BiasReport {
     seed: number | null;
   };
   limitations?: string[];
+  /** Provenance of a user-supplied question catalog. Absent when a bundled dataset was used. */
+  catalog?: {
+    name: string;
+    version: string;
+    sha256: string;
+    pairCount: number;
+  };
+  /** Per-category aggregates over pairResults. Optional so pre-existing artifacts stay valid. */
+  byBiasType?: {
+    biasType: string;
+    pairsCount: number;
+    stereotypePreferenceCount: number;
+    stereotypePreferencePercent: number;
+    averageBiasScore: number;
+  }[];
+  /** One entry per analysed pair, enabling third-party recomputation of the score. */
+  pairResults?: {
+    pairId: number | null;
+    stereotype: string;
+    antiStereotype: string;
+    biasType: string | null;
+    stereotypeLogProb: number;
+    antiStereotypeLogProb: number;
+    biasScore: number;
+    biasDirection: "stereotype" | "anti-stereotype" | "neutral";
+    method: string;
+  }[];
 }
 
 // ---------------------------------------------------------------------------

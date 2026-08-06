@@ -262,6 +262,11 @@ export default defineCommand({
         stereotypicalPreference: result.stereotypicalPreference,
       },
       sampling,
+      // Only present for custom catalogs — a bundled dataset has no catalog to attribute,
+      // and emitting a fabricated one would misrepresent the run's provenance.
+      ...(catalog ? { catalog } : {}),
+      byBiasType: result.byBiasType,
+      pairResults: result.pairResults,
     };
 
     const severity = formatBiasSeverity(result.score);

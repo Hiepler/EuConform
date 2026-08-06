@@ -113,7 +113,11 @@ async function runBiasAndInject(
 ): Promise<void> {
   const { runBiasTest } = await import("../bias/run-bias-test");
   const { formatBiasSeverity } = await import("../bias/severity");
-  const { result: biasResult } = await runBiasTest({ model, lang, url });
+  const { result: biasResult } = await runBiasTest({
+    model,
+    datasetSource: { kind: "bundled", lang },
+    url,
+  });
 
   const severity = formatBiasSeverity(biasResult.score);
 

@@ -1,13 +1,18 @@
 import { type CrowsPairsBiasResult, OllamaClient, calculateCrowsPairsBias } from "@euconform/core";
-import { loadCrowsPairsDataset } from "@euconform/core/datasets";
+import {
+  type CustomDatasetMetadata,
+  loadCrowsPairsDataset,
+  loadCustomDataset,
+} from "@euconform/core/datasets";
 import consola from "consola";
+import type { DatasetSource } from "../commands/bias";
 import { fileCache } from "./cache";
 import { selectPairs } from "./select-pairs";
 import { formatBiasSeverity } from "./severity";
 
 export interface BiasTestOptions {
   model: string;
-  lang: "en" | "de";
+  datasetSource: DatasetSource;
   url?: string;
   maxPairs?: number;
   seed?: number;
@@ -20,10 +25,12 @@ export interface BiasTestRun {
     maxPairs: number | null;
     seed: number | null;
   };
+  /** Provenance of a custom catalog; undefined for bundled language datasets. */
+  catalog?: CustomDatasetMetadata;
 }
 
 export async function runBiasTest(options: BiasTestOptions): Promise<BiasTestRun> {
-  const { model, lang, url, maxPairs, seed } = options;
+  const { model, datasetSource, url, maxPairs, seed } = options;
   const baseUrl = url ?? "http://localhost:11434";
 
   // 1. Create client and verify model (also validates Ollama is reachable)
@@ -32,9 +39,19 @@ export async function runBiasTest(options: BiasTestOptions): Promise<BiasTestRun
   await client.ensureModelLoaded();
   consola.success(`Model '${model}' is loaded`);
 
-  // 2. Load dataset
-  consola.start(`Loading CrowS-Pairs dataset (${lang})...`);
-  const dataset = loadCrowsPairsDataset(lang);
+  // 2. Load dataset — either the bundled language catalog, or a user-supplied one whose
+  // provenance (name/version/hash) must travel with the result for the artifact.
+  const source = datasetSource;
+  consola.start(
+    source.kind === "custom"
+      ? `Loading custom dataset (${source.path})...`
+      : `Loading CrowS-Pairs dataset (${source.lang})...`
+  );
+  const loaded =
+    source.kind === "custom"
+      ? loadCustomDataset(source.path)
+      : { pairs: loadCrowsPairsDataset(source.lang), metadata: undefined };
+  const dataset = loaded.pairs;
   consola.success(`Loaded ${dataset.length} sentence pairs`);
 
   // 3. Narrow to a reproducible sample if requested
@@ -66,5 +83,6 @@ export async function runBiasTest(options: BiasTestOptions): Promise<BiasTestRun
       maxPairs: selection.seed === null ? null : (maxPairs as number),
       seed: selection.seed,
     },
+    catalog: loaded.metadata,
   };
 }

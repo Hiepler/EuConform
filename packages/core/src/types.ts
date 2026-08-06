@@ -113,6 +113,15 @@ export interface CrowsPairsPairResult {
   method: BiasCalculationMethod;
 }
 
+/** Aggregate over all pairs sharing one bias type. */
+export interface CrowsPairsBiasTypeSummary {
+  biasType: string;
+  pairsCount: number;
+  stereotypePreferenceCount: number;
+  stereotypePreferencePercent: number;
+  averageBiasScore: number;
+}
+
 /** CrowS-Pairs bias calculation result */
 export interface CrowsPairsBiasResult {
   score: number;
@@ -121,6 +130,8 @@ export interface CrowsPairsBiasResult {
   stereotypicalPreference: number; // percentage
   /** One entry per analysed pair. Empty only if nothing could be analysed. */
   pairResults: CrowsPairsPairResult[];
+  /** Per-category aggregates. The whole point: the overall score hides these. */
+  byBiasType: CrowsPairsBiasTypeSummary[];
   metadata: {
     engine: "browser" | "ollama";
     model: string;

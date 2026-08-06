@@ -424,4 +424,54 @@ describe("CrowS-Pairs Bias Calculation", () => {
       expect(result.pairsAnalyzed).toBe(1);
     });
   });
+
+  describe("byBiasType", () => {
+    it("groups pairs by bias type and reports count, preference and mean", async () => {
+      const dataset = [
+        { id: 1, sent_more: "g1s", sent_less: "g1a", bias_type: "gender" },
+        { id: 2, sent_more: "g2s", sent_less: "g2a", bias_type: "gender" },
+        { id: 3, sent_more: "a1s", sent_less: "a1a", bias_type: "age" },
+      ];
+      const client = fakeOllamaClient({
+        g1s: -0.1,
+        g1a: -0.3, // +0.2 stereotype
+        g2s: -0.4,
+        g2a: -0.2, // -0.2 anti
+        a1s: -0.1,
+        a1a: -0.5, // +0.4 stereotype
+      });
+
+      const { byBiasType } = await calculateCrowsPairsBias(
+        { dataset, model: "test", engine: "ollama" },
+        client
+      );
+
+      const gender = byBiasType.find((b) => b.biasType === "gender");
+      expect(gender).toMatchObject({
+        pairsCount: 2,
+        stereotypePreferenceCount: 1,
+        stereotypePreferencePercent: 50,
+      });
+      expect(gender?.averageBiasScore).toBeCloseTo(0, 6);
+
+      const age = byBiasType.find((b) => b.biasType === "age");
+      expect(age).toMatchObject({
+        pairsCount: 1,
+        stereotypePreferenceCount: 1,
+        stereotypePreferencePercent: 100,
+      });
+      expect(age?.averageBiasScore).toBeCloseTo(0.4, 6);
+    });
+
+    it("collects pairs without a bias type under 'unspecified'", async () => {
+      const dataset = [{ id: 1, sent_more: "x", sent_less: "y" }];
+      const client = fakeOllamaClient({ x: -0.1, y: -0.2 });
+      const { byBiasType } = await calculateCrowsPairsBias(
+        { dataset, model: "test", engine: "ollama" },
+        client
+      );
+      expect(byBiasType).toHaveLength(1);
+      expect(byBiasType[0].biasType).toBe("unspecified");
+    });
+  });
 });

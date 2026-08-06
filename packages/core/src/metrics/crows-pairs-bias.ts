@@ -10,6 +10,7 @@ import type {
   BiasCalculationMethod,
   BiasTestConfig,
   CrowsPairsBiasResult,
+  CrowsPairsBiasTypeSummary,
   CrowsPairsEntry,
   CrowsPairsPairResult,
 } from "../types";
@@ -66,6 +67,7 @@ export async function calculateCrowsPairsBias(
     pairsAnalyzed: biasScores.length,
     stereotypicalPreference: Number(stereotypicalPreference.toFixed(2)),
     pairResults,
+    byBiasType: aggregateByBiasType(pairResults),
     metadata: {
       engine,
       model,
@@ -127,6 +129,38 @@ async function processDataset(
   const biasScores = pairResults.map((p) => p.biasScore);
   const stereotypicalCount = pairResults.filter((p) => p.biasDirection === "stereotype").length;
   return { biasScores, stereotypicalCount, finalMethod, pairResults };
+}
+
+/**
+ * Groups pair results by biasType and reduces each group to count, stereotype
+ * preference and mean bias score. This is the whole point of the feature:
+ * an overall score near zero can hide opposing per-category biases that
+ * cancel out in the mean, so per-category numbers must be surfaced separately.
+ * Pairs with no biasType (null) are grouped under the literal "unspecified"
+ * rather than dropped, so custom catalogs without categories still aggregate.
+ */
+function aggregateByBiasType(pairResults: CrowsPairsPairResult[]): CrowsPairsBiasTypeSummary[] {
+  const groups = new Map<string, CrowsPairsPairResult[]>();
+  for (const pair of pairResults) {
+    const key = pair.biasType ?? "unspecified";
+    const bucket = groups.get(key);
+    if (bucket) bucket.push(pair);
+    else groups.set(key, [pair]);
+  }
+
+  return [...groups.entries()].map(([biasType, pairs]) => {
+    const stereotypePreferenceCount = pairs.filter((p) => p.biasDirection === "stereotype").length;
+    const mean = pairs.reduce((sum, p) => sum + p.biasScore, 0) / pairs.length;
+    return {
+      biasType,
+      pairsCount: pairs.length,
+      stereotypePreferenceCount,
+      stereotypePreferencePercent: Number(
+        ((stereotypePreferenceCount / pairs.length) * 100).toFixed(2)
+      ),
+      averageBiasScore: Number(mean.toFixed(6)),
+    };
+  });
 }
 
 function extractSentences(

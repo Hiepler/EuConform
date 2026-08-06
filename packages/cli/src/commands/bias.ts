@@ -73,7 +73,7 @@ function resolveDatasetSourceOrExit(args: { lang?: string; dataset?: string }): 
  * it. These numbers are meant to be recomputed from a conference stage, so a silently
  * degraded run must not slip through as if it were exact.
  */
-function enforceExactMethod(
+export function enforceExactMethod(
   result: { pairResults: { method: string }[] },
   requireExact: boolean
 ): void {

@@ -25,10 +25,58 @@ register(join(SCRIPT_DIR, "ts-extensionless-resolve-hook.mjs"), import.meta.url)
 
 const { BrowserInference } = await import(join(CORE_ROOT, "src/inference/browser-inference.ts"));
 
-// Pin to a fixed ref: v2's from_pretrained accepts `revision` (default "main"), and
-// we pass it explicitly so the fixture documents exactly what was fetched.
 const MODEL_ID = "Xenova/gpt2";
-const REVISION = "main";
+const HF_SHA_PATTERN = /^[0-9a-f]{40}$/i;
+
+/**
+ * Resolve the CURRENT commit SHA of the model repo on the Hugging Face Hub.
+ *
+ * "main" is a mutable branch pointer, not a pin: a future push to Xenova/gpt2 would
+ * silently move it and invalidate this fixture without anyone noticing. This is a
+ * tiny metadata fetch (not a model download), so we resolve it eagerly at seed time
+ * and pass the immutable SHA to `from_pretrained` as the `revision`. This script is
+ * online-by-nature (it downloads model weights), so a failure here aborts loudly
+ * rather than silently falling back to "main".
+ *
+ * Observed in this environment: a bare `fetch` sometimes returns a stale/cached
+ * schema-shaped stub instead of the real API response. Sending `Cache-Control:
+ * no-cache` reliably returns the real payload; we still validate the `sha` field's
+ * shape before trusting it, and retry a few times before giving up.
+ */
+async function resolveModelRevisionSha(modelId, { attempts = 3 } = {}) {
+  const url = `https://huggingface.co/api/models/${modelId}`;
+  let lastError;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const response = await fetch(url, {
+        headers: { "Cache-Control": "no-cache", Accept: "application/json" },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      }
+      const body = await response.json();
+      const sha = body?.sha;
+      if (typeof sha !== "string" || !HF_SHA_PATTERN.test(sha)) {
+        throw new Error(
+          `response did not contain a valid 40-char commit sha (got: ${JSON.stringify(sha)}); this looks like a malformed or stubbed API response, not the real Hub metadata`
+        );
+      }
+      return sha;
+    } catch (err) {
+      lastError = err;
+      console.warn(
+        `[seed-logprob-fixture] revision resolution attempt ${attempt}/${attempts} failed: ${err.message}`
+      );
+    }
+  }
+
+  throw new Error(
+    `Could not resolve an immutable commit sha for "${modelId}" from the Hugging Face Hub API ` +
+      `after ${attempts} attempts. Aborting: seeding against the mutable "main" ref would silently ` +
+      `invalidate this fixture on the next upstream push. Last error: ${lastError?.message}`
+  );
+}
 
 // 5 sentences per the binding spec:
 // - 2 German sentences from docs/talks/froscon2026/katalog-neuro-de.v1.json, pair id 1
@@ -52,9 +100,12 @@ function round6(n) {
 }
 
 async function main() {
+  const revision = await resolveModelRevisionSha(MODEL_ID);
+  console.log(`resolved revision (immutable commit sha): ${revision}`);
+
   // quantized: false -- full precision. Log-probability scoring for bias measurement
   // must not carry quantization noise; the fixture is a numerical truth anchor.
-  const engine = new BrowserInference(MODEL_ID, null, { revision: REVISION, quantized: false });
+  const engine = new BrowserInference(MODEL_ID, null, { revision, quantized: false });
   await engine.load();
 
   const sentenceResults = [];
@@ -76,7 +127,7 @@ async function main() {
 
   const fixture = {
     modelId: MODEL_ID,
-    revision: REVISION,
+    revision,
     quantized: false,
     dtype: sentenceResults[0]?.provenance.dtypeInfo ?? "unknown",
     backend: "node-onnx",

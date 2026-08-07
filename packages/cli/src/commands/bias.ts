@@ -10,6 +10,12 @@ const VALID_LANGS = new Set(["en", "de"]);
 const VALID_OUTPUTS = new Set(["json", "md", "all"]);
 const MAX_SEED = 0xffffffff;
 
+const OLLAMA_DISABLED_MESSAGE =
+  "Ollama liefert keine Prompt-/Satz-Logprobs — logprobs decken dort nur bereits generierte " +
+  "Tokens ab, nicht die zu bewertenden Sätze. Damit lässt sich Bias nicht messen. " +
+  "Nutze --engine transformers (Standard) mit einem Hugging-Face-Modell " +
+  "(z.B. onnx-community/Llama-3.2-1B-Instruct oder Xenova/distilgpt2).";
+
 async function refreshBundle(outDir: string): Promise<void> {
   const { readFile } = await import("node:fs/promises");
   const { writeBundleManifest } = await import("../output/writer");
@@ -62,6 +68,39 @@ export function resolveDatasetSource(args: { lang?: string; dataset?: string }):
 function resolveDatasetSourceOrExit(args: { lang?: string; dataset?: string }): DatasetSource {
   try {
     return resolveDatasetSource(args);
+  } catch (error) {
+    return exitWithError((error as Error).message);
+  }
+}
+
+/**
+ * `--engine ollama` must fail BEFORE any network access or artifact generation —
+ * Ollama never measured sentence log-probabilities (logprobs there cover only
+ * generated tokens), so any bias number it produced was noise dressed up as a
+ * measurement. `--url` only makes sense for that (removed) Ollama mode, so
+ * passing it together with the (default) transformers engine is also rejected.
+ * Kept as a pure, throwing function — like `resolveDatasetSource` — so tests can
+ * exercise it directly without spawning the CLI.
+ */
+export function resolveEngine(args: { engine?: string; url?: string }): "transformers" {
+  const engine = args.engine ?? "transformers";
+  if (engine === "ollama") {
+    throw new Error(OLLAMA_DISABLED_MESSAGE);
+  }
+  if (engine !== "transformers") {
+    throw new Error(`Invalid --engine: ${engine}. Use one of: transformers, ollama.`);
+  }
+  if (args.url !== undefined) {
+    throw new Error(
+      "--url gehört zum Ollama-Modus und kann nicht mit --engine transformers kombiniert werden."
+    );
+  }
+  return engine;
+}
+
+function resolveEngineOrExit(args: { engine?: string; url?: string }): "transformers" {
+  try {
+    return resolveEngine(args);
   } catch (error) {
     return exitWithError((error as Error).message);
   }
@@ -167,13 +206,26 @@ async function writeMarkdownReport(outDir: string, content: string): Promise<voi
 export default defineCommand({
   meta: {
     name: "bias",
-    description: "Run CrowS-Pairs bias test on an Ollama model",
+    description: "Run CrowS-Pairs bias test on a Hugging Face model via transformers.js",
   },
   args: {
     model: {
       type: "positional",
-      description: "Ollama model name (e.g. llama3.2, mistral:7b)",
+      description:
+        "Hugging Face model id (e.g. onnx-community/Llama-3.2-1B-Instruct, Xenova/distilgpt2)",
       required: true,
+    },
+    engine: {
+      type: "string",
+      description:
+        "Measurement engine: transformers (default; the only one that measures real sentence " +
+        "log-probabilities) or ollama (disabled — see error message).",
+    },
+    "allow-partial": {
+      type: "boolean",
+      description:
+        "Diagnose, nicht als vollständige Messung geeignet: Paare, deren Messung fehlschlägt, " +
+        "landen in failedPairs statt den Lauf abzubrechen (runStatus wird 'partial').",
     },
     lang: {
       type: "string",
@@ -192,8 +244,7 @@ export default defineCommand({
     },
     url: {
       type: "string",
-      description: "Ollama base URL",
-      default: "http://localhost:11434",
+      description: "Ollama base URL (Ollama-Modus ist deaktiviert — siehe --engine).",
     },
     output: {
       type: "string",
@@ -215,10 +266,17 @@ export default defineCommand({
     },
   },
   async run({ args }) {
+    // Ollama is checked first and unconditionally: it must fail before any
+    // network access, model download, or artifact generation happens.
+    resolveEngineOrExit({
+      engine: args.engine as string | undefined,
+      url: args.url as string | undefined,
+    });
+
     const output = args.output as string;
     const outDir = resolve(args["out-dir"] as string);
     const model = args.model as string;
-    const url = args.url as string;
+    const allowPartial = Boolean(args["allow-partial"]);
     const maxPairs = parseCount(args["max-pairs"] as string | undefined, "--max-pairs");
     const seed = parseCount(args.seed as string | undefined, "--seed", 0);
 
@@ -235,14 +293,26 @@ export default defineCommand({
     if (seed !== undefined && maxPairs === undefined) {
       consola.warn("--seed only affects sampling; without --max-pairs the full dataset is used.");
     }
+    if (allowPartial) {
+      consola.warn(
+        "--allow-partial: Diagnosemodus, nicht als vollständige Messung geeignet. " +
+          "Fehlgeschlagene Paare werden übersprungen statt den Lauf abzubrechen."
+      );
+    }
 
     const { result, sampling, catalog } = await runBiasTest({
       model,
       datasetSource,
-      url,
       maxPairs,
       seed,
+      allowPartial,
     });
+
+    if (result.runStatus === "partial") {
+      consola.warn(
+        `${result.failedCount} von ${result.selectedCount} Paaren konnten nicht gemessen werden (runStatus: partial, --allow-partial). Dies ist eine Diagnose, keine vollständige Messung.`
+      );
+    }
 
     enforceExactMethod(result, Boolean(args["require-exact"]));
 
@@ -260,6 +330,11 @@ export default defineCommand({
         method: result.method,
         pairsAnalyzed: result.pairsAnalyzed,
         stereotypicalPreference: result.stereotypicalPreference,
+        runStatus: result.runStatus,
+        selectedCount: result.selectedCount,
+        analyzedCount: result.analyzedCount,
+        failedCount: result.failedCount,
+        failedPairs: result.failedPairs,
       },
       sampling,
       // Only present for custom catalogs — a bundled dataset has no catalog to attribute,

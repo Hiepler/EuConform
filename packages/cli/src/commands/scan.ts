@@ -1,6 +1,6 @@
 import { stat } from "node:fs/promises";
 import { resolve } from "node:path";
-import type { ScanOutput, ScanScope } from "@euconform/core/evidence";
+import type { ScanScope } from "@euconform/core/evidence";
 import { generateScanOutput } from "@euconform/core/evidence";
 import { scanRepository } from "@euconform/core/scanner";
 import { defineCommand } from "citty";
@@ -105,36 +105,6 @@ function buildOutputFileNames(format: string): BaseArtifactName[] {
   return names;
 }
 
-async function runBiasAndInject(
-  output: ScanOutput,
-  model: string,
-  lang: "en" | "de",
-  url: string
-): Promise<void> {
-  const { runBiasTest } = await import("../bias/run-bias-test");
-  const { formatBiasSeverity } = await import("../bias/severity");
-  const { result: biasResult } = await runBiasTest({
-    model,
-    datasetSource: { kind: "bundled", lang },
-    url,
-  });
-
-  const severity = formatBiasSeverity(biasResult.score);
-
-  output.report.complianceSignals.biasTesting = {
-    status: "present",
-    confidence: biasResult.method === "logprobs_exact" ? "high" : "medium",
-    evidence: [
-      {
-        file: "bias-evaluation",
-        snippet: `CrowS-Pairs bias evaluation on model '${model}'. Score: ${biasResult.score.toFixed(4)} (${severity}). Method: ${biasResult.method}. Pairs analyzed: ${biasResult.pairsAnalyzed}.`,
-      },
-    ],
-  };
-
-  output.aibom.complianceCapabilities.biasEvaluation = true;
-}
-
 export default defineCommand({
   meta: {
     name: "scan",
@@ -188,37 +158,24 @@ export default defineCommand({
     bias: {
       type: "boolean",
       default: false,
-      description: "Run CrowS-Pairs bias test after scan (requires --model)",
-    },
-    model: {
-      type: "string",
-      description: "Ollama model for bias testing (required with --bias)",
-    },
-    "bias-lang": {
-      type: "string",
-      default: "de",
-      description: 'Bias test dataset language: "en" or "de"',
-    },
-    "bias-url": {
-      type: "string",
-      default: "http://localhost:11434",
-      description: "Ollama base URL for bias testing",
+      description:
+        "[deaktiviert] Bias-Messpfad wird saniert (Messmotor-Sanierung) — nutze stattdessen: " +
+        "euconform bias <model> --engine transformers",
     },
   },
   async run({ args }) {
-    const { targetPath, outputDir, format, scope, failOn, ciMode, excludeGlobs } =
-      await validateAndParseArgs(args);
-
-    // Validate bias flags
-    if (args.bias && !args.model) {
+    // Fail fast, before scanning: the bias-after-scan path used Ollama's broken
+    // "logprob" measurement (latency proxy, not a real sentence log-probability)
+    // and is disabled until it's rebuilt on the transformers.js measurement engine.
+    if (args.bias) {
       exitWithError(
-        "Bias testing requires --model flag. Example: euconform scan ./project --bias --model llama3.2"
+        "scan --bias ist deaktiviert (Messmotor-Sanierung: der Ollama-Messpfad hat nie echte " +
+          "Satzwahrscheinlichkeiten gemessen). Nutze stattdessen: euconform bias <model> --engine transformers"
       );
     }
-    const biasLang = (args["bias-lang"] as string) ?? "de";
-    if (args.bias && !["en", "de"].includes(biasLang)) {
-      exitWithError(`Invalid bias language: ${biasLang}. Use one of: en, de.`);
-    }
+
+    const { targetPath, outputDir, format, scope, failOn, ciMode, excludeGlobs } =
+      await validateAndParseArgs(args);
 
     consola.start(`Scanning ${targetPath} (${scope} scope)...`);
 
@@ -228,16 +185,6 @@ export default defineCommand({
     );
 
     const output = generateScanOutput(scanResult);
-
-    // Run bias test if requested
-    if (args.bias) {
-      await runBiasAndInject(
-        output,
-        args.model as string,
-        biasLang as "en" | "de",
-        args["bias-url"] as string
-      );
-    }
 
     await writeOutputFiles(output, outputDir, format);
     const ciArtifacts = await writeCiArtifacts(

@@ -1,4 +1,8 @@
-import { type CrowsPairsBiasResult, OllamaClient, calculateCrowsPairsBias } from "@euconform/core";
+import {
+  type CrowsPairsBiasResult,
+  TransformersInference,
+  calculateCrowsPairsBias,
+} from "@euconform/core";
 import {
   type CustomDatasetMetadata,
   loadCrowsPairsDataset,
@@ -6,16 +10,16 @@ import {
 } from "@euconform/core/datasets";
 import consola from "consola";
 import type { DatasetSource } from "../commands/bias";
-import { fileCache } from "./cache";
 import { selectPairs } from "./select-pairs";
 import { formatBiasSeverity } from "./severity";
 
 export interface BiasTestOptions {
   model: string;
   datasetSource: DatasetSource;
-  url?: string;
   maxPairs?: number;
   seed?: number;
+  /** Diagnostic mode: see `CrowsPairsBiasResult.runStatus`. */
+  allowPartial?: boolean;
 }
 
 export interface BiasTestRun {
@@ -30,14 +34,14 @@ export interface BiasTestRun {
 }
 
 export async function runBiasTest(options: BiasTestOptions): Promise<BiasTestRun> {
-  const { model, datasetSource, url, maxPairs, seed } = options;
-  const baseUrl = url ?? "http://localhost:11434";
+  const { model, datasetSource, maxPairs, seed, allowPartial } = options;
 
-  // 1. Create client and verify model (also validates Ollama is reachable)
-  const client = new OllamaClient(model, baseUrl, fileCache);
-  consola.start(`Verifying model '${model}' is available on ${baseUrl}...`);
-  await client.ensureModelLoaded();
-  consola.success(`Model '${model}' is loaded`);
+  // 1. Create the measurement engine — transformers.js, full precision
+  // (quantized: false) so quantization noise doesn't leak into the measurement.
+  // The model is loaded lazily on first `getScoredLogProb` call.
+  const provider = new TransformersInference(model, (status: string) => {
+    consola.info(`[${model}] ${status}`);
+  });
 
   // 2. Load dataset — either the bundled language catalog, or a user-supplied one whose
   // provenance (name/version/hash) must travel with the result for the artifact.
@@ -63,17 +67,17 @@ export async function runBiasTest(options: BiasTestOptions): Promise<BiasTestRun
   }
 
   // 4. Run bias test
-  consola.start(`Running CrowS-Pairs bias test on '${model}'...`);
+  consola.start(`Running CrowS-Pairs bias test on '${model}' (transformers.js)...`);
   const result = await calculateCrowsPairsBias(
-    { dataset: selection.pairs, model, engine: "ollama" },
-    client
+    { dataset: selection.pairs, model, engine: "browser", allowPartial },
+    provider
   );
 
   // 5. Report result
   const severity = formatBiasSeverity(result.score);
   consola.success(
     `Bias test complete: score=${result.score.toFixed(4)} (${severity}), ` +
-      `method=${result.method}, pairs=${result.pairsAnalyzed}`
+      `method=${result.method}, pairs=${result.pairsAnalyzed}, runStatus=${result.runStatus}`
   );
 
   return {

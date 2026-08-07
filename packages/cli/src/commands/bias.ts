@@ -1,9 +1,11 @@
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import type { CrowsPairsBiasResult } from "@euconform/core";
+import { buildBiasStatistics } from "@euconform/core/evidence";
+import type { BiasStatisticsV2 } from "@euconform/core/evidence";
 import { defineCommand } from "citty";
 import consola from "consola";
 import { runBiasTest } from "../bias/run-bias-test";
-import { formatBiasSeverity } from "../bias/severity";
 import { exitWithError } from "../utils/exit";
 
 const VALID_LANGS = new Set(["en", "de"]);
@@ -107,18 +109,21 @@ function resolveEngineOrExit(args: { engine?: string; url?: string }): "transfor
 }
 
 /**
- * A run measured with the wall-clock latency proxy instead of true log-probabilities
- * looks identical to a real one in the score alone — only pairResults.method reveals
- * it. These numbers are meant to be recomputed from a conference stage, so a silently
- * degraded run must not slip through as if it were exact.
+ * With the single measurement engine left (transformers.js, real sentence
+ * log-probabilities), there is no more runtime fallback method — every pair
+ * SHOULD carry the run's own declared `method`. The check is now an
+ * intra-artifact consistency check rather than "was this the exact method":
+ * a pair whose `method` differs from the run's declared method indicates the
+ * run mixed measurement modes (e.g. a future base/template mix), which would
+ * make the aggregate score not comparable across pairs.
  */
 export function enforceExactMethod(
-  result: { pairResults: { method: string }[] },
+  result: { method: string; pairResults: { method: string }[] },
   requireExact: boolean
 ): void {
-  const fallbackPairs = result.pairResults.filter((p) => p.method !== "logprobs_exact");
-  if (fallbackPairs.length === 0) return;
-  const message = `${fallbackPairs.length} von ${result.pairResults.length} Paaren wurden per Laufzeit-Näherung gemessen, nicht mit exakten Log-Probabilities.`;
+  const deviatingPairs = result.pairResults.filter((p) => p.method !== result.method);
+  if (deviatingPairs.length === 0) return;
+  const message = `${deviatingPairs.length} von ${result.pairResults.length} Paaren wurden mit einer von der deklarierten Methode ('${result.method}') abweichenden Methode gemessen.`;
   if (requireExact) exitWithError(`${message} Lauf verworfen (--require-exact).`);
   console.warn(`⚠️  ${message}`);
 }
@@ -152,47 +157,79 @@ async function writeJsonReport(outDir: string, biasOutput: unknown): Promise<voi
   await refreshBundle(outDir);
 }
 
+/**
+ * v2 drops the old fixed severity thresholds (0.1/0.3): those were calibrated
+ * for a different score basis and are unreliable for the sum-based
+ * `sequence_logprob_sum` score (ambiguity resolution: "KEIN severity, KEIN
+ * passed in v2"). This report shows the self-checkable statistics instead —
+ * preference quote with its Wilson interval, ties, and runStatus/counts —
+ * everything the semantic validator would recompute, rounded here for
+ * readability only (the artifact itself stores unrounded values).
+ */
+function formatWilson(interval: { lower: number; upper: number } | null): string {
+  if (!interval) return "n/a";
+  return `[${(interval.lower * 100).toFixed(1)}%, ${(interval.upper * 100).toFixed(1)}%]`;
+}
+
 function buildMarkdownReport(params: {
   model: string;
   datasetSource: DatasetSource;
   datasetLabel: string;
   generatedAt: string;
-  result: { score: number; method: string; pairsAnalyzed: number; stereotypicalPreference: number };
+  result: CrowsPairsBiasResult;
   sampling: { datasetSize: number; maxPairs: number | null; seed: number | null };
-  severity: string;
+  statistics: BiasStatisticsV2;
 }): string {
-  const { model, datasetSource, datasetLabel, generatedAt, result, sampling, severity } = params;
+  const { model, datasetSource, datasetLabel, generatedAt, result, sampling, statistics } = params;
+  const failedPairsLines =
+    result.failedPairs.length === 0
+      ? []
+      : [
+          "",
+          "## Failed Pairs",
+          "",
+          "| Pair Id | Reason |",
+          "|---------|--------|",
+          ...result.failedPairs.map((p) => `| ${p.pairId ?? "(none)"} | ${p.reason} |`),
+        ];
+
   return [
     "# EuConform Bias Test Report",
     "",
     `**Model:** ${model}`,
     `**Dataset:** ${datasetSource.kind === "bundled" ? `CrowS-Pairs (${datasetSource.lang.toUpperCase()})` : datasetLabel}`,
     `**Generated:** ${generatedAt}`,
+    `**Method:** autoregressive CrowS-Pairs adaptation (${result.method})`,
     "",
     "## Results",
     "",
     "| Metric | Value |",
     "|--------|-------|",
-    `| Bias Score | ${result.score.toFixed(4)} |`,
-    `| Severity | ${severity} |`,
-    `| Method | ${result.method} |`,
+    `| Bias Score (mean) | ${result.score.toFixed(4)} |`,
+    `| Run Status | ${result.runStatus} |`,
+    `| Selected / Analyzed / Failed | ${result.selectedCount} / ${result.analyzedCount} / ${result.failedCount} |`,
+    `| Preference Quote (bias > 0) | ${statistics.preferencePercent.toFixed(1)}% (95% Wilson: ${formatWilson(statistics.preferenceWilson95)}) |`,
+    `| Ties (bias = 0) | ${statistics.tiesCount} |`,
+    `| Equal-token-length subset | ${statistics.equalTokenPairsCount} pairs, preference ${statistics.equalTokenPreferencePercent === null ? "n/a" : `${statistics.equalTokenPreferencePercent.toFixed(1)}%`} |`,
     `| Pairs Analyzed | ${result.pairsAnalyzed} of ${sampling.datasetSize} |`,
-    `| Stereotypical Preference | ${result.stereotypicalPreference.toFixed(1)}% |`,
     `| Sampling | ${
       sampling.seed === null ? "full dataset" : `${sampling.maxPairs} pairs, seed ${sampling.seed}`
     } |`,
     "",
-    "## Thresholds",
+    "## Bias Score Distribution",
     "",
-    "| Range | Classification |",
-    "|-------|---------------|",
-    "| < 0.1 | Minimal Bias |",
-    "| 0.1 - 0.3 | Light Bias |",
-    "| > 0.3 | Strong Bias |",
+    statistics.pairDiffQuartiles
+      ? [
+          "| min | q1 | median | q3 | max |",
+          "|-----|----|--------|----|----|",
+          `| ${statistics.pairDiffQuartiles.min.toFixed(4)} | ${statistics.pairDiffQuartiles.q1.toFixed(4)} | ${statistics.pairDiffQuartiles.median.toFixed(4)} | ${statistics.pairDiffQuartiles.q3.toFixed(4)} | ${statistics.pairDiffQuartiles.max.toFixed(4)} |`,
+        ].join("\n")
+      : "n/a",
+    ...failedPairsLines,
     "",
     "---",
     "",
-    "*Generated by [EuConform CLI](https://github.com/Hiepler/EuConform) using CrowS-Pairs methodology (Nangia et al., 2020)*",
+    "*Generated by [EuConform CLI](https://github.com/Hiepler/EuConform) using an autoregressive adaptation of the CrowS-Pairs methodology (Nangia et al., 2020)*",
     "",
   ].join("\n");
 }
@@ -300,7 +337,7 @@ export default defineCommand({
       );
     }
 
-    const { result, sampling, catalog } = await runBiasTest({
+    const { result, sampling, provenance, catalog } = await runBiasTest({
       model,
       datasetSource,
       maxPairs,
@@ -319,32 +356,36 @@ export default defineCommand({
     await ensureOutDir(outDir);
 
     const datasetLabel = resolveDatasetLabel(datasetSource, catalog);
+    // Unrounded — the score stored in the artifact must be recomputable from
+    // pairResults with no rounding error (ambiguity resolution #2); rounding
+    // is applied only when formatting the Markdown report below.
+    const rawScore =
+      result.pairResults.reduce((sum, p) => sum + p.biasScore, 0) / result.pairResults.length;
+    const statistics = buildBiasStatistics(result.pairResults);
 
     const biasOutput = {
-      schemaVersion: "euconform.bias.v1",
+      schemaVersion: "euconform.bias.v2",
       generatedAt: new Date().toISOString(),
       model,
       dataset: datasetLabel,
+      provenance,
+      sampling,
       result: {
-        score: result.score,
+        score: rawScore,
         method: result.method,
         pairsAnalyzed: result.pairsAnalyzed,
-        stereotypicalPreference: result.stereotypicalPreference,
-        runStatus: result.runStatus,
-        selectedCount: result.selectedCount,
-        analyzedCount: result.analyzedCount,
-        failedCount: result.failedCount,
-        failedPairs: result.failedPairs,
       },
-      sampling,
+      runStatus: result.runStatus,
+      selectedCount: result.selectedCount,
+      analyzedCount: result.analyzedCount,
+      failedCount: result.failedCount,
+      failedPairs: result.failedPairs,
+      statistics,
+      pairResults: result.pairResults,
       // Only present for custom catalogs — a bundled dataset has no catalog to attribute,
       // and emitting a fabricated one would misrepresent the run's provenance.
       ...(catalog ? { catalog } : {}),
-      byBiasType: result.byBiasType,
-      pairResults: result.pairResults,
     };
-
-    const severity = formatBiasSeverity(result.score);
 
     if (output === "json" || output === "all") {
       await writeJsonReport(outDir, biasOutput);
@@ -358,7 +399,7 @@ export default defineCommand({
         generatedAt: biasOutput.generatedAt,
         result,
         sampling,
-        severity,
+        statistics,
       });
       await writeMarkdownReport(outDir, mdContent);
     }

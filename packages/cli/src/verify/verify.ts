@@ -1,10 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import {
-  getSchemaMajorVersion,
+  isPartialRun,
   sha256Hex,
   validateAiBillOfMaterials,
-  validateBiasReport,
+  validateBiasArtifact,
   validateCiReport,
   validateScanBundle,
   validateScanReport,
@@ -12,6 +12,7 @@ import {
 import type {
   AiBillOfMaterials,
   BiasReport,
+  BiasReportV2,
   CiReport,
   ScanBundle,
   ScanReport,
@@ -148,7 +149,7 @@ async function loadBundleInput(inputPath: string): Promise<LoadedBundleInput> {
   };
 }
 
-type JsonArtifact = ScanReport | AiBillOfMaterials | CiReport | BiasReport;
+type JsonArtifact = ScanReport | AiBillOfMaterials | CiReport | BiasReport | BiasReportV2;
 type MetadataIssue = Omit<VerifyIssue, "severity">;
 
 function mismatchIssue(fileName: string, code: string, field: string): MetadataIssue {
@@ -244,7 +245,35 @@ function compareJsonMetadata(
   return issues;
 }
 
+/**
+ * Bias artifacts go through the ONE shared semantic validator
+ * (`validateBiasArtifact`, also used by `euconform validate`) instead of
+ * being dispatched like the other roles — it returns a legacy flag/warning
+ * for v1 and recomputes statistics for v2, neither of which the other
+ * validators need to report back to the caller.
+ */
+function validateBiasArtifactForVerify(ctx: ArtifactContext, parsed: unknown): JsonArtifact {
+  const outcome = validateBiasArtifact(parsed);
+
+  if (outcome.legacy) {
+    addIssue(ctx.report, ctx.strict ? "error" : "warning", {
+      artifact: ctx.artifact.fileName,
+      code: "artifact.bias.legacyMethod",
+      message: outcome.warning ?? "This bias artifact uses the legacy euconform.bias.v1 format.",
+    });
+  } else if (isPartialRun(outcome.document as BiasReportV2) && ctx.strict) {
+    addIssue(ctx.report, "error", {
+      artifact: ctx.artifact.fileName,
+      code: "artifact.bias.partial",
+      message: `${ctx.artifact.fileName} has runStatus 'partial' (--allow-partial diagnostic run); --strict requires a complete measurement.`,
+    });
+  }
+
+  return outcome.document;
+}
+
 function validateJsonArtifactForRole(
+  ctx: ArtifactContext,
   artifact: ScanBundle["artifacts"][number],
   parsed: unknown
 ): JsonArtifact {
@@ -256,7 +285,7 @@ function validateJsonArtifactForRole(
     case "ci":
       return validateCiReport(parsed);
     case "bias":
-      return validateBiasReport(parsed);
+      return validateBiasArtifactForVerify(ctx, parsed);
     default:
       throw new Error(`Unsupported JSON artifact role '${artifact.role}'`);
   }
@@ -348,21 +377,19 @@ function extractSchemaVersion(parsed: unknown): string | undefined {
   return typeof candidate === "string" ? candidate : undefined;
 }
 
+/**
+ * Bundle decoupling (Messmotor-Sanierung Task 3): the bundle binds artifacts by
+ * hash and role, not by schema major version — a euconform.bundle.v1 manifest
+ * may legitimately reference a euconform.bias.v2 artifact. The only remaining
+ * check is that the artifact's OWN schemaVersion matches what the manifest
+ * declared for it (a literal string mismatch is still a real inconsistency).
+ */
 function checkSchemaVersionConsistency(ctx: ArtifactContext, actualSchemaVersion: string): void {
   if (ctx.artifact.schemaVersion && ctx.artifact.schemaVersion !== actualSchemaVersion) {
     addIssue(ctx.report, "error", {
       artifact: ctx.artifact.fileName,
       code: "artifact.schemaVersion.mismatch",
       message: `${ctx.artifact.fileName} schemaVersion '${actualSchemaVersion}' does not match manifest '${ctx.artifact.schemaVersion}'`,
-    });
-  }
-
-  const bundleMajor = getSchemaMajorVersion(ctx.bundle.schemaVersion);
-  if (bundleMajor && getSchemaMajorVersion(actualSchemaVersion) !== bundleMajor) {
-    addIssue(ctx.report, "error", {
-      artifact: ctx.artifact.fileName,
-      code: "artifact.schemaVersion.major",
-      message: `${ctx.artifact.fileName} uses schemaVersion '${actualSchemaVersion}' with a different major than the bundle`,
     });
   }
 }
@@ -409,7 +436,7 @@ function verifyJsonArtifact(ctx: ArtifactContext): void {
 
   let validatedDocument: JsonArtifact;
   try {
-    validatedDocument = validateJsonArtifactForRole(ctx.artifact, parsedArtifact);
+    validatedDocument = validateJsonArtifactForRole(ctx, ctx.artifact, parsedArtifact);
     ctx.result.schemaStatus = "valid";
   } catch (error) {
     ctx.result.schemaStatus = "invalid";

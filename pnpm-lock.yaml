@@ -172,6 +172,9 @@ importers:
       '@euconform/core':
         specifier: workspace:*
         version: link:../core
+      '@xenova/transformers':
+        specifier: ^2.17.2
+        version: 2.17.2
       citty:
         specifier: ^0.1.6
         version: 0.1.6
@@ -3039,6 +3042,7 @@ packages:
   prebuild-install@7.1.3:
     resolution: {integrity: sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==}
     engines: {node: '>=10'}
+    deprecated: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
     hasBin: true
 
   prettier@2.8.8:

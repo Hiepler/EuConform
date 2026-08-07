@@ -1,5 +1,6 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
+import { validateBiasArtifact } from "@euconform/core/evidence";
 import { validate } from "@euconform/core/validation";
 import type { ValidationResult } from "@euconform/core/validation";
 import { defineCommand } from "citty";
@@ -8,13 +9,46 @@ import consola from "consola";
 interface FileResult {
   file: string;
   result: ValidationResult;
+  /** Set only for bias artifacts (v1 legacy warning), so callers can surface it. */
+  legacyWarning?: string;
 }
 
-async function validateFile(file: string): Promise<FileResult> {
+/**
+ * AJV (via `validate`) only checks schema SHAPE. Bias artifacts additionally
+ * need the semantic pass — statistics recomputation for v2, legacy flagging
+ * for v1 — via the SAME `validateBiasArtifact` that `euconform verify` calls,
+ * so the two commands can no longer disagree on the same file.
+ */
+export async function validateFile(file: string): Promise<FileResult> {
   try {
     const content = await readFile(file, "utf-8");
     const data: unknown = JSON.parse(content);
-    return { file, result: validate(data) };
+    const result = validate(data);
+
+    const isBiasArtifact = result.schemaType === "bias.v1" || result.schemaType === "bias.v2";
+    if (!result.valid || !isBiasArtifact) {
+      return { file, result };
+    }
+
+    try {
+      const outcome = validateBiasArtifact(data);
+      return { file, result, legacyWarning: outcome.legacy ? outcome.warning : undefined };
+    } catch (error) {
+      return {
+        file,
+        result: {
+          valid: false,
+          schemaType: result.schemaType,
+          errors: [
+            {
+              path: "",
+              message: error instanceof Error ? error.message : String(error),
+              keyword: "semantic",
+            },
+          ],
+        },
+      };
+    }
   } catch {
     return {
       file,
@@ -35,6 +69,7 @@ function printJsonResults(results: FileResult[]): void {
         valid: r.result.valid,
         schemaType: r.result.schemaType,
         errors: r.result.errors,
+        ...(r.legacyWarning ? { legacyWarning: r.legacyWarning } : {}),
       })),
       null,
       2
@@ -43,10 +78,11 @@ function printJsonResults(results: FileResult[]): void {
 }
 
 function printHumanResults(results: FileResult[]): void {
-  for (const { file, result } of results) {
+  for (const { file, result, legacyWarning } of results) {
     const shortName = basename(file);
     if (result.valid) {
       consola.success(`${shortName} \u2014 valid (euconform.${result.schemaType})`);
+      if (legacyWarning) consola.warn(`  ${legacyWarning}`);
     } else {
       consola.error(
         `${shortName} \u2014 ${result.errors.length} error(s) (euconform.${result.schemaType})`

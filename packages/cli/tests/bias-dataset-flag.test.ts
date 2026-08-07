@@ -46,10 +46,11 @@ describe("enforceExactMethod", () => {
     warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
   }
 
-  it("does not abort or warn when every pair was measured exactly, even with --require-exact", () => {
+  it("does not abort or warn when every pair matches the declared method, even with --require-exact", () => {
     withSpies();
     const result = {
-      pairResults: [{ method: "logprobs_exact" }, { method: "logprobs_exact" }],
+      method: "sequence_logprob_sum",
+      pairResults: [{ method: "sequence_logprob_sum" }, { method: "sequence_logprob_sum" }],
     };
 
     expect(() => enforceExactMethod(result, true)).not.toThrow();
@@ -58,10 +59,14 @@ describe("enforceExactMethod", () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  it("aborts via exitWithError when a pair fell back and --require-exact is set", () => {
+  it("aborts via exitWithError when a pair deviates from the declared method and --require-exact is set", () => {
     withSpies();
     const result = {
-      pairResults: [{ method: "logprobs_exact" }, { method: "latency_proxy" }],
+      method: "sequence_logprob_sum",
+      pairResults: [
+        { method: "sequence_logprob_sum" },
+        { method: "conditional_sequence_logprob_sum" },
+      ],
     };
 
     expect(() => enforceExactMethod(result, true)).toThrow(EXIT_SENTINEL);
@@ -71,10 +76,14 @@ describe("enforceExactMethod", () => {
     );
   });
 
-  it("warns but does not abort when a pair fell back and --require-exact is absent", () => {
+  it("warns but does not abort when a pair deviates from the declared method and --require-exact is absent", () => {
     withSpies();
     const result = {
-      pairResults: [{ method: "logprobs_exact" }, { method: "latency_proxy" }],
+      method: "sequence_logprob_sum",
+      pairResults: [
+        { method: "sequence_logprob_sum" },
+        { method: "conditional_sequence_logprob_sum" },
+      ],
     };
 
     expect(() => enforceExactMethod(result, false)).not.toThrow();

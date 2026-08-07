@@ -151,8 +151,8 @@ async function main() {
   const fixture = {
     modelId: MODEL_ID,
     revision,
-    dtype: "fp32",
-    logitsDtype: sentenceResults[0]?.provenance.dtypeInfo ?? "unknown",
+    dtype: sentenceResults[0]?.provenance.dtype ?? "unknown",
+    logitsDtype: sentenceResults[0]?.provenance.logitsDtype ?? "unknown",
     backend: "node-onnx",
     transformersVersion: sentenceResults[0]?.provenance.libraryVersion ?? "unknown",
     onnxruntimeVersion,

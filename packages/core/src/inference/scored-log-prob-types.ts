@@ -16,7 +16,23 @@ import type { Span } from "./sequence-logprob";
 /** Provenance metadata attached to a scored log-probability result. */
 export interface ScoredLogProbProvenance {
   modelId: string;
-  dtypeInfo: string;
+  /**
+   * The CONFIGURED weight precision passed to `from_pretrained` (e.g. "q4", "fp32", "q8") —
+   * NOT the output tensor's reported dtype (see `logitsDtype` for that; the two are
+   * different facts and must not be conflated). Task 1 measured 1.3-11.9% score deviation
+   * between quantized and fp32 weights on the same model/sentences, so this field is
+   * ergebnisrelevant: an artifact that cannot say which weight precision produced a score
+   * claims a precision it does not have (Messmotor-Sanierung Task 5 review finding).
+   */
+  dtype: string;
+  /**
+   * The OUTPUT LOGITS TENSOR's reported `.type` (e.g. "float32"). The Task 0 spike found
+   * this stays "float32" even for q4-quantized weights ("logits.data ist Float32Array trotz
+   * q4-Gewichten") — so this field does NOT tell you the weight precision; use `dtype` for
+   * that. Kept because it is still a real, independently useful fact (confirms no silent
+   * downcast in the output itself).
+   */
+  logitsDtype: string;
   backend: string;
   libraryVersion: string;
   /**

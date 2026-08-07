@@ -162,7 +162,14 @@ export class TransformersInference {
   private loadError: Error | null = null;
   private statusCallback: ((status: string) => void) | null = null;
   private readonly revision: string;
-  private readonly dtype: TransformersDType;
+  /**
+   * Public (not private) so callers building their own provenance/artifact records (e.g.
+   * the CLI's `run-bias-test.ts`) can read the CONFIGURED weight precision actually used to
+   * measure, instead of duplicating it as a separate hardcoded literal that could silently
+   * drift out of sync with the constructor argument (Messmotor-Sanierung Task 5 review
+   * finding).
+   */
+  public readonly dtype: TransformersDType;
   /**
    * Selected from the loaded model CONFIG (`architectures`), never from `modelId` — see
    * `isConditionalGenerationConfig` (Messmotor-Sanierung Task 5). `true` routes
@@ -375,6 +382,7 @@ export class TransformersInference {
           model: this.model as unknown as TemplateModel,
           modelId: this.modelId,
           libraryVersion,
+          dtype: this.dtype,
         },
         text
       );
@@ -433,7 +441,8 @@ export class TransformersInference {
       contextTokenHash,
       provenance: {
         modelId: this.modelId,
-        dtypeInfo: String((logits as unknown as { type?: string }).type ?? "unknown"),
+        dtype: this.dtype,
+        logitsDtype: String((logits as unknown as { type?: string }).type ?? "unknown"),
         backend: "node-onnx",
         libraryVersion,
         templateStrategy: "none",

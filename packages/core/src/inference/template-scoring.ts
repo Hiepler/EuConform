@@ -70,6 +70,11 @@ export interface TemplateScoringDeps {
   model: TemplateModel;
   modelId: string;
   libraryVersion: string;
+  /** The CONFIGURED weight precision (e.g. "q4", "fp32") passed to `from_pretrained` —
+   * threaded through explicitly because the output logits tensor's own `.type` is always
+   * "float32" regardless of weight quantization (Task 0 spike) and so cannot be used to
+   * recover it; see `ScoredLogProbProvenance.dtype` vs `.logitsDtype`. */
+  dtype: string;
 }
 
 async function sha256Hex(input: string): Promise<string> {
@@ -120,7 +125,7 @@ export async function scoreTemplateContinuation(
   deps: TemplateScoringDeps,
   text: string
 ): Promise<ScoredLogProb> {
-  const { tokenizer, model, modelId, libraryVersion } = deps;
+  const { tokenizer, model, modelId, libraryVersion, dtype } = deps;
 
   const messages = buildTemplateMessages();
   const contextText = tokenizer.apply_chat_template(messages, {
@@ -168,7 +173,8 @@ export async function scoreTemplateContinuation(
 
   const provenance: ScoredLogProbProvenance = {
     modelId,
-    dtypeInfo: String((logits as unknown as { type?: string }).type ?? "unknown"),
+    dtype,
+    logitsDtype: String((logits as unknown as { type?: string }).type ?? "unknown"),
     backend: "node-onnx",
     libraryVersion,
     templateStrategy: "fixed_template_span",

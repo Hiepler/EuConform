@@ -127,7 +127,11 @@ export async function runBiasTest(options: BiasTestOptions): Promise<BiasTestRun
     tokenizerId: model,
     transformersVersion: resolveTransformersPackageVersion(),
     onnxruntimeVersion: resolveOnnxRuntimeVersion(),
-    dtype: "fp32",
+    // Read from the provider actually constructed above, not a second hardcoded literal —
+    // duplicating "fp32" here was only correct by coincidence (Messmotor-Sanierung Task 5
+    // review finding); it would have silently become a falsehood once a caller constructs
+    // the provider with a different dtype (e.g. template mode's "q4").
+    dtype: provider.dtype,
     backend: "node-onnx",
     templateStrategy: "none",
   };

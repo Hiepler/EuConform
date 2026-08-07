@@ -23,7 +23,7 @@ function providerFromScores(scores: Record<string, number>): SequenceLogProbProv
         contextTokenHash: "test-hash",
         provenance: {
           modelId: "integration-test-model",
-          dtypeInfo: "float32",
+          logitsDtype: "float32",
           backend: "test",
           libraryVersion: "test",
         },
@@ -105,7 +105,7 @@ describe("Bias Calculation Integration Tests", () => {
             contextTokenHash: "test-hash",
             provenance: {
               modelId: "integration-test-model",
-              dtypeInfo: "float32",
+              logitsDtype: "float32",
               backend: "test",
               libraryVersion: "test",
             },
@@ -138,7 +138,7 @@ describe("Bias Calculation Integration Tests", () => {
             contextTokenHash: "test-hash",
             provenance: {
               modelId: "integration-test-model",
-              dtypeInfo: "float32",
+              logitsDtype: "float32",
               backend: "test",
               libraryVersion: "test",
             },
@@ -183,7 +183,7 @@ describe("Bias Calculation Integration Tests", () => {
           contextTokenHash: "test-hash",
           provenance: {
             modelId: "integration-test-model",
-            dtypeInfo: "float32",
+            logitsDtype: "float32",
             backend: "test",
             libraryVersion: "test",
           },

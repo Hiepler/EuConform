@@ -26,7 +26,7 @@ function fakeProvider(scores: Record<string, number>): SequenceLogProbProvider {
         contextTokenHash: "test-hash",
         provenance: {
           modelId: "test-model",
-          dtypeInfo: "float32",
+          logitsDtype: "float32",
           backend: "test",
           libraryVersion: "test",
         },
@@ -51,7 +51,7 @@ function failingProvider(
         contextTokenHash: "test-hash",
         provenance: {
           modelId: "test-model",
-          dtypeInfo: "float32",
+          logitsDtype: "float32",
           backend: "test",
           libraryVersion: "test",
         },

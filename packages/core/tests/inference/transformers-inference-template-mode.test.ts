@@ -120,7 +120,7 @@ describe("TransformersInference config-based loader selection (Task 5)", () => {
 
   it("routes a conditional-generation architecture through AutoProcessor + Gemma4ForConditionalGeneration and the template mode", async () => {
     const TransformersInference = await loadTransformersInference();
-    const engine = new TransformersInference("test/gemma4-like");
+    const engine = new TransformersInference("test/gemma4-like", null, { dtype: "q4" });
 
     const result = await engine.getScoredLogProb("Ein Satz.");
 
@@ -131,11 +131,17 @@ describe("TransformersInference config-based loader selection (Task 5)", () => {
     expect(result.method).toBe("conditional_sequence_logprob_sum");
     expect(result.provenance.templateStrategy).toBe("fixed_template_span");
     expect(result.scoredTokenIds).toEqual(SENTENCE_TOKEN_IDS);
+
+    // Task 5 review finding: the CONFIGURED weight precision must be threaded into
+    // provenance in template mode too, distinct from the output tensor's own dtype (which
+    // stays "float32" regardless of weight quantization — Task 0 spike).
+    expect(result.provenance.dtype).toBe("q4");
+    expect(result.provenance.logitsDtype).toBe("float32");
   });
 
   it("keeps a classic causal-LM architecture on AutoTokenizer + AutoModelForCausalLM and the base mode", async () => {
     const TransformersInference = await loadTransformersInference();
-    const engine = new TransformersInference("test/gpt2-like");
+    const engine = new TransformersInference("test/gpt2-like", null, { dtype: "q4" });
 
     const result = await engine.getScoredLogProb("Hi there");
 
@@ -146,5 +152,11 @@ describe("TransformersInference config-based loader selection (Task 5)", () => {
 
     expect(result.method).toBe("sequence_logprob_sum");
     expect(result.provenance.templateStrategy).toBe("none");
+
+    // Same finding, base mode: previously this path also only reported the output logits
+    // tensor's dtype under the (misleading) name `dtypeInfo`, never the configured weight
+    // precision actually passed to `from_pretrained`.
+    expect(result.provenance.dtype).toBe("q4");
+    expect(result.provenance.logitsDtype).toBe("float32");
   });
 });

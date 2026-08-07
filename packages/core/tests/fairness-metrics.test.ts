@@ -28,7 +28,7 @@ const alwaysSucceedingProvider: SequenceLogProbProvider = {
     contextTokenHash: "test-hash",
     provenance: {
       modelId: "test-model",
-      dtypeInfo: "float32",
+      logitsDtype: "float32",
       backend: "test",
       libraryVersion: "test",
     },

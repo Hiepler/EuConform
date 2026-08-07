@@ -11,8 +11,10 @@ import { useLanguage } from "../lib/i18n/LanguageContext";
  * user preferences, and scientific accuracy requirements.
  */
 function shouldRecommend(capability: ModelCapability, allCapabilities: ModelCapability[]): boolean {
-  // Only recommend available models
-  if (capability.status !== "available") {
+  // Only recommend usable models. "unverified" (declared-supported, e.g. browser
+  // models that haven't been load-tested) counts as usable — only "unavailable"/
+  // "error"/"detecting" should be excluded here.
+  if (capability.status !== "available" && capability.status !== "unverified") {
     return false;
   }
 
@@ -40,7 +42,7 @@ function shouldRecommend(capability: ModelCapability, allCapabilities: ModelCapa
 }
 
 function getRecommendationScore(capability: ModelCapability): number {
-  if (capability.status !== "available") return 0;
+  if (capability.status !== "available" && capability.status !== "unverified") return 0;
 
   let score = 0;
 

@@ -82,7 +82,11 @@ export function ModelSelectScreen({
           <button
             type="button"
             onClick={onContinue}
-            disabled={!selectedCapability || selectedCapability.status !== "available"}
+            disabled={
+              !selectedCapability ||
+              (selectedCapability.status !== "available" &&
+                selectedCapability.status !== "unverified")
+            }
             className="w-full mt-6 inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg border-2 border-slate-deep dark:border-paper text-slate-deep dark:text-paper font-medium hover:bg-slate-deep hover:text-paper dark:hover:bg-paper dark:hover:text-slate-deep transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-current"
           >
             {t("continue_to_risk_assessment")}

@@ -170,7 +170,12 @@ export function useComplianceWizard(
    * Branches on userRole: "gpai-provider" → "gpai-quiz", else → "quiz"
    */
   const handleStartQuiz = useCallback(() => {
-    if (!selectedCapability || selectedCapability.status !== "available") {
+    // "unverified" (declared-supported, not yet load-tested — e.g. browser
+    // models) is a usable selection; only unavailable/error/detecting block here.
+    if (
+      !selectedCapability ||
+      (selectedCapability.status !== "available" && selectedCapability.status !== "unverified")
+    ) {
       setError("Please select an available model before continuing");
       return;
     }
@@ -302,7 +307,11 @@ export function useComplianceWizard(
   const handleRunBiasTest = useCallback(async () => {
     if (!inferenceClient || modelLoadingStatus === "loading") return;
 
-    if (selectedCapability && selectedCapability.status !== "available") {
+    if (
+      selectedCapability &&
+      selectedCapability.status !== "available" &&
+      selectedCapability.status !== "unverified"
+    ) {
       setError(
         `Selected model ${selectedCapability.modelId} is no longer available (status: ${selectedCapability.status})`
       );

@@ -167,7 +167,14 @@ export function ModelSelector({
   // Filter models based on user preferences and engine filter
   const validModels = state.models.filter((model: ModelCapability) => {
     if (userPreferences.hideUnavailableModels) {
-      if (model.status !== "available" && model.status !== "detecting") {
+      // "unverified" is a usable, declared-supported model (not measured yet,
+      // but not broken either) — treat it like "available"/"detecting" here so
+      // the honest status doesn't hide otherwise-usable models from selection.
+      if (
+        model.status !== "available" &&
+        model.status !== "unverified" &&
+        model.status !== "detecting"
+      ) {
         return false;
       }
     }

@@ -6,9 +6,21 @@
 import type { BiasCalculationMethod } from "../types";
 
 /**
- * Detection status for model capabilities
+ * Detection status for model capabilities.
+ *
+ * "unverified": the model is declared supported (e.g. it's in the static
+ * BROWSER_MODELS list) but has NOT actually been loaded/tested — no request
+ * was made, no capability was measured. Distinct from "available", which
+ * means a real detection/measurement round confirmed it. Do not report
+ * "available" for a model that was never tested (see Messmotor-Sanierung
+ * Task 2): the runtime status is what a consumer reads, not source comments.
  */
-export type CapabilityDetectionStatus = "detecting" | "available" | "unavailable" | "error";
+export type CapabilityDetectionStatus =
+  | "detecting"
+  | "available"
+  | "unverified"
+  | "unavailable"
+  | "error";
 
 /**
  * Model capability information
@@ -105,22 +117,19 @@ export class DefaultCapabilityDetectionService implements CapabilityDetectionSer
       // Import browser models dynamically
       const { BROWSER_MODELS } = await import("./browser-inference");
 
-      // NOTE: these entries are declared from the static BROWSER_MODELS list, not
-      // measured — no model has actually been loaded/tested at this point. Since
-      // this (transformers.js) is now the only engine that can honestly produce a
-      // ScoredLogProb (see Messmotor-Sanierung Task 2), "available"/"logprobs_exact"
-      // here means "declared supported", not "verified". `lastTested` is misleading
-      // in that sense; a real per-model verification step is future work, not this
-      // task's scope — do not read this as a live capability probe.
+      // These entries are declared from the static BROWSER_MODELS list, not
+      // measured — no model has actually been loaded/tested at this point.
+      // status: "unverified" (not "available") reflects that honestly; no
+      // lastTested since no test ran. A real per-model verification step is
+      // future work, not this task's scope.
       for (const model of BROWSER_MODELS) {
         if (!model.supported) continue;
         capabilities.push({
           modelId: model.id,
           engine: "browser",
           method: "logprobs_exact",
-          status: "available",
+          status: "unverified",
           recommended: true,
-          lastTested: new Date().toISOString(),
         });
       }
     } catch (error) {
@@ -130,9 +139,8 @@ export class DefaultCapabilityDetectionService implements CapabilityDetectionSer
         modelId: "Xenova/distilgpt2",
         engine: "browser",
         method: "logprobs_exact",
-        status: "available",
+        status: "unverified",
         recommended: true,
-        lastTested: new Date().toISOString(),
       });
     }
 
@@ -196,15 +204,14 @@ export class DefaultCapabilityDetectionService implements CapabilityDetectionSer
       return cached.capability;
     }
 
-    // Browser inference always supports exact log-probabilities
+    // Declared, not measured — no model has been loaded/tested here.
     if (engine === "browser") {
       const capability: ModelCapability = {
         modelId,
         engine: "browser",
         method: "logprobs_exact",
-        status: "available",
+        status: "unverified",
         recommended: true,
-        lastTested: new Date().toISOString(),
       };
 
       this.setCachedCapability(capability);
@@ -367,7 +374,9 @@ export class DefaultCapabilityDetectionService implements CapabilityDetectionSer
    * Calculate recommendation score for a capability
    */
   protected getRecommendationScore(capability: ModelCapability): number {
-    if (capability.status !== "available") return 0;
+    // "unverified" is a usable, declared-supported model (see the type doc) —
+    // only truly broken/unknown states (unavailable, error, detecting) score 0.
+    if (capability.status !== "available" && capability.status !== "unverified") return 0;
 
     let score = 0;
 
@@ -405,15 +414,14 @@ export class EnhancedCapabilityDetectionService extends DefaultCapabilityDetecti
       return cached.capability;
     }
 
-    // Browser inference always supports exact log-probabilities
+    // Declared, not measured — no model has been loaded/tested here.
     if (engine === "browser") {
       const capability: ModelCapability = {
         modelId,
         engine: "browser",
         method: "logprobs_exact",
-        status: "available",
+        status: "unverified",
         recommended: true,
-        lastTested: new Date().toISOString(),
       };
 
       this.setCachedCapability(capability);
@@ -516,7 +524,8 @@ export class EnhancedCapabilityDetectionService extends DefaultCapabilityDetecti
   async detectAllCapabilities(): Promise<ModelCapability[]> {
     const capabilities: ModelCapability[] = [];
 
-    // Add all supported browser models dynamically
+    // Add all supported browser models dynamically. Declared, not measured —
+    // no model has actually been loaded/tested at this point.
     try {
       const { BROWSER_MODELS } = await import("./browser-inference");
 
@@ -526,9 +535,8 @@ export class EnhancedCapabilityDetectionService extends DefaultCapabilityDetecti
           modelId: model.id,
           engine: "browser",
           method: "logprobs_exact",
-          status: "available",
+          status: "unverified",
           recommended: true,
-          lastTested: new Date().toISOString(),
         });
       }
     } catch (error) {
@@ -538,9 +546,8 @@ export class EnhancedCapabilityDetectionService extends DefaultCapabilityDetecti
         modelId: "Xenova/distilgpt2",
         engine: "browser",
         method: "logprobs_exact",
-        status: "available",
+        status: "unverified",
         recommended: true,
-        lastTested: new Date().toISOString(),
       });
     }
 

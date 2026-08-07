@@ -178,7 +178,7 @@ function ModelCard({ capability, isSelected, onSelect, disabled }: ModelCardProp
       {/* Footer Details */}
       <div className="w-full mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
         <div className="flex items-center gap-1">
-          {capability.status === "available" ? (
+          {capability.status === "available" || capability.status === "unverified" ? (
             <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />

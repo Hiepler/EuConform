@@ -96,6 +96,24 @@ describe("isConditionalGenerationConfig", () => {
   });
 });
 
+describe("hasChatTemplate", () => {
+  it("detects a non-empty chat template string", async () => {
+    const { hasChatTemplate } = await loadModule();
+    expect(hasChatTemplate({ chat_template: "{{ bos_token }}..." })).toBe(true);
+  });
+
+  it("does not detect a null chat template (e.g. Xenova/gpt2, Xenova/llama2.c-stories15M)", async () => {
+    const { hasChatTemplate } = await loadModule();
+    expect(hasChatTemplate({ chat_template: null })).toBe(false);
+  });
+
+  it("does not detect a missing chat_template field or an empty string", async () => {
+    const { hasChatTemplate } = await loadModule();
+    expect(hasChatTemplate({})).toBe(false);
+    expect(hasChatTemplate({ chat_template: "" })).toBe(false);
+  });
+});
+
 describe("scoreTemplateContinuation", () => {
   it("span excludes ALL template/context tokens — scoredTokenIds contains none of them", async () => {
     const { scoreTemplateContinuation } = await loadModule();

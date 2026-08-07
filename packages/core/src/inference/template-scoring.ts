@@ -214,3 +214,35 @@ export function isConditionalGenerationConfig(config: MinimalModelConfig): boole
     (name) => typeof name === "string" && name.endsWith("ForConditionalGeneration")
   );
 }
+
+/** Minimal shape this module needs from a loaded tokenizer to detect a chat template. */
+export interface MinimalChatTemplateTokenizer {
+  chat_template?: string | null;
+}
+
+/**
+ * Detect whether a loaded TOKENIZER carries a chat template, which decides the SCORING MODE
+ * (template vs. base) — Messmotor-Sanierung Task 6c.
+ *
+ * This replaces architecture-name sniffing (`isConditionalGenerationConfig`) as the mode
+ * signal: Task 6b's panel run showed that keying mode on architecture misses instruction-tuned
+ * models whose architecture is plain `*ForCausalLM` (e.g. `LlamaForCausalLM`,
+ * `Gemma3ForCausalLM`) but which still expect chat-templated input — they were scored bare,
+ * the exact error template mode exists to prevent.
+ *
+ * Verified empirically (transformers.js@4.2.0, against the four panel models + gpt2) via
+ * `AutoTokenizer.from_pretrained(modelId)`: the loaded tokenizer instance exposes the chat
+ * template — sourced from `tokenizer_config.json`'s `chat_template` field — directly as
+ * `tokenizer.chat_template`. It is `null` for models with no chat template
+ * (`Xenova/gpt2`, `Xenova/llama2.c-stories15M`) and a non-empty Jinja template string for
+ * instruction-tuned models (`onnx-community/Llama-3.2-1B-Instruct-ONNX`,
+ * `onnx-community/gemma-3-1b-it-ONNX`, `onnx-community/gemma-4-E2B-it-ONNX`).
+ *
+ * Mode selection (this function) and LOADER selection (`isConditionalGenerationConfig`,
+ * still architecture-keyed) are deliberately independent: a CausalLM-architecture model with
+ * a chat template loads via the base-mode loader (`AutoTokenizer` + `AutoModelForCausalLM`)
+ * but scores via the template-mode scorer — e.g. Llama-3.2-1B-Instruct.
+ */
+export function hasChatTemplate(tokenizer: MinimalChatTemplateTokenizer): boolean {
+  return typeof tokenizer.chat_template === "string" && tokenizer.chat_template.length > 0;
+}

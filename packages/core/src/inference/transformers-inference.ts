@@ -14,9 +14,11 @@ import type {
 import type { ScoredLogProb } from "./scored-log-prob-types";
 import { type LogitsTensorLike, type Span, sumSequenceLogProb } from "./sequence-logprob";
 import {
+  type MinimalChatTemplateTokenizer,
   type MinimalModelConfig,
   type TemplateModel,
   type TemplateTokenizer,
+  hasChatTemplate,
   isConditionalGenerationConfig,
   scoreTemplateContinuation,
 } from "./template-scoring";
@@ -171,10 +173,16 @@ export class TransformersInference {
    */
   public readonly dtype: TransformersDType;
   /**
-   * Selected from the loaded model CONFIG (`architectures`), never from `modelId` — see
-   * `isConditionalGenerationConfig` (Messmotor-Sanierung Task 5). `true` routes
-   * `getScoredLogProb` through the Gemma-4 template-mode scorer instead of the Task 1
-   * base (bare-sentence) mode.
+   * Selected from the loaded TOKENIZER's chat template (`hasChatTemplate`), never from the
+   * model's architecture name and never from `modelId` — see `hasChatTemplate`
+   * (Messmotor-Sanierung Task 6c; supersedes the architecture-keyed detection from Task 5,
+   * which missed instruction-tuned `*ForCausalLM` models). `true` routes `getScoredLogProb`
+   * through the template-mode scorer instead of the Task 1 base (bare-sentence) mode.
+   *
+   * Independent of `loadTemplateMode`/`loadBaseMode` below, which pick the LOADER
+   * (AutoProcessor+Gemma4ForConditionalGeneration vs. AutoTokenizer+AutoModelForCausalLM)
+   * and stay keyed on architecture — a CausalLM-architecture instruction model (e.g.
+   * Llama-3.2-1B-Instruct) uses the base-mode loader but the template-mode scorer.
    */
   private isTemplateMode = false;
 
@@ -293,24 +301,41 @@ export class TransformersInference {
     try {
       const transformers = await import("@huggingface/transformers");
 
-      // Architecture detection is from the loaded CONFIG (`architectures`), never from
-      // `modelId` — see `isConditionalGenerationConfig` (Messmotor-Sanierung Task 5,
-      // ambiguity resolution 1). This one extra `from_pretrained` call runs for every
-      // model (base mode included); it hits the same on-disk cache as the tokenizer/model
-      // downloads, so the added cost is negligible next to those.
+      // LOADER selection is from the loaded CONFIG (`architectures`), never from `modelId`
+      // — see `isConditionalGenerationConfig` (Messmotor-Sanierung Task 5, ambiguity
+      // resolution 1). This is a loader decision only (which `from_pretrained` class pair
+      // to call); the SCORING MODE is decided separately below, from the tokenizer's chat
+      // template (Task 6c) — the two must not be conflated. This one extra
+      // `AutoConfig.from_pretrained` call runs for every model (base mode included); it
+      // hits the same on-disk cache as the tokenizer/model downloads, so the added cost is
+      // negligible next to those.
       this.notifyStatus("loading-config");
       const config = await transformers.AutoConfig.from_pretrained(this.modelId, {
         revision: this.revision,
       });
-      this.isTemplateMode = isConditionalGenerationConfig(config as unknown as MinimalModelConfig);
+      const useConditionalGenerationLoader = isConditionalGenerationConfig(
+        config as unknown as MinimalModelConfig
+      );
 
       const device = await this.resolveDevice();
 
-      if (this.isTemplateMode) {
+      if (useConditionalGenerationLoader) {
         await this.loadTemplateMode(transformers, device);
       } else {
         await this.loadBaseMode(transformers, device);
       }
+
+      if (!this.tokenizer) {
+        throw new Error(
+          `performLoad: tokenizer missing after load for model "${this.modelId}" — cannot determine scoring mode.`
+        );
+      }
+      // SCORING MODE selection (Messmotor-Sanierung Task 6c): keyed on the loaded
+      // tokenizer's chat template, independent of the loader chosen above — see
+      // `hasChatTemplate`.
+      this.isTemplateMode = hasChatTemplate(
+        this.tokenizer as unknown as MinimalChatTemplateTokenizer
+      );
 
       this.notifyStatus("ready");
     } catch (err) {

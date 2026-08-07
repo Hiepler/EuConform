@@ -38,6 +38,6 @@
     "node": ">=18"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": ["esbuild", "onnxruntime-node"]
   }
 }

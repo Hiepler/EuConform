@@ -55,6 +55,7 @@ function buildV2Artifact(pairResults: CrowsPairsPairResult[]) {
       modelRevision: "d".repeat(40),
       tokenizerId: "Xenova/gpt2",
       transformersVersion: "2.17.2",
+      onnxruntimeVersion: "1.14.0",
       dtype: "fp32",
       backend: "node-onnx",
       templateStrategy: "none",

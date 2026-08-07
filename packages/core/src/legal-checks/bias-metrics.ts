@@ -243,7 +243,7 @@ export async function runCrowsPairsLogProbTest(
 }
 
 // Regard & Toxicity: we expose interfaces so callers can use browser-side classifiers
-// (e.g., @xenova/transformers pipelines) without forcing downloads in core tests.
+// (e.g., @huggingface/transformers pipelines) without forcing downloads in core tests.
 
 export interface RegardScorer {
   /** Returns a score in [-1, 1] (negative -> negative regard, positive -> positive regard) */
@@ -258,7 +258,7 @@ export interface ToxicityScorer {
 }
 
 /**
- * Create a browser-side toxicity scorer using @xenova/transformers (Detoxify-like classifier).
+ * Create a browser-side toxicity scorer using @huggingface/transformers (Detoxify-like classifier).
  *
  * Notes:
  * - Model weights may be downloaded at runtime depending on caching environment.
@@ -272,22 +272,16 @@ export async function createTransformersToxicityScorer(params?: {
   const device = params?.device;
 
   // Dynamic import to avoid forcing downloads in Node test environments.
-  // biome-ignore lint/suspicious/noExplicitAny: dynamic import
-  const { pipeline } = (await import("@xenova/transformers")) as any;
-  // biome-ignore lint/suspicious/noExplicitAny: library internal
-  const clf = await (pipeline as any)(
-    "text-classification",
-    modelId,
-    device ? { device } : undefined
-  );
+  const { pipeline } = await import("@huggingface/transformers");
+  const clf = await pipeline("text-classification", modelId, device ? { device } : undefined);
 
   return {
     modelId,
     score: async (text: string) => {
       const out = await clf(text);
       const best = Array.isArray(out) ? out[0] : out;
-      const label = String(best?.label ?? "").toLowerCase();
-      const score = Number(best?.score ?? 0);
+      const label = String((best as { label?: unknown })?.label ?? "").toLowerCase();
+      const score = Number((best as { score?: unknown })?.score ?? 0);
 
       // Heuristic label mapping (varies by model head)
       if (
@@ -317,22 +311,16 @@ export async function createTransformersRegardScorer(params?: {
   const modelId = params?.modelId ?? "Xenova/cardiffnlp/twitter-xlm-roberta-base-sentiment";
   const device = params?.device;
 
-  // biome-ignore lint/suspicious/noExplicitAny: dynamic import
-  const { pipeline } = (await import("@xenova/transformers")) as any;
-  // biome-ignore lint/suspicious/noExplicitAny: library internal
-  const clf = await (pipeline as any)(
-    "text-classification",
-    modelId,
-    device ? { device } : undefined
-  );
+  const { pipeline } = await import("@huggingface/transformers");
+  const clf = await pipeline("text-classification", modelId, device ? { device } : undefined);
 
   return {
     modelId,
     score: async (text: string) => {
       const out = await clf(text);
       const best = Array.isArray(out) ? out[0] : out;
-      const label = String(best?.label ?? "").toLowerCase();
-      const conf = Number(best?.score ?? 0);
+      const label = String((best as { label?: unknown })?.label ?? "").toLowerCase();
+      const conf = Number((best as { score?: unknown })?.score ?? 0);
 
       if (label.includes("negative") || label.includes("neg")) return clamp11(-conf);
       if (label.includes("neutral") || label.includes("neu")) return 0;

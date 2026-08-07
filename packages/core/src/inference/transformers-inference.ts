@@ -5,10 +5,18 @@
  * STRICT MODE: Real inference only. No demo data.
  */
 
-// We need to use 'any' for transformers objects because the types are not fully exported
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
+import type {
+  DataType,
+  PreTrainedModel,
+  PreTrainedTokenizer,
+  Tensor,
+} from "@huggingface/transformers";
 import { type LogitsTensorLike, type Span, sumSequenceLogProb } from "./sequence-logprob";
+
+/** Numeric precision for model weights — re-exported so callers don't need to import from
+ * @huggingface/transformers directly. See DATA_TYPES in that package for the full list
+ * (includes quantization schemes like "q4", "bnb4"); the scoring path must use "fp32". */
+export type TransformersDType = DataType;
 
 /** Provenance metadata attached to a scored log-probability result. */
 export interface ScoredLogProbProvenance {
@@ -37,33 +45,36 @@ async function sha256Hex(input: string): Promise<string> {
 
 async function resolveTransformersVersion(): Promise<string> {
   try {
-    // webpackIgnore: this module is only reachable from CLI/Node call paths in
-    // practice, but the class is also imported (transitively, via @euconform/core)
-    // by apps/web for browser-side scoring. Without the comment, webpack tries to
-    // statically resolve "node:module" for the client bundle and fails the build
-    // (UnhandledSchemeError) even though this branch never runs there — the catch
-    // below turns an unresolved/failed import into "unknown" either way.
-    const { createRequire } = await import(/* webpackIgnore: true */ "node:module");
-    const require = createRequire(import.meta.url);
-    const pkg = require("@xenova/transformers/package.json") as { version?: string };
-    return pkg.version ?? "unknown";
+    // v4's package.json declares a strict `exports` map with no "./package.json" subpath
+    // (unlike v2's), so `require("@huggingface/transformers/package.json")` throws
+    // ERR_PACKAGE_PATH_NOT_EXPORTED — surfaced while fixing Messmotor-Sanierung Task 4's
+    // onnxruntimeVersion provenance gap, where this exact function was silently returning
+    // "unknown" on every real run. `env.version` is v4's own documented public API for this
+    // and isn't subject to the exports map at all.
+    const { env } = await import("@huggingface/transformers");
+    return env.version ?? "unknown";
   } catch {
     return "unknown";
   }
 }
 
-/** Resolve the tokenizer's BOS token id, aborting with a speaking error if undefined. */
-// biome-ignore lint/suspicious/noExplicitAny: internal transformers.js types
-function resolveBosTokenId(tokenizer: any, modelId: string): number {
-  const bosToken: string | undefined =
-    tokenizer.getToken?.("bos_token") ?? tokenizer._tokenizer_config?.bos_token;
+/**
+ * Resolve the tokenizer's BOS token id, aborting with a speaking error if undefined.
+ *
+ * @huggingface/transformers v4 exposes `bos_token` / `bos_token_id` directly as typed
+ * properties on `PreTrainedTokenizer` — the v2 lookup dance (`getToken("bos_token")` then
+ * `tokenizer.model.tokens_to_ids.get(...)`) is gone; deleting transformers.d.ts surfaced
+ * this (Messmotor-Sanierung Task 4, trap 3).
+ */
+function resolveBosTokenId(tokenizer: PreTrainedTokenizer, modelId: string): number {
+  const bosToken = tokenizer.bos_token;
   if (!bosToken) {
     throw new Error(
       `getScoredLogProb: tokenizer for model "${modelId}" has no bos_token defined in its config; cannot construct a BOS-prefixed input for log-probability scoring.`
     );
   }
-  const bosTokenId: number | undefined = tokenizer.model?.tokens_to_ids?.get(bosToken);
-  if (bosTokenId === undefined) {
+  const bosTokenId = tokenizer.bos_token_id;
+  if (bosTokenId === undefined || bosTokenId === null) {
     throw new Error(
       `getScoredLogProb: tokenizer for model "${modelId}" could not resolve bos_token "${bosToken}" to a token id.`
     );
@@ -131,7 +142,7 @@ export async function checkWebGPU(): Promise<boolean> {
 export async function checkTransformersAvailable(): Promise<boolean> {
   try {
     // Try dynamic import - this will fail if package not installed
-    await import("@xenova/transformers");
+    await import("@huggingface/transformers");
     return true;
   } catch {
     return false;
@@ -149,27 +160,28 @@ export async function checkTransformersAvailable(): Promise<boolean> {
  */
 export class TransformersInference {
   public readonly modelId: string;
-  private model: unknown = null;
-  private tokenizer: unknown = null;
-  private pipeline: unknown = null; // Keep pipeline for generation
+  private model: PreTrainedModel | null = null;
+  private tokenizer: PreTrainedTokenizer | null = null;
   private loadingPromise: Promise<void> | null = null;
   private loadError: Error | null = null;
   private statusCallback: ((status: string) => void) | null = null;
   private readonly revision: string;
-  private readonly quantized: boolean;
+  private readonly dtype: TransformersDType;
 
   constructor(
     modelId = "Xenova/distilgpt2",
     statusCallback: ((status: string) => void) | null = null,
-    options: { revision?: string; quantized?: boolean } = {}
+    options: { revision?: string; dtype?: TransformersDType } = {}
   ) {
     this.modelId = modelId;
     this.statusCallback = statusCallback;
     this.revision = options.revision ?? "main";
-    // Default true preserves prior behavior for browser generation (smaller/faster).
-    // Log-probability scoring for bias measurement should use `quantized: false`
-    // (full precision) to avoid quantization noise in the measurement itself.
-    this.quantized = options.quantized ?? true;
+    // Default "q8" preserves the prior effective behavior for browser generation
+    // (smaller/faster; the v2 default was `quantized: true`, which loaded 8-bit
+    // weights). Log-probability scoring for bias measurement must pass `dtype: "fp32"`
+    // explicitly (full precision) to avoid quantization noise in the measurement
+    // itself — see run-bias-test.ts and the golden integration test.
+    this.dtype = options.dtype ?? "q8";
   }
 
   /**
@@ -200,33 +212,26 @@ export class TransformersInference {
     if (this.statusCallback) this.statusCallback("loading");
 
     try {
-      const { AutoTokenizer, AutoModelForCausalLM, pipeline } = await import(
-        "@xenova/transformers"
-      );
+      const { AutoTokenizer, AutoModelForCausalLM } = await import("@huggingface/transformers");
 
       const hasWebGPU = await checkWebGPU();
-      const device = hasWebGPU ? "webgpu" : "cpu";
+      // v4 device names: Node's CPU backend is "cpu"; the browser's non-GPU backend is
+      // "wasm" (there is no "cpu" device in a browser). checkWebGPU() always resolves to
+      // false under Node, so this only matters for the (typeof window !== "undefined")
+      // branch — Messmotor-Sanierung Task 4, trap 2.
+      const isBrowserEnv = typeof window !== "undefined";
+      const device = hasWebGPU ? "webgpu" : isBrowserEnv ? "wasm" : "cpu";
 
       if (this.statusCallback) this.statusCallback("loading-tokenizer");
-      // biome-ignore lint/suspicious/noExplicitAny: library internal (revision option missing from .d.ts)
-      this.tokenizer = await (AutoTokenizer as any).from_pretrained(this.modelId, {
+      this.tokenizer = await AutoTokenizer.from_pretrained(this.modelId, {
         revision: this.revision,
       });
 
       if (this.statusCallback) this.statusCallback("loading-model");
-      // biome-ignore lint/suspicious/noExplicitAny: library internal
-      this.model = await (AutoModelForCausalLM as any).from_pretrained(this.modelId, {
+      this.model = await AutoModelForCausalLM.from_pretrained(this.modelId, {
         device,
-        quantized: this.quantized,
+        dtype: this.dtype,
         revision: this.revision,
-      });
-
-      if (this.statusCallback) this.statusCallback("loading-pipeline");
-      // biome-ignore lint/suspicious/noExplicitAny: library internal
-      this.pipeline = await (pipeline as any)("text-generation", this.modelId, {
-        device,
-        model: this.model,
-        tokenizer: this.tokenizer,
       });
 
       if (this.statusCallback) this.statusCallback("ready");
@@ -238,23 +243,39 @@ export class TransformersInference {
   }
 
   /**
-   * Generate text
+   * Generate text.
+   *
+   * v4 note: previously this called a `pipeline("text-generation", ...)` built from the
+   * already-loaded model/tokenizer, which transformers.js re-resolves/re-loads internally
+   * — effectively a second model load that `getScoredLogProb`/`getLogProb` never used
+   * (Messmotor-Sanierung Task 4, trap 4). Calling `model.generate()` directly avoids that.
    */
   async generate(prompt: string, maxTokens = 50): Promise<string> {
     await this.load();
 
-    if (!this.pipeline) {
+    if (!this.tokenizer || !this.model) {
       throw new Error("Model not loaded");
     }
 
-    // biome-ignore lint/suspicious/noExplicitAny: library internal
-    const result = await (this.pipeline as any)(prompt, {
+    const tokenizer = this.tokenizer;
+    const model = this.model;
+
+    const { input_ids, attention_mask } = tokenizer(prompt, { return_tensor: true });
+    const outputs = await model.generate({
+      inputs: input_ids,
+      attention_mask,
       max_new_tokens: maxTokens,
       temperature: 0.7,
       do_sample: true,
     });
 
-    return result[0]?.generated_text || "";
+    // model.generate()'s declared return type is `ModelOutput | Tensor`, but for causal LM
+    // decoding (no encoder-decoder, no streamer) it is always a plain Tensor of token ids —
+    // narrow via `unknown` rather than `any` since the union has no discriminant we can check.
+    const decoded = tokenizer.batch_decode(outputs as unknown as Tensor, {
+      skip_special_tokens: true,
+    });
+    return decoded[0] ?? "";
   }
 
   /**
@@ -275,14 +296,16 @@ export class TransformersInference {
       throw new Error("Model not loaded");
     }
 
-    // biome-ignore lint/suspicious/noExplicitAny: internal transformers.js types
-    const tokenizer = this.tokenizer as any;
-    // biome-ignore lint/suspicious/noExplicitAny: internal transformers.js types
-    const model = this.model as any;
+    const tokenizer = this.tokenizer;
+    const model = this.model;
 
     const bosTokenId = resolveBosTokenId(tokenizer, this.modelId);
 
-    const encoded = await tokenizer(text, { return_tensors: "pt", add_special_tokens: false });
+    // v4 renamed the tokenizer call's tensor-output option from `return_tensors: "pt"`
+    // (a v2 backend-name string) to `return_tensor: true` (a plain boolean) — surfaced by
+    // deleting transformers.d.ts; `return_tensors: "pt"` is not a recognized v4 option and
+    // would silently fail to type-check (Messmotor-Sanierung Task 4).
+    const encoded = tokenizer(text, { return_tensor: true, add_special_tokens: false });
     const inputIdsTensor = encoded.input_ids;
     const [batchSize] = inputIdsTensor.dims;
     if (batchSize !== 1) {
@@ -299,21 +322,16 @@ export class TransformersInference {
       sentenceTokenIds[0] === bosTokenId ? sentenceTokenIds : [bosTokenId, ...sentenceTokenIds];
     const scoredTokenIds = finalTokenIds.slice(1);
 
-    // biome-ignore lint/suspicious/noExplicitAny: Tensor is exported at runtime but missing from the package's .d.ts
-    const { Tensor } = (await import("@xenova/transformers")) as any;
+    const { Tensor } = await import("@huggingface/transformers");
     const newLen = finalTokenIds.length;
-    // biome-ignore lint/suspicious/noExplicitAny: transformers.js Tensor constructor is untyped for dtype strings
-    const newInputIds = new (Tensor as any)(
-      "int64",
-      BigInt64Array.from(finalTokenIds.map(BigInt)),
-      [1, newLen]
-    );
-    // biome-ignore lint/suspicious/noExplicitAny: transformers.js Tensor constructor is untyped for dtype strings
-    const newAttentionMask = new (Tensor as any)(
-      "int64",
-      BigInt64Array.from(new Array(newLen).fill(1n)),
-      [1, newLen]
-    );
+    const newInputIds = new Tensor("int64", BigInt64Array.from(finalTokenIds.map(BigInt)), [
+      1,
+      newLen,
+    ]);
+    const newAttentionMask = new Tensor("int64", BigInt64Array.from(new Array(newLen).fill(1n)), [
+      1,
+      newLen,
+    ]);
 
     const outputs = await model({ input_ids: newInputIds, attention_mask: newAttentionMask });
     const logits: LogitsTensorLike = outputs.logits;

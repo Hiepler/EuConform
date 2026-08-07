@@ -29,19 +29,19 @@ const VOCAB_SIZE = 5;
 
 const modelCallSpy = vi.fn();
 
-vi.mock("@xenova/transformers", () => {
-  const tokenizerFn = vi.fn(async (_text: string, _opts: unknown) => ({
+vi.mock("@huggingface/transformers", () => {
+  const tokenizerFn = vi.fn((_text: string, _opts: unknown) => ({
     input_ids: new FakeTensor("int64", BigInt64Array.from(SENTENCE_TOKEN_IDS.map(BigInt)), [
       1,
       SENTENCE_TOKEN_IDS.length,
     ]),
   })) as unknown as {
-    (text: string, opts: unknown): Promise<{ input_ids: FakeTensor }>;
-    getToken: (key: string) => string;
-    model: { tokens_to_ids: Map<string, number> };
+    (text: string, opts: unknown): { input_ids: FakeTensor };
+    bos_token: string;
+    bos_token_id: number;
   };
-  tokenizerFn.getToken = (key: string) => (key === "bos_token" ? BOS_TOKEN : "");
-  tokenizerFn.model = { tokens_to_ids: new Map([[BOS_TOKEN, BOS_TOKEN_ID]]) };
+  tokenizerFn.bos_token = BOS_TOKEN;
+  tokenizerFn.bos_token_id = BOS_TOKEN_ID;
 
   const modelFn = vi.fn(async (inputs: { input_ids: FakeTensor; attention_mask: FakeTensor }) => {
     modelCallSpy(inputs);
@@ -59,7 +59,6 @@ vi.mock("@xenova/transformers", () => {
   return {
     AutoTokenizer: { from_pretrained: vi.fn(async () => tokenizerFn) },
     AutoModelForCausalLM: { from_pretrained: vi.fn(async () => modelFn) },
-    pipeline: vi.fn(async () => vi.fn()),
     Tensor: FakeTensor,
   };
 });
@@ -141,7 +140,7 @@ describe("BrowserInference.getScoredLogProb (BOS fix regression)", () => {
 
     // Simulate a tokenizer without a defined bos_token.
     // biome-ignore lint/suspicious/noExplicitAny: reaching into private test double
-    (engine as any).tokenizer.getToken = (key: string) => (key === "bos_token" ? "" : "");
+    (engine as any).tokenizer.bos_token = "";
 
     await expect(engine.getScoredLogProb("Hi there")).rejects.toThrow(/has no bos_token defined/);
   });

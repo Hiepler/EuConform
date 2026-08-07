@@ -386,6 +386,15 @@ export interface BiasReportV2Provenance {
   /** The tokenizer actually used; equals modelId unless a distinct tokenizer repo was loaded. */
   tokenizerId: string;
   transformersVersion: string;
+  /**
+   * Installed onnxruntime-node version. Ergebnisrelevant: a native ONNX Runtime version
+   * bump (1.14.0 -> 1.24.3 across the @xenova/transformers -> @huggingface/transformers
+   * migration) shifted sequence log-probabilities at the 1e-6 relative level even with
+   * byte-identical model weights and dtype (Messmotor-Sanierung Task 4). Must be resolved
+   * from the installed package at measurement time; an artifact that cannot resolve it is
+   * a loud failure, not a placeholder.
+   */
+  onnxruntimeVersion: string;
   /** Numeric precision used for scoring, e.g. "fp32" or "q8" — ergebnisrelevant (Task 1: up to 11.9% deviation quantized vs fp32). */
   dtype: string;
   backend: "node-onnx";

@@ -40,7 +40,8 @@ const RULES: DetectionRule[] = [
   {
     id: "local-inference-transformers-browser",
     name: "Transformers.js (browser inference)",
-    pattern: /(?:from\s+['"]@xenova\/transformers['"]|\.pipeline\s*\(|env\.allowLocalModels)/,
+    pattern:
+      /(?:from\s+['"](?:@xenova|@huggingface)\/transformers['"]|\.pipeline\s*\(|env\.allowLocalModels)/,
     confidence: "medium",
     extensions: [".ts", ".tsx", ".js", ".jsx"],
   },

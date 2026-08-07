@@ -12,7 +12,7 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   noExternal: ["@euconform/core"],
-  external: ["sharp", "@xenova/transformers", "onnxruntime-node"],
+  external: ["sharp", "@huggingface/transformers", "onnxruntime-node"],
   async onSuccess() {
     await mkdir(schemasDest, { recursive: true });
     const files = await readdir(schemasSource);

@@ -14,6 +14,16 @@ import { BrowserInference } from "../../src/inference/browser-inference";
  *
  * Run with:
  *   RUN_MODEL_TESTS=1 pnpm --filter @euconform/core exec vitest run tests/inference/logprob-golden.integration.test.ts
+ *
+ * Tolerance is RELATIVE, not absolute (Messmotor-Sanierung Task 4): the score is a SUM over
+ * tokens, so its magnitude scales with sentence length. An absolute tolerance therefore
+ * tightens arbitrarily for short sentences and loosens for long ones — the wrong shape for
+ * "did the measurement change." A native ONNX Runtime version bump alone (onnxruntime-node
+ * 1.14.0 -> 1.24.3, byte-identical model weights, identical dtype) was observed to shift
+ * scores by ~1.16e-6 relative (max 3.55e-6 across the 5 fixture sentences) — real floating-
+ * point kernel drift, not a logic bug (token ids were identical). `relativeTolerance: 1e-5`
+ * leaves an order of magnitude of headroom over that observed drift without being permissive
+ * enough to hide an actual regression.
  */
 
 const RUN_MODEL_TESTS = process.env.RUN_MODEL_TESTS === "1";
@@ -33,12 +43,13 @@ interface FixtureSentence {
 interface Fixture {
   modelId: string;
   revision: string;
-  quantized: boolean;
   dtype: string;
+  logitsDtype: string;
   backend: string;
-  libraryVersion: string;
+  transformersVersion: string;
+  onnxruntimeVersion: string;
   nodeVersion: string;
-  tolerance: number;
+  relativeTolerance: number;
   generatedAt: string;
   sentences: FixtureSentence[];
 }
@@ -51,19 +62,24 @@ function sha256HexOfIds(ids: number[]): string {
   return createHash("sha256").update(JSON.stringify(ids), "utf8").digest("hex");
 }
 
+function relativeDiff(actual: number, expected: number): number {
+  return Math.abs(actual - expected) / Math.abs(expected);
+}
+
 describe.skipIf(!RUN_MODEL_TESTS)("logprob golden integration (Xenova/gpt2, real model)", () => {
   const fixture = loadFixture();
 
-  it("matches the checked-in fixture within tolerance for every sentence", async () => {
+  it("matches the checked-in fixture within relative tolerance for every sentence", async () => {
     const engine = new BrowserInference(fixture.modelId, null, {
       revision: fixture.revision,
-      quantized: fixture.quantized,
+      dtype: fixture.dtype,
     });
     await engine.load();
 
     console.log(
       `[logprob-golden] modelId=${fixture.modelId} revision=${fixture.revision} ` +
-        `libraryVersion=${fixture.libraryVersion} backend=${fixture.backend}`
+        `transformersVersion=${fixture.transformersVersion} onnxruntimeVersion=${fixture.onnxruntimeVersion} ` +
+        `backend=${fixture.backend}`
     );
 
     for (const expected of fixture.sentences) {
@@ -73,15 +89,16 @@ describe.skipIf(!RUN_MODEL_TESTS)("logprob golden integration (Xenova/gpt2, real
       expect(sha256HexOfIds(result.scoredTokenIds)).toBe(expected.scoredTokenIdsHash);
       expect(result.scoredTokenIds.length).toBe(expected.scoredTokenCount);
       expect(result.contextTokenHash).toBe(expected.contextTokenHash);
-      expect(result.score).toBeCloseTo(expected.score, 4);
-      expect(Math.abs(result.score - expected.score)).toBeLessThan(fixture.tolerance);
+      expect(relativeDiff(result.score, expected.score)).toBeLessThanOrEqual(
+        fixture.relativeTolerance
+      );
     }
   }, 120_000);
 
   it("length monotonicity: extending a token-identical prefix strictly decreases the score", async () => {
     const engine = new BrowserInference(fixture.modelId, null, {
       revision: fixture.revision,
-      quantized: fixture.quantized,
+      dtype: fixture.dtype,
     });
     await engine.load();
 

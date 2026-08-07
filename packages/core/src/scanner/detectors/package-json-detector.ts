@@ -24,6 +24,7 @@ const AI_PACKAGES: Record<string, PackageInfo> = {
   "@langchain/core": { category: "ai-framework", label: "LangChain Core" },
   llamaindex: { category: "ai-framework", label: "LlamaIndex" },
   "@xenova/transformers": { category: "ai-framework", label: "Transformers.js" },
+  "@huggingface/transformers": { category: "ai-framework", label: "Transformers.js" },
   ai: { category: "ai-framework", label: "Vercel AI SDK" },
   "@huggingface/inference": { category: "ai-framework", label: "HuggingFace Inference" },
 

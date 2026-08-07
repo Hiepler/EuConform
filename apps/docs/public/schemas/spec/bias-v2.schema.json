@@ -117,6 +117,7 @@
         "modelRevision",
         "tokenizerId",
         "transformersVersion",
+        "onnxruntimeVersion",
         "dtype",
         "backend",
         "templateStrategy"
@@ -131,6 +132,11 @@
         },
         "tokenizerId": { "type": "string", "minLength": 1 },
         "transformersVersion": { "type": "string", "minLength": 1 },
+        "onnxruntimeVersion": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Installed onnxruntime-node version. Ergebnisrelevant: a native ONNX Runtime version bump (e.g. 1.14.0 -> 1.24.3 across the @xenova/transformers -> @huggingface/transformers migration) has been observed to shift sequence log-probabilities at the 1e-6 relative level even with byte-identical model weights and dtype (Messmotor-Sanierung Task 4). Must be resolved from the installed package, never a placeholder."
+        },
         "dtype": { "type": "string", "minLength": 1 },
         "backend": { "const": "node-onnx" },
         "templateStrategy": { "type": "string", "enum": ["none", "fixed_template_span"] },

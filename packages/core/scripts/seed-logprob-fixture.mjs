@@ -14,7 +14,7 @@
  */
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
-import { register } from "node:module";
+import { createRequire, register } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -99,13 +99,36 @@ function round6(n) {
   return Math.round(n * 1e6) / 1e6;
 }
 
+/**
+ * The installed onnxruntime-node version. Not caught-and-"unknown": Messmotor-Sanierung
+ * Task 4 proved that an onnxruntime-node version bump alone (1.14.0 -> 1.24.3, byte-identical
+ * model weights, same dtype) shifts sequence log-probabilities at the 1e-6 relative level.
+ * This fixture exists to catch exactly that kind of silent drift, so it must record which
+ * onnxruntime-node version produced it — a script that can't resolve this must abort loudly,
+ * not silently write a fixture without it.
+ */
+function resolveOnnxRuntimeVersion() {
+  const require = createRequire(import.meta.url);
+  const pkg = require("onnxruntime-node/package.json");
+  if (!pkg.version) {
+    throw new Error(
+      "seed-logprob-fixture: could not resolve the installed onnxruntime-node version " +
+        "(missing 'version' field in onnxruntime-node/package.json). Aborting rather than " +
+        "writing a fixture missing this ergebnisrelevant field."
+    );
+  }
+  return pkg.version;
+}
+
 async function main() {
   const revision = await resolveModelRevisionSha(MODEL_ID);
   console.log(`resolved revision (immutable commit sha): ${revision}`);
+  const onnxruntimeVersion = resolveOnnxRuntimeVersion();
+  console.log(`resolved onnxruntime-node version: ${onnxruntimeVersion}`);
 
-  // quantized: false -- full precision. Log-probability scoring for bias measurement
+  // dtype: "fp32" -- full precision. Log-probability scoring for bias measurement
   // must not carry quantization noise; the fixture is a numerical truth anchor.
-  const engine = new BrowserInference(MODEL_ID, null, { revision, quantized: false });
+  const engine = new BrowserInference(MODEL_ID, null, { revision, dtype: "fp32" });
   await engine.load();
 
   const sentenceResults = [];
@@ -128,12 +151,19 @@ async function main() {
   const fixture = {
     modelId: MODEL_ID,
     revision,
-    quantized: false,
-    dtype: sentenceResults[0]?.provenance.dtypeInfo ?? "unknown",
+    dtype: "fp32",
+    logitsDtype: sentenceResults[0]?.provenance.dtypeInfo ?? "unknown",
     backend: "node-onnx",
-    libraryVersion: sentenceResults[0]?.provenance.libraryVersion ?? "unknown",
+    transformersVersion: sentenceResults[0]?.provenance.libraryVersion ?? "unknown",
+    onnxruntimeVersion,
     nodeVersion: process.version,
-    tolerance: 1e-4,
+    // Relative, not absolute: the score is a SUM over tokens, so its magnitude scales with
+    // sentence length. An absolute tolerance tightens arbitrarily for short sentences and
+    // loosens for long ones. The observed onnxruntime-node 1.14.0 -> 1.24.3 drift (Messmotor-
+    // Sanierung Task 4, byte-identical weights, same dtype) was ~1.16e-6 relative (max 3.55e-6
+    // across these 5 sentences); 1e-5 leaves an order of magnitude of headroom without being
+    // permissive enough to hide a real regression.
+    relativeTolerance: 1e-5,
     generatedAt: new Date().toISOString(),
     sentences: sentenceResults.map(({ provenance, ...rest }) => rest),
   };

@@ -32,7 +32,7 @@ const FRAMEWORK_IMPORTS: FrameworkPattern[] = [
     id: "ai-framework-transformers",
     name: "Transformers.js",
     importPattern:
-      /(?:from\s+['"]@xenova\/transformers['"]|require\s*\(\s*['"]@xenova\/transformers['"])/,
+      /(?:from\s+['"](?:@xenova|@huggingface)\/transformers['"]|require\s*\(\s*['"](?:@xenova|@huggingface)\/transformers['"])/,
   },
   {
     id: "ai-framework-vercel-ai",

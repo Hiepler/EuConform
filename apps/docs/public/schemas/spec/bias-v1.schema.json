@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://euconform.eu/schemas/bias-v1.schema.json",
+  "title": "EuConform Bias Report v1",
+  "description": "Result of a CrowS-Pairs style bias measurement, including the method and sampling parameters needed to reproduce it.",
+  "type": "object",
+  "required": ["schemaVersion", "generatedAt", "model", "dataset", "result"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "euconform.bias.v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier of the measured model, e.g. 'phi3:3.8b'."
+    },
+    "dataset": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Dataset the sentence pairs came from, e.g. 'crows_pairs_de'."
+    },
+    "result": {
+      "type": "object",
+      "required": ["score", "method", "pairsAnalyzed", "stereotypicalPreference"],
+      "additionalProperties": false,
+      "properties": {
+        "score": {
+          "type": "number",
+          "description": "Mean of log P(stereotype) - log P(anti-stereotype) across all analysed pairs."
+        },
+        "method": {
+          "type": "string",
+          "enum": ["logprobs_exact", "logprobs_fallback_latency"],
+          "description": "How the per-sentence probabilities were obtained. Not identical to the masked-model pseudo-log-likelihood of the original paper."
+        },
+        "pairsAnalyzed": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Pairs that produced a usable score; can be lower than the requested sample if entries were skipped."
+        },
+        "stereotypicalPreference": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage of pairs where the stereotypical variant scored higher."
+        }
+      }
+    },
+    "sampling": {
+      "type": "object",
+      "required": ["datasetSize", "maxPairs", "seed"],
+      "additionalProperties": false,
+      "description": "What subset of the dataset was measured. Null values mean the full dataset was used.",
+      "properties": {
+        "datasetSize": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxPairs": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "seed": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Replaying this seed with the same maxPairs reproduces the selection."
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Known constraints of this measurement, recorded alongside the number."
+    },
+    "catalog": {
+      "type": "object",
+      "description": "Provenance of a user-supplied question catalog. Absent when a bundled dataset was used — there is no catalog to attribute.",
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "pairCount": { "type": "integer", "minimum": 1 }
+      },
+      "required": ["name", "version", "sha256", "pairCount"],
+      "additionalProperties": false
+    },
+    "byBiasType": {
+      "type": "array",
+      "description": "Per-category aggregates over pairResults. The overall score hides these.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "biasType": { "type": "string" },
+          "pairsCount": { "type": "integer", "minimum": 1 },
+          "stereotypePreferenceCount": { "type": "integer", "minimum": 0 },
+          "stereotypePreferencePercent": { "type": "number", "minimum": 0, "maximum": 100 },
+          "averageBiasScore": { "type": "number" }
+        },
+        "required": [
+          "biasType",
+          "pairsCount",
+          "stereotypePreferenceCount",
+          "stereotypePreferencePercent",
+          "averageBiasScore"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "pairResults": {
+      "type": "array",
+      "description": "One entry per analysed sentence pair, enabling third-party recomputation of the aggregate score.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pairId": { "type": ["integer", "null"] },
+          "stereotype": { "type": "string" },
+          "antiStereotype": { "type": "string" },
+          "biasType": { "type": ["string", "null"] },
+          "stereotypeLogProb": { "type": "number" },
+          "antiStereotypeLogProb": { "type": "number" },
+          "biasScore": { "type": "number" },
+          "biasDirection": {
+            "type": "string",
+            "enum": ["stereotype", "anti-stereotype", "neutral"]
+          },
+          "method": { "type": "string" }
+        },
+        "required": ["stereotype", "antiStereotype", "biasScore", "biasDirection", "method"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

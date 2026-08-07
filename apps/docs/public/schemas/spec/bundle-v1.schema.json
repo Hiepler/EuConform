@@ -45,7 +45,7 @@
       "additionalProperties": false,
       "properties": {
         "role": {
-          "enum": ["report", "aibom", "ci", "summary"]
+          "enum": ["report", "aibom", "ci", "summary", "bias"]
         },
         "fileName": { "type": "string" },
         "sha256": {

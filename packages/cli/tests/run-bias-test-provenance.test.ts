@@ -45,8 +45,18 @@ class FakeTransformersInference {
   }
 }
 
+vi.mock("@huggingface/transformers", () => ({
+  // `runBiasTest` resolves the measurement dtype (fp32 vs q4) BEFORE constructing the
+  // provider by inspecting the model config directly (Messmotor-Sanierung Task 6) — stub
+  // it here so this test stays offline and independent of that unrelated decision; the
+  // returned config's `architectures` is irrelevant to the dtype-plumbing behavior under
+  // test (the fake provider below ignores whatever dtype it is constructed with anyway).
+  AutoConfig: { from_pretrained: vi.fn(async () => ({ architectures: [] })) },
+}));
+
 vi.mock("@euconform/core", () => ({
   TransformersInference: FakeTransformersInference,
+  isConditionalGenerationConfig: vi.fn(() => false),
   calculateCrowsPairsBias: vi.fn(async () => ({
     score: 0,
     method: "sequence_logprob_sum",

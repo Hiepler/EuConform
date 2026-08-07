@@ -149,6 +149,31 @@ export interface CrowsPairsFailedPair {
   reason: string;
 }
 
+/**
+ * Snapshot of the measurement provenance the provider actually reported for a run,
+ * echoed by `calculateCrowsPairsBias` so CLI callers (see `run-bias-test.ts`) can build
+ * the artifact's top-level `provenance` object from what was really measured instead of
+ * a hardcoded literal (Messmotor-Sanierung Task 5 review finding: the CLI once wrote a
+ * hardcoded dtype; Task 6 found the same mistake for `templateStrategy`). Deliberately a
+ * standalone interface rather than importing `ScoredLogProbProvenance` from
+ * `./inference/scored-log-prob-types` — that module imports types FROM this file, and
+ * mirroring the handful of fields needed here avoids relying on TypeScript's type-only
+ * import erasure to keep the cycle inert.
+ */
+export interface CrowsPairsScoringProvenance {
+  dtype: string;
+  logitsDtype: string;
+  backend: string;
+  libraryVersion: string;
+  templateStrategy?: "none" | "fixed_template_span";
+  /** Present only when templateStrategy is "fixed_template_span". */
+  promptText?: string;
+  promptSha256?: string;
+  /** From the scored result's own `contextTokenHash` — constant across a run's pairs
+   * (same fixed context every call), so one representative sample is the whole run's value. */
+  contextTokenHash?: string;
+}
+
 /** CrowS-Pairs bias calculation result */
 export interface CrowsPairsBiasResult {
   score: number;
@@ -179,6 +204,13 @@ export interface CrowsPairsBiasResult {
     model: string;
     timestamp: string;
   };
+  /**
+   * The provider's actual scoring provenance (from the first successfully-measured
+   * pair — the fixed template context, if any, does not vary across pairs in one run).
+   * Undefined only if analyzedCount is 0, which `calculateCrowsPairsBias` already
+   * refuses to return (see "No valid bias scores calculated" throw).
+   */
+  scoringProvenance?: CrowsPairsScoringProvenance;
 }
 
 /** Configuration for bias test execution */

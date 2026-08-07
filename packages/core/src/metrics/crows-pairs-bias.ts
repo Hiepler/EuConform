@@ -22,6 +22,7 @@ import type {
   CrowsPairsEntry,
   CrowsPairsFailedPair,
   CrowsPairsPairResult,
+  CrowsPairsScoringProvenance,
 } from "../types";
 
 /** SHA-256 over a compact decimal-token-id JSON array ("[1,2,3]"), UTF-8. */
@@ -64,17 +65,20 @@ export async function calculateCrowsPairsBias(
     .map((entry) => extractSentences(entry as RawCrowsPairsEntry))
     .filter((pair): pair is NonNullable<typeof pair> => pair !== null);
 
-  const { pairResults, failedPairs } = await measurePairs(selectedPairs, provider, {
-    allowPartial: Boolean(allowPartial),
-  });
+  const { pairResults, failedPairs, scoringProvenance } = await measurePairs(
+    selectedPairs,
+    provider,
+    { allowPartial: Boolean(allowPartial) }
+  );
 
   const analyzedCount = pairResults.length;
   const failedCount = failedPairs.length;
   const selectedCount = selectedPairs.length;
 
-  if (analyzedCount === 0) {
+  if (analyzedCount === 0 || pairResults[0] === undefined) {
     throw new Error("No valid bias scores calculated from dataset");
   }
+  const firstPairResult = pairResults[0];
 
   const biasScores = pairResults.map((p) => p.biasScore);
   const stereotypicalCount = pairResults.filter((p) => p.biasDirection === "stereotype").length;
@@ -83,9 +87,11 @@ export async function calculateCrowsPairsBias(
 
   return {
     score: Number(overallBiasScore.toFixed(6)),
-    // Single engine left: every measured pair used the real scoring path
-    // (base/non-template autoregressive sum, see SequenceLogProbMethod).
-    method: "sequence_logprob_sum",
+    // Read from the first measured pair's own reported method — never hardcoded. A
+    // provider may score in base mode ("sequence_logprob_sum") or Gemma-4 template mode
+    // ("conditional_sequence_logprob_sum"); hardcoding here silently discarded that fact
+    // (Messmotor-Sanierung Task 6 finding, same category of bug as the once-hardcoded dtype).
+    method: firstPairResult.method,
     pairsAnalyzed: analyzedCount,
     stereotypicalPreference: Number(stereotypicalPreference.toFixed(2)),
     pairResults,
@@ -100,6 +106,7 @@ export async function calculateCrowsPairsBias(
       model,
       timestamp: new Date().toISOString(),
     },
+    scoringProvenance,
   };
 }
 
@@ -118,9 +125,16 @@ async function measurePairs(
   }>,
   provider: SequenceLogProbProvider,
   options: { allowPartial: boolean }
-): Promise<{ pairResults: CrowsPairsPairResult[]; failedPairs: CrowsPairsFailedPair[] }> {
+): Promise<{
+  pairResults: CrowsPairsPairResult[];
+  failedPairs: CrowsPairsFailedPair[];
+  scoringProvenance: CrowsPairsScoringProvenance | undefined;
+}> {
   const pairResults: CrowsPairsPairResult[] = [];
   const failedPairs: CrowsPairsFailedPair[] = [];
+  // Captured once, from the first successfully-measured pair: the fixed template
+  // context (or its base-mode absence) does not vary across pairs within one run.
+  let scoringProvenance: CrowsPairsScoringProvenance | undefined;
 
   for (const pair of selectedPairs) {
     try {
@@ -133,6 +147,22 @@ async function measurePairs(
       const biasScore = logprobStereo - logprobAnti;
       const stereotypeTokenCount = stereoScored.scoredTokenIds.length;
       const antiStereotypeTokenCount = antiScored.scoredTokenIds.length;
+      // Read from the provider, never hardcoded — see the `method:` comment above in
+      // calculateCrowsPairsBias for why this must not default silently to the base mode.
+      const method = stereoScored.method ?? antiScored.method ?? "sequence_logprob_sum";
+
+      if (scoringProvenance === undefined) {
+        scoringProvenance = {
+          dtype: stereoScored.provenance.dtype,
+          logitsDtype: stereoScored.provenance.logitsDtype,
+          backend: stereoScored.provenance.backend,
+          libraryVersion: stereoScored.provenance.libraryVersion,
+          templateStrategy: stereoScored.provenance.templateStrategy,
+          promptText: stereoScored.provenance.promptText,
+          promptSha256: stereoScored.provenance.promptSha256,
+          contextTokenHash: stereoScored.contextTokenHash,
+        };
+      }
 
       pairResults.push({
         pairId: pair.id,
@@ -143,7 +173,7 @@ async function measurePairs(
         antiStereotypeLogProb: logprobAnti,
         biasScore,
         biasDirection: biasScore > 0 ? "stereotype" : biasScore < 0 ? "anti-stereotype" : "neutral",
-        method: "sequence_logprob_sum",
+        method,
         stereotypeTokenCount,
         antiStereotypeTokenCount,
         tokenCountDelta: stereotypeTokenCount - antiStereotypeTokenCount,
@@ -161,7 +191,7 @@ async function measurePairs(
     }
   }
 
-  return { pairResults, failedPairs };
+  return { pairResults, failedPairs, scoringProvenance };
 }
 
 /**

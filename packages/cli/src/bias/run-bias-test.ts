@@ -1,8 +1,10 @@
 import { createRequire } from "node:module";
 import {
   type CrowsPairsBiasResult,
+  type MinimalModelConfig,
   TransformersInference,
   calculateCrowsPairsBias,
+  isConditionalGenerationConfig,
 } from "@euconform/core";
 import {
   type CustomDatasetMetadata,
@@ -25,7 +27,11 @@ export interface BiasRunProvenance {
   onnxruntimeVersion: string;
   dtype: string;
   backend: "node-onnx";
-  templateStrategy: "none";
+  templateStrategy: "none" | "fixed_template_span";
+  /** Present only when templateStrategy is "fixed_template_span". */
+  promptText?: string;
+  promptSha256?: string;
+  contextTokenHash?: string;
 }
 
 export interface BiasTestOptions {
@@ -101,27 +107,57 @@ function pairIdOf(entry: unknown): number | null {
   return typeof id === "number" ? id : null;
 }
 
+/**
+ * Pick the measurement dtype BEFORE constructing the provider (dtype is a constructor
+ * option). "fp32" is the Task 1 default — full precision, no quantization noise — but
+ * Messmotor-Sanierung Task 5 measured fp32 for a conditional-generation model (Gemma-4-E2B)
+ * and rejected it: the fp32 weights are ~4x the q4 size and did not finish loading within
+ * 900s. Task 5's decision for that model class was "q4" (496-707 ms/pair, ~2.2 GB RSS).
+ * Detection reuses `isConditionalGenerationConfig` — the exact same check
+ * `TransformersInference` runs internally — rather than guessing from the model id string,
+ * so a differently-named repo hosting the same architecture still gets "q4". The extra
+ * `AutoConfig.from_pretrained` call here is a second cache hit against the same on-disk
+ * cache `TransformersInference.performLoad()` will hit again once construction proceeds —
+ * the existing precedent in `transformers-inference.ts` for why that duplicate call is
+ * cheap enough to accept.
+ */
+async function resolveDtype(model: string, revision: string): Promise<"fp32" | "q4"> {
+  const transformers = await import("@huggingface/transformers");
+  const config = await transformers.AutoConfig.from_pretrained(model, { revision });
+  const isTemplateModel = isConditionalGenerationConfig(config as unknown as MinimalModelConfig);
+  return isTemplateModel ? "q4" : "fp32";
+}
+
 export async function runBiasTest(options: BiasTestOptions): Promise<BiasTestRun> {
   const { model, datasetSource, maxPairs, seed, allowPartial } = options;
 
-  // 1. Create the measurement engine — transformers.js, full precision
-  // (dtype: "fp32") so quantization noise doesn't leak into the measurement
-  // (Task 1: up to 11.9% deviation quantized vs fp32 — dtype is ergebnisrelevant,
-  // recorded in provenance below). Resolve the model's revision up front: an
-  // immutable commit SHA, not the mutable "main" ref (see resolve-model-revision.ts).
-  // The model itself is loaded lazily on first `getScoredLogProb` call.
+  // 1. Create the measurement engine — transformers.js. Resolve the model's revision up
+  // front: an immutable commit SHA, not the mutable "main" ref (see
+  // resolve-model-revision.ts). The dtype (fp32 vs q4, see `resolveDtype` above) is
+  // ergebnisrelevant (Task 1: up to 11.9% deviation quantized vs fp32) and recorded in
+  // provenance below via `provider.dtype`. The model itself is loaded lazily on first
+  // `getScoredLogProb` call.
   consola.start(`Resolving immutable revision for '${model}'...`);
   const modelRevision = await resolveModelRevisionSha(model);
+  const dtype = await resolveDtype(model, modelRevision);
   const provider = new TransformersInference(
     model,
     (status: string) => {
       consola.info(`[${model}] ${status}`);
     },
-    { revision: modelRevision, dtype: "fp32" }
+    { revision: modelRevision, dtype }
   );
 
-  const provenance: BiasRunProvenance = {
-    engine: "transformers",
+  // Base provenance fields known before any pair is scored. templateStrategy (and, in
+  // template mode, promptText/promptSha256/contextTokenHash) is filled in AFTER the run
+  // from `result.scoringProvenance` — the provider's own report of what it actually did —
+  // rather than hardcoded here. Hardcoding it as "none" unconditionally was exactly the
+  // bug this task found: it silently discarded Gemma-4 template-mode provenance even when
+  // the provider correctly detected the architecture and scored in template mode
+  // (Messmotor-Sanierung Task 6, same category of mistake as the once-hardcoded dtype
+  // that Task 5 had to fix).
+  const baseProvenance = {
+    engine: "transformers" as const,
     modelId: model,
     modelRevision,
     tokenizerId: model,
@@ -132,8 +168,7 @@ export async function runBiasTest(options: BiasTestOptions): Promise<BiasTestRun
     // review finding); it would have silently become a falsehood once a caller constructs
     // the provider with a different dtype (e.g. template mode's "q4").
     dtype: provider.dtype,
-    backend: "node-onnx",
-    templateStrategy: "none",
+    backend: "node-onnx" as const,
   };
 
   // 2. Load dataset — either the bundled language catalog, or a user-supplied one whose
@@ -179,6 +214,25 @@ export async function runBiasTest(options: BiasTestOptions): Promise<BiasTestRun
       `of ${result.pairsAnalyzed} pairs, score=${result.score.toFixed(4)}, ` +
       `method=${result.method}, runStatus=${result.runStatus}`
   );
+
+  // The provider's actually-used template strategy, echoed back via
+  // `calculateCrowsPairsBias`'s `scoringProvenance` — never re-derived or assumed here.
+  // Guaranteed defined because `result.pairsAnalyzed > 0` (calculateCrowsPairsBias throws
+  // otherwise), but the type is optional to keep CrowsPairsBiasResult's other callers
+  // (which may not have any measured pairs to report) unaffected.
+  const scoring = result.scoringProvenance;
+  const templateStrategy = scoring?.templateStrategy ?? "none";
+  const provenance: BiasRunProvenance = {
+    ...baseProvenance,
+    templateStrategy,
+    ...(templateStrategy === "fixed_template_span"
+      ? {
+          promptText: scoring?.promptText,
+          promptSha256: scoring?.promptSha256,
+          contextTokenHash: scoring?.contextTokenHash,
+        }
+      : {}),
+  };
 
   return {
     result,

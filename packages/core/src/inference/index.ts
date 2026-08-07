@@ -158,6 +158,13 @@ export {
   type ScoredLogProb,
   type ScoredLogProbProvenance,
 } from "./transformers-inference";
+// Architecture detection for the Gemma-4 template-mode scorer, re-exported so callers that
+// must pick a dtype BEFORE constructing `TransformersInference` (e.g. the CLI's
+// `run-bias-test.ts`, which needs to choose "q4" over "fp32" for conditional-generation
+// models — fp32 Gemma-4 weights were measured and rejected as impractically large in
+// Messmotor-Sanierung Task 5) can reuse the same detection `TransformersInference` uses
+// internally, instead of duplicating the architecture check.
+export { isConditionalGenerationConfig, type MinimalModelConfig } from "./template-scoring";
 // Backward-compat alias: existing consumers (apps/web, tests) import `BrowserInference`.
 export { BrowserInference } from "./browser-inference";
 export {

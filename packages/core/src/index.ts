@@ -153,6 +153,8 @@ export {
   type EnhancedModelSelectionState,
   type CapabilityDetectionStatus,
   type CapabilityCache,
+  isConditionalGenerationConfig,
+  type MinimalModelConfig,
 } from "./inference";
 
 // Inference Factory

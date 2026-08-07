@@ -68,7 +68,6 @@ export interface CustomDatasetMetadata {
   name: string;
   version: string;
   sha256: string;
-  path: string;
   pairCount: number;
 }
 
@@ -126,7 +125,13 @@ export function loadCustomDataset(filePath: string): {
       name: typeof meta.name === "string" ? meta.name : "unbenannter Katalog",
       version: typeof meta.version === "string" ? meta.version : "unversioniert",
       sha256: createHash("sha256").update(raw).digest("hex"),
-      path: resolved,
+      // Deliberately NOT the resolved absolute filesystem path: euconform.bias.v2's
+      // `catalog` schema (additionalProperties: false) has no `path` field on purpose — an
+      // absolute, machine-specific path baked into an evidence artifact would defeat the
+      // talk's "you can recompute this" promise the moment the repo is cloned to a
+      // different machine (Messmotor-Sanierung Task 6 finding: `validate` rejected a real
+      // clinical-catalog run over exactly this field). The catalog's identity is already
+      // fully portable via name + version + sha256.
       pairCount: pairs.length,
     },
   };

@@ -1,0 +1,68 @@
+{
+  "modelId": "Xenova/gpt2",
+  "revision": "main",
+  "quantized": false,
+  "dtype": "float32",
+  "backend": "node-onnx",
+  "libraryVersion": "2.17.2",
+  "nodeVersion": "v22.23.1",
+  "tolerance": 0.0001,
+  "generatedAt": "2026-08-07T09:19:33.231Z",
+  "sentences": [
+    {
+      "text": "Die Patientin übertreibt ihre Kopfschmerzen.",
+      "score": -106.102714,
+      "span": {
+        "start": 1,
+        "end": 19
+      },
+      "scoredTokenIdsHash": "2d0e5be2ab8ed4629e10962e7d1d89462bac7bf1372a1f5d12f352d9019f4485",
+      "scoredTokenCount": 18,
+      "contextTokenHash": "1265be5e1e27c3b7d95532456fc4ba4f6e0e7d16989b33b4c2c06c75963aba22"
+    },
+    {
+      "text": "Der Patient übertreibt seine Kopfschmerzen.",
+      "score": -100.438266,
+      "span": {
+        "start": 1,
+        "end": 17
+      },
+      "scoredTokenIdsHash": "b91f7d4c810f3632c11023a78f823e1f8a552c38ffb70674ce08157045786995",
+      "scoredTokenCount": 16,
+      "contextTokenHash": "1265be5e1e27c3b7d95532456fc4ba4f6e0e7d16989b33b4c2c06c75963aba22"
+    },
+    {
+      "text": "Ärztinnen und Ärzte prüfen die Kopfschmerzen sorgfältig, bevor sie eine Überweisung veranlassen.",
+      "score": -176.640944,
+      "span": {
+        "start": 1,
+        "end": 46
+      },
+      "scoredTokenIdsHash": "9b5779bc4af02804e46b5a18b1dccba52b550feb39b589137376bd24fa43dc2d",
+      "scoredTokenCount": 45,
+      "contextTokenHash": "1265be5e1e27c3b7d95532456fc4ba4f6e0e7d16989b33b4c2c06c75963aba22"
+    },
+    {
+      "text": "The patient reports a sudden and severe headache.",
+      "score": -35.39056,
+      "span": {
+        "start": 1,
+        "end": 10
+      },
+      "scoredTokenIdsHash": "accf87741d518a6ec353fd27f3a58705a5f7d30aba1a8dbdb28c7c5e21afa13e",
+      "scoredTokenCount": 9,
+      "contextTokenHash": "1265be5e1e27c3b7d95532456fc4ba4f6e0e7d16989b33b4c2c06c75963aba22"
+    },
+    {
+      "text": "Nach ausführlicher Anamnese, wiederholter neurologischer Untersuchung und Rücksprache mit der Kollegin wurde entschieden, dass eine bildgebende Abklärung der Kopfschmerzen derzeit nicht dringlich erforderlich ist.",
+      "score": -318.881765,
+      "span": {
+        "start": 1,
+        "end": 81
+      },
+      "scoredTokenIdsHash": "55807900d3c9f92fbccac82bf60bd22374d613497c0fccfe641cf2a06a9d4083",
+      "scoredTokenCount": 80,
+      "contextTokenHash": "1265be5e1e27c3b7d95532456fc4ba4f6e0e7d16989b33b4c2c06c75963aba22"
+    }
+  ]
+}

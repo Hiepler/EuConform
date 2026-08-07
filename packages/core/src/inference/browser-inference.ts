@@ -8,6 +8,63 @@
 // We need to use 'any' for transformers objects because the types are not fully exported
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { type LogitsTensorLike, type Span, sumSequenceLogProb } from "./sequence-logprob";
+
+/** Provenance metadata attached to a scored log-probability result. */
+export interface ScoredLogProbProvenance {
+  modelId: string;
+  dtypeInfo: string;
+  backend: string;
+  libraryVersion: string;
+}
+
+/** Full result of scoring a sentence with `getScoredLogProb`. */
+export interface ScoredLogProb {
+  score: number;
+  scoredTokenIds: number[];
+  span: Span;
+  contextTokenHash: string;
+  provenance: ScoredLogProbProvenance;
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const bytes = new TextEncoder().encode(input);
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function resolveTransformersVersion(): Promise<string> {
+  try {
+    const { createRequire } = await import("node:module");
+    const require = createRequire(import.meta.url);
+    const pkg = require("@xenova/transformers/package.json") as { version?: string };
+    return pkg.version ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+/** Resolve the tokenizer's BOS token id, aborting with a speaking error if undefined. */
+// biome-ignore lint/suspicious/noExplicitAny: internal transformers.js types
+function resolveBosTokenId(tokenizer: any, modelId: string): number {
+  const bosToken: string | undefined =
+    tokenizer.getToken?.("bos_token") ?? tokenizer._tokenizer_config?.bos_token;
+  if (!bosToken) {
+    throw new Error(
+      `getScoredLogProb: tokenizer for model "${modelId}" has no bos_token defined in its config; cannot construct a BOS-prefixed input for log-probability scoring.`
+    );
+  }
+  const bosTokenId: number | undefined = tokenizer.model?.tokens_to_ids?.get(bosToken);
+  if (bosTokenId === undefined) {
+    throw new Error(
+      `getScoredLogProb: tokenizer for model "${modelId}" could not resolve bos_token "${bosToken}" to a token id.`
+    );
+  }
+  return bosTokenId;
+}
+
 export interface BrowserModel {
   id: string;
   name: string;
@@ -87,13 +144,21 @@ export class BrowserInference {
   private loadingPromise: Promise<void> | null = null;
   private loadError: Error | null = null;
   private statusCallback: ((status: string) => void) | null = null;
+  private readonly revision: string;
+  private readonly quantized: boolean;
 
   constructor(
     modelId = "Xenova/distilgpt2",
-    statusCallback: ((status: string) => void) | null = null
+    statusCallback: ((status: string) => void) | null = null,
+    options: { revision?: string; quantized?: boolean } = {}
   ) {
     this.modelId = modelId;
     this.statusCallback = statusCallback;
+    this.revision = options.revision ?? "main";
+    // Default true preserves prior behavior for browser generation (smaller/faster).
+    // Log-probability scoring for bias measurement should use `quantized: false`
+    // (full precision) to avoid quantization noise in the measurement itself.
+    this.quantized = options.quantized ?? true;
   }
 
   /**
@@ -132,13 +197,17 @@ export class BrowserInference {
       const device = hasWebGPU ? "webgpu" : "cpu";
 
       if (this.statusCallback) this.statusCallback("loading-tokenizer");
-      this.tokenizer = await AutoTokenizer.from_pretrained(this.modelId);
+      // biome-ignore lint/suspicious/noExplicitAny: library internal (revision option missing from .d.ts)
+      this.tokenizer = await (AutoTokenizer as any).from_pretrained(this.modelId, {
+        revision: this.revision,
+      });
 
       if (this.statusCallback) this.statusCallback("loading-model");
       // biome-ignore lint/suspicious/noExplicitAny: library internal
       this.model = await (AutoModelForCausalLM as any).from_pretrained(this.modelId, {
         device,
-        quantized: true,
+        quantized: this.quantized,
+        revision: this.revision,
       });
 
       if (this.statusCallback) this.statusCallback("loading-pipeline");
@@ -178,11 +247,17 @@ export class BrowserInference {
   }
 
   /**
-   * Calculate Log-Probability for a given text
+   * Score a sentence's log-probability with full provenance.
    * This is the "Gold Standard" for bias testing.
-   * We calculate the loss (negative log likelihood) of the text.
+   *
+   * BOS fix: GPT-2-family tokenizers do not insert a BOS token on their own, so the
+   * sentence is tokenized WITHOUT special tokens and a BOS token is explicitly
+   * prepended before feeding the model (input_ids and attention_mask are rebuilt
+   * together). This ensures the model sees P(first_token | BOS) instead of silently
+   * skipping the first sentence token. BOS itself is context and is never scored;
+   * every sentence token is scored via the half-open span [1, n+1).
    */
-  async getLogProb(text: string): Promise<number> {
+  async getScoredLogProb(text: string): Promise<ScoredLogProb> {
     await this.load();
 
     if (!this.tokenizer || !this.model) {
@@ -190,63 +265,75 @@ export class BrowserInference {
     }
 
     // biome-ignore lint/suspicious/noExplicitAny: internal transformers.js types
-    const inputs = await (this.tokenizer as any)(text, { return_tensors: "pt" });
-    const inputIds = inputs.input_ids;
-
+    const tokenizer = this.tokenizer as any;
     // biome-ignore lint/suspicious/noExplicitAny: internal transformers.js types
-    const outputs = await (this.model as any)(inputs);
-    const logits = outputs.logits;
+    const model = this.model as any;
 
-    // 3. Compute Log Likelihood
-    // We want to calculate P(text) = P(t1) * P(t2|t1) * ...
-    // LogProb = sum( log( P(ti | t_<i) ) )
+    const bosTokenId = resolveBosTokenId(tokenizer, this.modelId);
 
-    // logits shape: [batch_size, seq_len, vocab_size]
-    // inputIds shape: [batch_size, seq_len]
-    // We are interested in the probability of the *next* token given previous tokens.
-    // So we look at logits[0, i, :] to predict inputIds[0, i+1]
-
-    const data = logits.data; // Float32Array
-    const dims = logits.dims; // [batch, seq, vocab]
-    const vocabSize = dims[2];
-    const seqLen = dims[1];
-
-    let totalLogProb = 0;
-
-    // Helper to get logit value
-    const getLogit = (seqIdx: number, vocabIdx: number) => {
-      return data[seqIdx * vocabSize + vocabIdx];
-    };
-
-    // Helper for softmax/logsoftmax
-    // We only need the log_prob of the target token
-    // log_softmax(x_i) = x_i - log(sum(exp(x_j)))
-    // To avoid overflow: x_i - max(x) - log(sum(exp(x_j - max(x))))
-
-    for (let i = 0; i < seqLen - 1; i++) {
-      const targetTokenId = Number(inputIds.data[i + 1]);
-
-      // Calculate max logit for numerical stability
-      let maxLogit = Number.NEGATIVE_INFINITY;
-      for (let j = 0; j < vocabSize; j++) {
-        const val = getLogit(i, j);
-        if (val > maxLogit) maxLogit = val;
-      }
-
-      // Calculate sum of exp
-      let sumExp = 0;
-      for (let j = 0; j < vocabSize; j++) {
-        sumExp += Math.exp(getLogit(i, j) - maxLogit);
-      }
-
-      const logSumExp = maxLogit + Math.log(sumExp);
-      const targetLogit = getLogit(i, targetTokenId);
-
-      const logProb = targetLogit - logSumExp;
-      totalLogProb += logProb;
+    const encoded = await tokenizer(text, { return_tensors: "pt", add_special_tokens: false });
+    const inputIdsTensor = encoded.input_ids;
+    const [batchSize] = inputIdsTensor.dims;
+    if (batchSize !== 1) {
+      throw new Error(`getScoredLogProb: batch_size must be 1, got ${batchSize}`);
     }
 
-    return totalLogProb;
+    const sentenceTokenIds: number[] = Array.from(
+      inputIdsTensor.data as ArrayLike<bigint | number>,
+      (v) => Number(v)
+    );
+
+    // Guard against double-BOS if a future tokenizer config already inserts it.
+    const finalTokenIds =
+      sentenceTokenIds[0] === bosTokenId ? sentenceTokenIds : [bosTokenId, ...sentenceTokenIds];
+    const scoredTokenIds = finalTokenIds.slice(1);
+
+    // biome-ignore lint/suspicious/noExplicitAny: Tensor is exported at runtime but missing from the package's .d.ts
+    const { Tensor } = (await import("@xenova/transformers")) as any;
+    const newLen = finalTokenIds.length;
+    // biome-ignore lint/suspicious/noExplicitAny: transformers.js Tensor constructor is untyped for dtype strings
+    const newInputIds = new (Tensor as any)(
+      "int64",
+      BigInt64Array.from(finalTokenIds.map(BigInt)),
+      [1, newLen]
+    );
+    // biome-ignore lint/suspicious/noExplicitAny: transformers.js Tensor constructor is untyped for dtype strings
+    const newAttentionMask = new (Tensor as any)(
+      "int64",
+      BigInt64Array.from(new Array(newLen).fill(1n)),
+      [1, newLen]
+    );
+
+    const outputs = await model({ input_ids: newInputIds, attention_mask: newAttentionMask });
+    const logits: LogitsTensorLike = outputs.logits;
+
+    const span: Span = { start: 1, end: newLen };
+    const score = sumSequenceLogProb(logits, finalTokenIds, span);
+
+    const contextTokenHash = await sha256Hex(JSON.stringify([bosTokenId]));
+    const libraryVersion = await resolveTransformersVersion();
+
+    return {
+      score,
+      scoredTokenIds,
+      span,
+      contextTokenHash,
+      provenance: {
+        modelId: this.modelId,
+        dtypeInfo: String((logits as unknown as { type?: string }).type ?? "unknown"),
+        backend: "node-onnx",
+        libraryVersion,
+      },
+    };
+  }
+
+  /**
+   * Calculate Log-Probability for a given text (score only).
+   * Thin wrapper around `getScoredLogProb` for callers that only need the score.
+   */
+  async getLogProb(text: string): Promise<number> {
+    const { score } = await this.getScoredLogProb(text);
+    return score;
   }
 
   /**

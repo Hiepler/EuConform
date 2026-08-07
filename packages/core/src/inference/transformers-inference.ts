@@ -11,29 +11,25 @@ import type {
   PreTrainedTokenizer,
   Tensor,
 } from "@huggingface/transformers";
+import type { ScoredLogProb } from "./scored-log-prob-types";
 import { type LogitsTensorLike, type Span, sumSequenceLogProb } from "./sequence-logprob";
+import {
+  type MinimalModelConfig,
+  type TemplateModel,
+  type TemplateTokenizer,
+  isConditionalGenerationConfig,
+  scoreTemplateContinuation,
+} from "./template-scoring";
 
 /** Numeric precision for model weights — re-exported so callers don't need to import from
  * @huggingface/transformers directly. See DATA_TYPES in that package for the full list
  * (includes quantization schemes like "q4", "bnb4"); the scoring path must use "fp32". */
 export type TransformersDType = DataType;
 
-/** Provenance metadata attached to a scored log-probability result. */
-export interface ScoredLogProbProvenance {
-  modelId: string;
-  dtypeInfo: string;
-  backend: string;
-  libraryVersion: string;
-}
-
-/** Full result of scoring a sentence with `getScoredLogProb`. */
-export interface ScoredLogProb {
-  score: number;
-  scoredTokenIds: number[];
-  span: Span;
-  contextTokenHash: string;
-  provenance: ScoredLogProbProvenance;
-}
+// `ScoredLogProb`/`ScoredLogProbProvenance` moved to `./scored-log-prob-types` in Task 5, to
+// let `template-scoring.ts` depend on them without a circular import; re-exported here so
+// existing `import { type ScoredLogProb } from "./transformers-inference"` sites keep working.
+export type { ScoredLogProb, ScoredLogProbProvenance } from "./scored-log-prob-types";
 
 async function sha256Hex(input: string): Promise<string> {
   const bytes = new TextEncoder().encode(input);
@@ -167,6 +163,13 @@ export class TransformersInference {
   private statusCallback: ((status: string) => void) | null = null;
   private readonly revision: string;
   private readonly dtype: TransformersDType;
+  /**
+   * Selected from the loaded model CONFIG (`architectures`), never from `modelId` — see
+   * `isConditionalGenerationConfig` (Messmotor-Sanierung Task 5). `true` routes
+   * `getScoredLogProb` through the Gemma-4 template-mode scorer instead of the Task 1
+   * base (bare-sentence) mode.
+   */
+  private isTemplateMode = false;
 
   constructor(
     modelId = "Xenova/distilgpt2",
@@ -208,36 +211,104 @@ export class TransformersInference {
     return this.loadingPromise;
   }
 
+  private notifyStatus(status: string): void {
+    if (this.statusCallback) this.statusCallback(status);
+  }
+
+  private async resolveDevice(): Promise<"webgpu" | "wasm" | "cpu"> {
+    const hasWebGPU = await checkWebGPU();
+    // v4 device names: Node's CPU backend is "cpu"; the browser's non-GPU backend is
+    // "wasm" (there is no "cpu" device in a browser). checkWebGPU() always resolves to
+    // false under Node, so this only matters for the (typeof window !== "undefined")
+    // branch — Messmotor-Sanierung Task 4, trap 2.
+    const isBrowserEnv = typeof window !== "undefined";
+    return hasWebGPU ? "webgpu" : isBrowserEnv ? "wasm" : "cpu";
+  }
+
+  /**
+   * Conditional-generation/multimodal architecture (e.g. Gemma-4): AutoProcessor +
+   * Gemma4ForConditionalGeneration, per Task 5. `Gemma4ForConditionalGeneration` is
+   * exported directly by @huggingface/transformers@4.2.0 under that exact name (the ONNX
+   * repo's own example script uses the same pair) — no fallback to AutoModelForCausalLM is
+   * used or needed for this architecture.
+   */
+  private async loadTemplateMode(
+    transformers: Pick<
+      Awaited<typeof import("@huggingface/transformers")>,
+      "AutoTokenizer" | "AutoProcessor" | "Gemma4ForConditionalGeneration"
+    >,
+    device: "webgpu" | "wasm" | "cpu"
+  ): Promise<void> {
+    const { AutoTokenizer, AutoProcessor, Gemma4ForConditionalGeneration } = transformers;
+
+    this.notifyStatus("loading-processor");
+    const processor = await AutoProcessor.from_pretrained(this.modelId, {
+      revision: this.revision,
+    });
+    this.tokenizer =
+      processor.tokenizer ??
+      (await AutoTokenizer.from_pretrained(this.modelId, { revision: this.revision }));
+
+    this.notifyStatus("loading-model");
+    this.model = await Gemma4ForConditionalGeneration.from_pretrained(this.modelId, {
+      device,
+      dtype: this.dtype,
+      revision: this.revision,
+    });
+  }
+
+  /** Base mode (Task 1): classic causal LM, unchanged behavior. */
+  private async loadBaseMode(
+    transformers: Pick<
+      Awaited<typeof import("@huggingface/transformers")>,
+      "AutoTokenizer" | "AutoModelForCausalLM"
+    >,
+    device: "webgpu" | "wasm" | "cpu"
+  ): Promise<void> {
+    const { AutoTokenizer, AutoModelForCausalLM } = transformers;
+
+    this.notifyStatus("loading-tokenizer");
+    this.tokenizer = await AutoTokenizer.from_pretrained(this.modelId, {
+      revision: this.revision,
+    });
+
+    this.notifyStatus("loading-model");
+    this.model = await AutoModelForCausalLM.from_pretrained(this.modelId, {
+      device,
+      dtype: this.dtype,
+      revision: this.revision,
+    });
+  }
+
   private async performLoad() {
-    if (this.statusCallback) this.statusCallback("loading");
+    this.notifyStatus("loading");
 
     try {
-      const { AutoTokenizer, AutoModelForCausalLM } = await import("@huggingface/transformers");
+      const transformers = await import("@huggingface/transformers");
 
-      const hasWebGPU = await checkWebGPU();
-      // v4 device names: Node's CPU backend is "cpu"; the browser's non-GPU backend is
-      // "wasm" (there is no "cpu" device in a browser). checkWebGPU() always resolves to
-      // false under Node, so this only matters for the (typeof window !== "undefined")
-      // branch — Messmotor-Sanierung Task 4, trap 2.
-      const isBrowserEnv = typeof window !== "undefined";
-      const device = hasWebGPU ? "webgpu" : isBrowserEnv ? "wasm" : "cpu";
-
-      if (this.statusCallback) this.statusCallback("loading-tokenizer");
-      this.tokenizer = await AutoTokenizer.from_pretrained(this.modelId, {
+      // Architecture detection is from the loaded CONFIG (`architectures`), never from
+      // `modelId` — see `isConditionalGenerationConfig` (Messmotor-Sanierung Task 5,
+      // ambiguity resolution 1). This one extra `from_pretrained` call runs for every
+      // model (base mode included); it hits the same on-disk cache as the tokenizer/model
+      // downloads, so the added cost is negligible next to those.
+      this.notifyStatus("loading-config");
+      const config = await transformers.AutoConfig.from_pretrained(this.modelId, {
         revision: this.revision,
       });
+      this.isTemplateMode = isConditionalGenerationConfig(config as unknown as MinimalModelConfig);
 
-      if (this.statusCallback) this.statusCallback("loading-model");
-      this.model = await AutoModelForCausalLM.from_pretrained(this.modelId, {
-        device,
-        dtype: this.dtype,
-        revision: this.revision,
-      });
+      const device = await this.resolveDevice();
 
-      if (this.statusCallback) this.statusCallback("ready");
+      if (this.isTemplateMode) {
+        await this.loadTemplateMode(transformers, device);
+      } else {
+        await this.loadBaseMode(transformers, device);
+      }
+
+      this.notifyStatus("ready");
     } catch (err) {
       this.loadError = err instanceof Error ? err : new Error(String(err));
-      if (this.statusCallback) this.statusCallback("error");
+      this.notifyStatus("error");
       throw this.loadError;
     }
   }
@@ -296,6 +367,19 @@ export class TransformersInference {
       throw new Error("Model not loaded");
     }
 
+    if (this.isTemplateMode) {
+      const libraryVersion = await resolveTransformersVersion();
+      return scoreTemplateContinuation(
+        {
+          tokenizer: this.tokenizer as unknown as TemplateTokenizer,
+          model: this.model as unknown as TemplateModel,
+          modelId: this.modelId,
+          libraryVersion,
+        },
+        text
+      );
+    }
+
     const tokenizer = this.tokenizer;
     const model = this.model;
 
@@ -352,7 +436,9 @@ export class TransformersInference {
         dtypeInfo: String((logits as unknown as { type?: string }).type ?? "unknown"),
         backend: "node-onnx",
         libraryVersion,
+        templateStrategy: "none",
       },
+      method: "sequence_logprob_sum",
     };
   }
 

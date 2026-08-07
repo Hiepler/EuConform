@@ -59,6 +59,18 @@ vi.mock("@huggingface/transformers", () => {
   return {
     AutoTokenizer: { from_pretrained: vi.fn(async () => tokenizerFn) },
     AutoModelForCausalLM: { from_pretrained: vi.fn(async () => modelFn) },
+    // Base mode (Task 5) now loads the config first to decide the loading path; a
+    // non-conditional-generation architecture must keep this test on the base-mode path.
+    AutoConfig: {
+      from_pretrained: vi.fn(async () => ({
+        model_type: "gpt2",
+        architectures: ["GPT2LMHeadModel"],
+      })),
+    },
+    // Unused on this test's base-mode path, but `performLoad` destructures them
+    // unconditionally from the module — must exist on the mock or vitest throws.
+    AutoProcessor: { from_pretrained: vi.fn() },
+    Gemma4ForConditionalGeneration: { from_pretrained: vi.fn() },
     Tensor: FakeTensor,
   };
 });

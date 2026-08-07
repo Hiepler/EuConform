@@ -12,7 +12,13 @@ export interface ValidationError {
   received?: unknown;
 }
 
-export type SchemaType = "report.v1" | "aibom.v1" | "aibom.v1.1" | "ci.v1" | "bundle.v1";
+export type SchemaType =
+  | "report.v1"
+  | "aibom.v1"
+  | "aibom.v1.1"
+  | "ci.v1"
+  | "bundle.v1"
+  | "bias.v1";
 
 export interface ValidationResult {
   valid: boolean;
@@ -45,6 +51,7 @@ const SCHEMA_MAP: Record<string, { schemaFile: string; type: SchemaType }> = {
   "euconform.aibom.v1.1": { schemaFile: "aibom-v1.1.schema.json", type: "aibom.v1.1" },
   "euconform.ci.v1": { schemaFile: "ci-v1.schema.json", type: "ci.v1" },
   "euconform.bundle.v1": { schemaFile: "bundle-v1.schema.json", type: "bundle.v1" },
+  "euconform.bias.v1": { schemaFile: "bias-v1.schema.json", type: "bias.v1" },
 };
 
 let ajvInstance: Ajv2020 | null = null;

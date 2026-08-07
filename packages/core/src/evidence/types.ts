@@ -313,10 +313,34 @@ export interface ScanOutput {
 }
 
 // ---------------------------------------------------------------------------
+// Bias report (euconform.bias.v1)
+// ---------------------------------------------------------------------------
+
+export interface BiasReport {
+  schemaVersion: "euconform.bias.v1";
+  generatedAt: string;
+  model: string;
+  dataset: string;
+  result: {
+    score: number;
+    method: string;
+    pairsAnalyzed: number;
+    stereotypicalPreference: number;
+  };
+  /** Absent in runs written before sampling was recorded; null fields mean the full dataset. */
+  sampling?: {
+    datasetSize: number;
+    maxPairs: number | null;
+    seed: number | null;
+  };
+  limitations?: string[];
+}
+
+// ---------------------------------------------------------------------------
 // Bundle manifest (euconform.bundle.v1)
 // ---------------------------------------------------------------------------
 
-export type BundleArtifactRole = "report" | "aibom" | "ci" | "summary";
+export type BundleArtifactRole = "report" | "aibom" | "ci" | "summary" | "bias";
 
 export interface BundleArtifactRef {
   role: BundleArtifactRole;

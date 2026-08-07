@@ -40,6 +40,9 @@ export async function writeBundleManifest(
     report,
     aibom: (await tryReadArtifact(outputDir, "euconform.aibom.json")) ?? undefined,
     ci: (await tryReadArtifact(outputDir, "euconform.ci.json")) ?? undefined,
+    // A bias run writes its own artifact next to the scan output. Include it so
+    // tampering with the measurement breaks the bundle hash like any other evidence.
+    bias: (await tryReadArtifact(outputDir, "euconform.bias.json")) ?? undefined,
     summary: (await tryReadArtifact(outputDir, "euconform.summary.md")) ?? undefined,
     tool: metadata.tool,
     target: metadata.target,
@@ -111,6 +114,8 @@ export async function writeZipBundle(outputDir: string): Promise<string> {
     "euconform.summary.md",
     "euconform.ci.json",
     "euconform.ci-summary.md",
+    "euconform.bias.json",
+    "euconform.bias.md",
     "euconform.bundle.json",
   ];
 

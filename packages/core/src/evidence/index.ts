@@ -9,6 +9,7 @@ export type {
   AiBillOfMaterials,
   AppType,
   AssessmentHint,
+  BiasReport,
   BomComponent,
   BomComponentKind,
   BundleArtifactRef,
@@ -44,6 +45,7 @@ export { sha256Hex } from "./hash";
 export {
   getSchemaMajorVersion,
   validateAiBillOfMaterials,
+  validateBiasReport,
   validateCiReport,
   validateEcefJsonDocument,
   validateScanBundle,

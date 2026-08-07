@@ -4,11 +4,18 @@ import {
   getSchemaMajorVersion,
   sha256Hex,
   validateAiBillOfMaterials,
+  validateBiasReport,
   validateCiReport,
   validateScanBundle,
   validateScanReport,
 } from "@euconform/core/evidence";
-import type { AiBillOfMaterials, CiReport, ScanBundle, ScanReport } from "@euconform/core/evidence";
+import type {
+  AiBillOfMaterials,
+  BiasReport,
+  CiReport,
+  ScanBundle,
+  ScanReport,
+} from "@euconform/core/evidence";
 import { strFromU8, unzipSync } from "fflate";
 
 export type VerifySeverity = "warning" | "error";
@@ -141,7 +148,7 @@ async function loadBundleInput(inputPath: string): Promise<LoadedBundleInput> {
   };
 }
 
-type JsonArtifact = ScanReport | AiBillOfMaterials | CiReport;
+type JsonArtifact = ScanReport | AiBillOfMaterials | CiReport | BiasReport;
 type MetadataIssue = Omit<VerifyIssue, "severity">;
 
 function mismatchIssue(fileName: string, code: string, field: string): MetadataIssue {
@@ -214,7 +221,9 @@ function compareJsonMetadata(
 ): MetadataIssue[] {
   const issues: MetadataIssue[] = [];
 
-  if (document.generatedAt !== bundle.generatedAt) {
+  // A bias run is a separate measurement that legitimately predates the bundle
+  // it gets folded into, so its timestamp is not expected to match.
+  if (artifact.role !== "bias" && document.generatedAt !== bundle.generatedAt) {
     issues.push(mismatchIssue(artifact.fileName, "metadata.generatedAt", "generatedAt"));
   }
 
@@ -246,6 +255,8 @@ function validateJsonArtifactForRole(
       return validateAiBillOfMaterials(parsed);
     case "ci":
       return validateCiReport(parsed);
+    case "bias":
+      return validateBiasReport(parsed);
     default:
       throw new Error(`Unsupported JSON artifact role '${artifact.role}'`);
   }

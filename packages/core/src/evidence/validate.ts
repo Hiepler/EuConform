@@ -1,4 +1,4 @@
-import type { AiBillOfMaterials, CiReport, ScanBundle, ScanReport } from "./types";
+import type { AiBillOfMaterials, BiasReport, CiReport, ScanBundle, ScanReport } from "./types";
 
 function assertObject(data: unknown, label: string): Record<string, unknown> {
   if (!data || typeof data !== "object" || Array.isArray(data)) {
@@ -155,7 +155,7 @@ export function validateCiReport(data: unknown): CiReport {
   return data as CiReport;
 }
 
-const VALID_BUNDLE_ROLES = new Set(["report", "aibom", "ci", "summary"]);
+const VALID_BUNDLE_ROLES = new Set(["report", "aibom", "ci", "summary", "bias"]);
 const SHA256_HEX = /^[a-f0-9]{64}$/;
 
 interface BundleArtifactFields {
@@ -251,6 +251,28 @@ function validateBundleHeader(obj: Record<string, unknown>): void {
   const target = requireField(obj, "target", "object", "bundle") as Record<string, unknown>;
   requireField(target, "name", "string", "bundle", "target.name");
   requireField(target, "rootPath", "string", "bundle", "target.rootPath");
+}
+
+export function validateBiasReport(data: unknown): BiasReport {
+  const obj = assertObject(data, "bias report");
+  requireSchemaVersion(obj, "euconform.bias.v1", "bias report");
+  requireField(obj, "generatedAt", "string", "bias report");
+  requireField(obj, "model", "string", "bias report");
+  requireField(obj, "dataset", "string", "bias report");
+
+  const result = requireField(obj, "result", "object", "bias report") as Record<string, unknown>;
+  requireField(result, "score", "number", "bias report", "result.score");
+  requireField(result, "method", "string", "bias report", "result.method");
+  requireField(result, "pairsAnalyzed", "number", "bias report", "result.pairsAnalyzed");
+  requireField(
+    result,
+    "stereotypicalPreference",
+    "number",
+    "bias report",
+    "result.stereotypicalPreference"
+  );
+
+  return data as BiasReport;
 }
 
 export function validateScanBundle(data: unknown): ScanBundle {

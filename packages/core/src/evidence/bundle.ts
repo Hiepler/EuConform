@@ -10,6 +10,7 @@ interface BuildBundleOptions {
   report: ArtifactInput;
   aibom?: ArtifactInput;
   ci?: ArtifactInput;
+  bias?: ArtifactInput;
   summary?: ArtifactInput;
   tool: { name: string; version: string };
   target: { name: string; rootPath: string };
@@ -53,6 +54,7 @@ export function buildBundleManifest(opts: BuildBundleOptions): ScanBundle {
 
   if (opts.aibom) artifacts.push(makeArtifactRef("aibom", opts.aibom, false));
   if (opts.ci) artifacts.push(makeArtifactRef("ci", opts.ci, false));
+  if (opts.bias) artifacts.push(makeArtifactRef("bias", opts.bias, false));
   if (opts.summary) artifacts.push(makeArtifactRef("summary", opts.summary, false));
 
   return {

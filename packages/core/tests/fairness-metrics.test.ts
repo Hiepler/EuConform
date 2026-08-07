@@ -4,10 +4,44 @@ import {
   equalizedOdds,
   generateLoanDataset,
   predictiveParity,
+  runComprehensiveBiasAnalysis,
+  runCrowsPairsBiasAnalysis,
   runFairnessAnalysis,
   statisticalParityDifference,
 } from "../src/fairness-metrics";
-import type { PredictionData } from "../src/types";
+import type { SequenceLogProbProvider } from "../src/inference";
+import type { ScoredLogProb } from "../src/inference/transformers-inference";
+import type { BiasTestConfig, PredictionData } from "../src/types";
+
+/** A provider whose scoring always throws — used to prove failures propagate. */
+const alwaysFailingProvider: SequenceLogProbProvider = {
+  getScoredLogProb: async (): Promise<ScoredLogProb> => {
+    throw new Error("measurement unavailable");
+  },
+};
+
+const alwaysSucceedingProvider: SequenceLogProbProvider = {
+  getScoredLogProb: async (text: string): Promise<ScoredLogProb> => ({
+    score: text.includes("stereo") ? -1 : -2,
+    scoredTokenIds: [],
+    span: { start: 0, end: 0 },
+    contextTokenHash: "test-hash",
+    provenance: {
+      modelId: "test-model",
+      dtypeInfo: "float32",
+      backend: "test",
+      libraryVersion: "test",
+    },
+  }),
+};
+
+const config: BiasTestConfig = {
+  dataset: [
+    { id: 1, sent_more: "stereo sentence", sent_less: "anti sentence", bias_type: "gender" },
+  ],
+  model: "test-model",
+  engine: "browser",
+};
 
 describe("Fairness Metrics", () => {
   describe("disparateImpact", () => {
@@ -182,6 +216,48 @@ describe("Fairness Metrics", () => {
       const data = generateLoanDataset(1000);
       const groups = new Set(data.map((d) => d.protectedGroup));
       expect(groups.size).toBeGreaterThan(1);
+    });
+  });
+
+  /**
+   * These entry points used to catch ANY calculateCrowsPairsBias failure —
+   * including the core's intentional fail-closed abort — and return a
+   * fabricated BiasTestResult (overallPassed: false, samplesAnalyzed: 0,
+   * method: "logprobs_fallback_latency") instead of propagating it. That is
+   * exactly the silent-fallback pattern this remediation removes: a failed
+   * measurement must never look like a plausible result object.
+   */
+  describe("runCrowsPairsBiasAnalysis", () => {
+    it("returns a real result when measurement succeeds", async () => {
+      const result = await runCrowsPairsBiasAnalysis(config, alwaysSucceedingProvider);
+      expect(result.crowsPairsResult).toBeDefined();
+      expect(result.samplesAnalyzed).toBe(1);
+    });
+
+    it("propagates a measurement failure instead of fabricating a result", async () => {
+      await expect(runCrowsPairsBiasAnalysis(config, alwaysFailingProvider)).rejects.toThrow();
+    });
+  });
+
+  describe("runComprehensiveBiasAnalysis", () => {
+    it("returns a real result when measurement succeeds", async () => {
+      const result = await runComprehensiveBiasAnalysis(
+        [],
+        config,
+        alwaysSucceedingProvider,
+        "gender"
+      );
+      expect(result.crowsPairsResult).toBeDefined();
+    });
+
+    it("propagates a measurement failure instead of fabricating or falling back to traditional-only metrics", async () => {
+      const predictionData: PredictionData[] = [
+        { prediction: 1, protectedGroup: "A" },
+        { prediction: 0, protectedGroup: "B" },
+      ];
+      await expect(
+        runComprehensiveBiasAnalysis(predictionData, config, alwaysFailingProvider, "gender")
+      ).rejects.toThrow();
     });
   });
 });

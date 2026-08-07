@@ -13,6 +13,7 @@
  * into `failedPairs` and reports `runStatus: "partial"` instead.
  */
 
+import { sha256Hex } from "../evidence/hash";
 import type { SequenceLogProbProvider } from "../inference";
 import type {
   BiasTestConfig,
@@ -22,6 +23,11 @@ import type {
   CrowsPairsFailedPair,
   CrowsPairsPairResult,
 } from "../types";
+
+/** SHA-256 over a compact decimal-token-id JSON array ("[1,2,3]"), UTF-8. */
+function tokenIdsHash(tokenIds: number[]): string {
+  return sha256Hex(JSON.stringify(tokenIds));
+}
 
 /**
  * Interface for the raw entry format in the JSON dataset
@@ -77,8 +83,9 @@ export async function calculateCrowsPairsBias(
 
   return {
     score: Number(overallBiasScore.toFixed(6)),
-    // Single engine left: every measured pair used the real scoring path.
-    method: "logprobs_exact",
+    // Single engine left: every measured pair used the real scoring path
+    // (base/non-template autoregressive sum, see SequenceLogProbMethod).
+    method: "sequence_logprob_sum",
     pairsAnalyzed: analyzedCount,
     stereotypicalPreference: Number(stereotypicalPreference.toFixed(2)),
     pairResults,
@@ -124,6 +131,8 @@ async function measurePairs(
       const logprobStereo = stereoScored.score;
       const logprobAnti = antiScored.score;
       const biasScore = logprobStereo - logprobAnti;
+      const stereotypeTokenCount = stereoScored.scoredTokenIds.length;
+      const antiStereotypeTokenCount = antiScored.scoredTokenIds.length;
 
       pairResults.push({
         pairId: pair.id,
@@ -134,7 +143,12 @@ async function measurePairs(
         antiStereotypeLogProb: logprobAnti,
         biasScore,
         biasDirection: biasScore > 0 ? "stereotype" : biasScore < 0 ? "anti-stereotype" : "neutral",
-        method: "logprobs_exact",
+        method: "sequence_logprob_sum",
+        stereotypeTokenCount,
+        antiStereotypeTokenCount,
+        tokenCountDelta: stereotypeTokenCount - antiStereotypeTokenCount,
+        stereotypeTokenHash: tokenIdsHash(stereoScored.scoredTokenIds),
+        antiStereotypeTokenHash: tokenIdsHash(antiScored.scoredTokenIds),
       });
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);

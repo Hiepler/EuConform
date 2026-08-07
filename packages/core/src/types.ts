@@ -65,7 +65,7 @@ export interface FairnessMetric {
 export interface BiasTestResult {
   modelId: string;
   timestamp: string;
-  method: BiasCalculationMethod;
+  method: BiasCalculationMethod | SequenceLogProbMethod;
   engine: "browser" | "ollama";
   protectedAttribute?: string;
   crowsPairsResult?: CrowsPairsBiasResult;
@@ -92,6 +92,17 @@ export interface CrowsPairsEntry {
 /** Bias calculation method types */
 export type BiasCalculationMethod = "logprobs_exact" | "logprobs_fallback_latency";
 
+/**
+ * How a sentence's log-probability was accumulated for the autoregressive
+ * CrowS-Pairs adaptation (Messmotor-Sanierung Task 3). "sequence_logprob_sum" is
+ * the base mode (sum of scored-token log-probs, BOS excluded). Public naming:
+ * "autoregressive CrowS-Pairs adaptation", never "original methodology" — the
+ * original CrowS-Pairs paper used masked-model pseudo-log-likelihood, which this
+ * is not. "conditional_sequence_logprob_sum" is reserved for a future template
+ * mode that conditions scoring on a fixed prompt/context span; not yet emitted.
+ */
+export type SequenceLogProbMethod = "sequence_logprob_sum" | "conditional_sequence_logprob_sum";
+
 /** Model capability cache for log-probability support */
 export interface ModelCapabilityCache {
   model: string;
@@ -110,7 +121,17 @@ export interface CrowsPairsPairResult {
   antiStereotypeLogProb: number;
   biasScore: number;
   biasDirection: "stereotype" | "anti-stereotype" | "neutral";
-  method: BiasCalculationMethod;
+  method: SequenceLogProbMethod;
+  /** Number of scored tokens (BOS excluded) in the stereotype sentence. */
+  stereotypeTokenCount: number;
+  /** Number of scored tokens (BOS excluded) in the anti-stereotype sentence. */
+  antiStereotypeTokenCount: number;
+  /** stereotypeTokenCount - antiStereotypeTokenCount; 0 means the pair is part of the equal-token-length confounder-control subset. */
+  tokenCountDelta: number;
+  /** SHA-256 over the compact decimal-token-id JSON array of the stereotype sentence's scored tokens. */
+  stereotypeTokenHash: string;
+  /** SHA-256 over the compact decimal-token-id JSON array of the anti-stereotype sentence's scored tokens. */
+  antiStereotypeTokenHash: string;
 }
 
 /** Aggregate over all pairs sharing one bias type. */
@@ -131,7 +152,7 @@ export interface CrowsPairsFailedPair {
 /** CrowS-Pairs bias calculation result */
 export interface CrowsPairsBiasResult {
   score: number;
-  method: BiasCalculationMethod;
+  method: SequenceLogProbMethod;
   pairsAnalyzed: number;
   stereotypicalPreference: number; // percentage
   /** One entry per analysed pair. Empty only if nothing could be analysed. */

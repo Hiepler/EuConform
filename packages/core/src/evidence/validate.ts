@@ -1,4 +1,26 @@
-import type { AiBillOfMaterials, BiasReport, CiReport, ScanBundle, ScanReport } from "./types";
+import type {
+  AiBillOfMaterials,
+  BiasReport,
+  BiasReportV2,
+  CiReport,
+  ScanBundle,
+  ScanReport,
+} from "./types";
+import { validateBiasReportV2 } from "./validate-bias-v2";
+
+const V1_BIAS_LEGACY_WARNING =
+  "This artifact uses euconform.bias.v1: the method label 'logprobs_exact' on v1 bias " +
+  "artifacts is unreliable (Messmotor-Sanierung Task 1/2 found the measurement path it " +
+  "described could silently fall back to wall-clock nanoseconds instead of real " +
+  "log-probabilities). Re-measure with `euconform bias --engine transformers` to get a " +
+  "euconform.bias.v2 artifact.";
+
+/** Result of validating any bias artifact, v1 (legacy) or v2. */
+export interface BiasValidationResult {
+  legacy: boolean;
+  warning?: string;
+  document: BiasReport | BiasReportV2;
+}
 
 function assertObject(data: unknown, label: string): Record<string, unknown> {
   if (!data || typeof data !== "object" || Array.isArray(data)) {
@@ -213,13 +235,20 @@ function readBundleArtifactFields(
   };
 }
 
+/**
+ * Bundle decoupling (Messmotor-Sanierung Task 3): artifact schema versions are
+ * independent of the bundle's own schema version. A `euconform.bundle.v1`
+ * manifest may reference a `euconform.bias.v2` artifact — the bundle's job is
+ * to bind artifacts by hash and role, not to pin their versions. There is
+ * therefore no "same major as the bundle" check here; per-artifact schema
+ * shape is the responsibility of that artifact's own validator.
+ */
 function assertBundleArtifactIntegrity(
   fields: BundleArtifactFields,
   seenRoles: Set<string>,
-  seenFiles: Set<string>,
-  bundleMajor: string | null
+  seenFiles: Set<string>
 ): void {
-  const { role, fileName, sha256, declaredSchemaVersion } = fields;
+  const { role, fileName, sha256 } = fields;
 
   if (!VALID_BUNDLE_ROLES.has(role)) {
     throw new Error(`Invalid bundle artifact: unsupported role '${role}'`);
@@ -232,11 +261,6 @@ function assertBundleArtifactIntegrity(
   }
   if (seenFiles.has(fileName)) {
     throw new Error(`Invalid bundle artifact: duplicate fileName '${fileName}'`);
-  }
-  if (declaredSchemaVersion && bundleMajor && majorVersion(declaredSchemaVersion) !== bundleMajor) {
-    throw new Error(
-      `Invalid bundle artifact: '${fileName}' uses schemaVersion '${declaredSchemaVersion}' with a different major than the bundle`
-    );
   }
 }
 
@@ -275,6 +299,28 @@ export function validateBiasReport(data: unknown): BiasReport {
   return data as BiasReport;
 }
 
+/**
+ * The ONE entry point for bias artifacts, dispatching on schemaVersion.
+ * `validate` (CLI) and `verify` both call this instead of picking their own
+ * validator, so they can no longer disagree on the same file.
+ *
+ * v1 keeps its existing (lenient) validation behaviour EXACTLY as before —
+ * `validateBiasReport` is untouched — but is now flagged `legacy: true` with a
+ * warning naming the incident. v2 is delegated to the shared semantic
+ * validator (`validate-bias-v2.ts`), which also recomputes statistics.
+ */
+export function validateBiasArtifact(data: unknown): BiasValidationResult {
+  const obj = assertObject(data, "bias report");
+  if (obj.schemaVersion === "euconform.bias.v2") {
+    return { legacy: false, document: validateBiasReportV2(data) };
+  }
+  return {
+    legacy: true,
+    warning: V1_BIAS_LEGACY_WARNING,
+    document: validateBiasReport(data),
+  };
+}
+
 export function validateScanBundle(data: unknown): ScanBundle {
   const obj = assertObject(data, "bundle");
   validateBundleHeader(obj);
@@ -286,13 +332,12 @@ export function validateScanBundle(data: unknown): ScanBundle {
 
   const seenRoles = new Set<string>();
   const seenFiles = new Set<string>();
-  const bundleMajor = majorVersion("euconform.bundle.v1");
   let hasRequiredReport = false;
 
   for (let index = 0; index < artifacts.length; index++) {
     const raw = assertObject(artifacts[index], "bundle artifact");
     const fields = readBundleArtifactFields(raw, index);
-    assertBundleArtifactIntegrity(fields, seenRoles, seenFiles, bundleMajor);
+    assertBundleArtifactIntegrity(fields, seenRoles, seenFiles);
 
     seenRoles.add(fields.role);
     seenFiles.add(fields.fileName);

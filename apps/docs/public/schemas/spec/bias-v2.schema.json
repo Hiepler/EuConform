@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://euconform.eu/schemas/bias-v2.schema.json",
+  "title": "EuConform Bias Report v2",
+  "description": "Result of the autoregressive CrowS-Pairs adaptation bias measurement. Mandatory measurement provenance and self-checkable statistics (recomputed by the shared semantic validator from pairResults). v1 is legacy: its 'logprobs_exact' method label was unreliable (see Messmotor-Sanierung Task 3).",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "model",
+    "dataset",
+    "provenance",
+    "sampling",
+    "result",
+    "runStatus",
+    "selectedCount",
+    "analyzedCount",
+    "failedCount",
+    "failedPairs",
+    "statistics",
+    "pairResults"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "wilsonInterval": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["lower", "upper"],
+      "properties": {
+        "lower": { "type": "number" },
+        "upper": { "type": "number" }
+      }
+    },
+    "categoryStatistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "biasType",
+        "analyzedCount",
+        "preferenceCount",
+        "tiesCount",
+        "preferencePercent",
+        "preferenceWilson95"
+      ],
+      "properties": {
+        "biasType": { "type": "string" },
+        "analyzedCount": { "type": "integer", "minimum": 1 },
+        "preferenceCount": { "type": "integer", "minimum": 0 },
+        "tiesCount": { "type": "integer", "minimum": 0 },
+        "preferencePercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "preferenceWilson95": { "$ref": "#/$defs/wilsonInterval" }
+      }
+    },
+    "pairResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pairId",
+        "stereotype",
+        "antiStereotype",
+        "biasType",
+        "stereotypeLogProb",
+        "antiStereotypeLogProb",
+        "biasScore",
+        "biasDirection",
+        "method",
+        "stereotypeTokenCount",
+        "antiStereotypeTokenCount",
+        "tokenCountDelta",
+        "stereotypeTokenHash",
+        "antiStereotypeTokenHash"
+      ],
+      "properties": {
+        "pairId": { "type": ["integer", "null"] },
+        "stereotype": { "type": "string" },
+        "antiStereotype": { "type": "string" },
+        "biasType": { "type": ["string", "null"] },
+        "stereotypeLogProb": { "type": "number" },
+        "antiStereotypeLogProb": { "type": "number" },
+        "biasScore": { "type": "number" },
+        "biasDirection": {
+          "type": "string",
+          "enum": ["stereotype", "anti-stereotype", "neutral"]
+        },
+        "method": {
+          "type": "string",
+          "enum": ["sequence_logprob_sum", "conditional_sequence_logprob_sum"]
+        },
+        "stereotypeTokenCount": { "type": "integer", "minimum": 0 },
+        "antiStereotypeTokenCount": { "type": "integer", "minimum": 0 },
+        "tokenCountDelta": { "type": "integer" },
+        "stereotypeTokenHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "antiStereotypeTokenHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "failedPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pairId", "reason"],
+      "properties": {
+        "pairId": { "type": ["integer", "null"] },
+        "reason": { "type": "string" }
+      }
+    }
+  },
+  "properties": {
+    "schemaVersion": { "const": "euconform.bias.v2" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "model": { "type": "string", "minLength": 1 },
+    "dataset": { "type": "string", "minLength": 1 },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "engine",
+        "modelId",
+        "modelRevision",
+        "tokenizerId",
+        "transformersVersion",
+        "dtype",
+        "backend",
+        "templateStrategy"
+      ],
+      "properties": {
+        "engine": { "const": "transformers" },
+        "modelId": { "type": "string", "minLength": 1 },
+        "modelRevision": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{40}$",
+          "description": "Resolved immutable commit SHA, never a mutable ref like 'main'."
+        },
+        "tokenizerId": { "type": "string", "minLength": 1 },
+        "transformersVersion": { "type": "string", "minLength": 1 },
+        "dtype": { "type": "string", "minLength": 1 },
+        "backend": { "const": "node-onnx" },
+        "templateStrategy": { "type": "string", "enum": ["none", "fixed_template_span"] },
+        "promptText": { "type": "string" },
+        "promptSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "contextTokenHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "if": {
+        "properties": { "templateStrategy": { "const": "fixed_template_span" } }
+      },
+      "then": {
+        "required": ["promptText", "promptSha256", "contextTokenHash"]
+      }
+    },
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "datasetSize", "maxPairs", "seed", "datasetSha256", "pairIds"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["seeded_sample", "full"] },
+        "datasetSize": { "type": "integer", "minimum": 1 },
+        "maxPairs": { "type": ["integer", "null"], "minimum": 1 },
+        "seed": { "type": ["integer", "null"], "minimum": 0 },
+        "datasetSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "pairIds": {
+          "type": "array",
+          "items": { "type": ["integer", "null"] }
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "method", "pairsAnalyzed"],
+      "properties": {
+        "score": { "type": "number" },
+        "method": {
+          "type": "string",
+          "enum": ["sequence_logprob_sum", "conditional_sequence_logprob_sum"]
+        },
+        "pairsAnalyzed": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "runStatus": { "type": "string", "enum": ["complete", "partial"] },
+    "selectedCount": { "type": "integer", "minimum": 1 },
+    "analyzedCount": { "type": "integer", "minimum": 1 },
+    "failedCount": { "type": "integer", "minimum": 0 },
+    "failedPairs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/failedPair" }
+    },
+    "statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "analyzedCount",
+        "preferenceCount",
+        "tiesCount",
+        "preferencePercent",
+        "preferenceWilson95",
+        "byBiasType",
+        "pairDiffQuartiles",
+        "equalTokenPairsCount",
+        "equalTokenPreferenceCount",
+        "equalTokenPreferencePercent",
+        "equalTokenPreferenceWilson95"
+      ],
+      "properties": {
+        "analyzedCount": { "type": "integer", "minimum": 1 },
+        "preferenceCount": { "type": "integer", "minimum": 0 },
+        "tiesCount": { "type": "integer", "minimum": 0 },
+        "preferencePercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "preferenceWilson95": { "$ref": "#/$defs/wilsonInterval" },
+        "byBiasType": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/categoryStatistics" }
+        },
+        "pairDiffQuartiles": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["min", "max", "median", "q1", "q3"],
+          "properties": {
+            "min": { "type": "number" },
+            "max": { "type": "number" },
+            "median": { "type": "number" },
+            "q1": { "type": "number" },
+            "q3": { "type": "number" }
+          }
+        },
+        "equalTokenPairsCount": { "type": "integer", "minimum": 0 },
+        "equalTokenPreferenceCount": { "type": "integer", "minimum": 0 },
+        "equalTokenPreferencePercent": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "equalTokenPreferenceWilson95": { "$ref": "#/$defs/wilsonInterval" }
+      }
+    },
+    "pairResults": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/pairResult" }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "sha256", "pairCount"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "pairCount": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

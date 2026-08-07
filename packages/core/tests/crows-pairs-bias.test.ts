@@ -220,7 +220,7 @@ describe("CrowS-Pairs Bias Calculation", () => {
 
       const result = await calculateCrowsPairsBias(config, provider);
 
-      expect(result.method).toBe("logprobs_exact");
+      expect(result.method).toBe("sequence_logprob_sum");
       expect(result.metadata.engine).toBe("browser");
       expect(result.metadata.model).toBe("test-model");
       expect(result.pairsAnalyzed).toBe(3);
@@ -351,7 +351,7 @@ describe("CrowS-Pairs Bias Calculation", () => {
         antiStereotype: "Der Patient übertreibt.",
         biasType: "gender",
         biasDirection: "stereotype",
-        method: "logprobs_exact",
+        method: "sequence_logprob_sum",
       });
       expect(result.pairResults[0]?.biasScore).toBeCloseTo(0.3, 6);
       expect(result.pairResults[1]?.biasDirection).toBe("anti-stereotype");

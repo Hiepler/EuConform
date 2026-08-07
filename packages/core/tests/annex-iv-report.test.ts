@@ -78,7 +78,7 @@ describe("Annex IV Report Generation", () => {
           engine: "browser",
           crowsPairsResult: {
             score: 0.15,
-            method: "logprobs_exact",
+            method: "sequence_logprob_sum",
             pairsAnalyzed: 100,
             stereotypicalPreference: 65.5,
             metadata: {

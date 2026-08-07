@@ -23,7 +23,7 @@ Each entry in the `artifacts` array describes one artifact:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `role` | enum | yes | `"report"`, `"aibom"`, `"ci"`, or `"summary"` |
+| `role` | enum | yes | `"report"`, `"aibom"`, `"ci"`, `"bias"`, or `"summary"` |
 | `fileName` | string | yes | Relative filename (e.g. `"euconform.report.json"`) |
 | `sha256` | string | yes | Hex-encoded SHA-256 hash of the file content |
 | `schemaVersion` | string | no | Schema version of the referenced JSON document |
@@ -46,8 +46,13 @@ Each entry in the `artifacts` array describes one artifact:
 ## Relationship to other document types
 
 - The bundle references artifacts by filename and hash — it does not embed them
-- A bundle only references same-major the EuConform format documents (v1 bundle references v1 artifacts)
-- The `report` artifact is the only required artifact; `aibom`, `ci`, and `summary` are optional
+- Artifact schema versions are independent of the bundle's own schema version: the
+  bundle binds artifacts by hash and role, not by version. A `euconform.bundle.v1`
+  manifest may reference a `euconform.bias.v2` artifact — there is no "same major
+  as the bundle" requirement on referenced artifacts (Messmotor-Sanierung Task 3).
+  Each artifact's own schema (and, for bias artifacts, the shared semantic
+  validator) is what determines whether that artifact is valid.
+- The `report` artifact is the only required artifact; `aibom`, `ci`, `bias`, and `summary` are optional
 - The bundle itself is optional — all the EuConform format tooling must continue to work with individual artifact files
 
 ## Notes

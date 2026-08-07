@@ -10,6 +10,9 @@ export type {
   AppType,
   AssessmentHint,
   BiasReport,
+  BiasReportV2,
+  BiasReportV2Provenance,
+  BiasReportV2Sampling,
   BomComponent,
   BomComponentKind,
   BundleArtifactRef,
@@ -37,14 +40,24 @@ export type {
   SignalDetector,
   SignalEvidence,
 } from "./types";
+export type {
+  BiasStatisticsV2,
+  CategoryPreferenceStatistics,
+  Quartiles,
+  WilsonInterval,
+} from "./bias-statistics";
+export type { BiasValidationResult } from "./validate";
 
 export { generateScanOutput } from "./output";
 export { generateSummaryMarkdown } from "./markdown";
 export { buildBundleManifest } from "./bundle";
 export { sha256Hex } from "./hash";
+export { buildBiasStatistics, quartilesType7, wilson95, WILSON_Z95 } from "./bias-statistics";
+export { validateBiasReportV2, isPartialRun } from "./validate-bias-v2";
 export {
   getSchemaMajorVersion,
   validateAiBillOfMaterials,
+  validateBiasArtifact,
   validateBiasReport,
   validateCiReport,
   validateEcefJsonDocument,

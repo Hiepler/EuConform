@@ -5,6 +5,9 @@
  * Classification is done by the wizard from human input, not by the scanner.
  */
 
+import type { CrowsPairsFailedPair, CrowsPairsPairResult, SequenceLogProbMethod } from "../types";
+import type { BiasStatisticsV2 } from "./bias-statistics";
+
 // ---------------------------------------------------------------------------
 // Signal types
 // ---------------------------------------------------------------------------
@@ -361,6 +364,78 @@ export interface BiasReport {
     biasDirection: "stereotype" | "anti-stereotype" | "neutral";
     method: string;
   }[];
+}
+
+// ---------------------------------------------------------------------------
+// Bias report v2 (euconform.bias.v2) — Messmotor-Sanierung Task 3.
+//
+// v1 is demoted to legacy (see validateBiasArtifact): its "logprobs_exact"
+// method label sat on artifacts that, before Tasks 1-2, measured wall-clock
+// nanoseconds rather than log-probabilities. v2 makes provenance mandatory
+// and statistics self-checkable (the shared semantic validator recomputes
+// them from pairResults and rejects any mismatch).
+// ---------------------------------------------------------------------------
+
+/** Mandatory measurement provenance — v2's core honesty guarantee. */
+export interface BiasReportV2Provenance {
+  /** Single supported engine (Ollama cannot measure sentence log-probabilities). */
+  engine: "transformers";
+  modelId: string;
+  /** Resolved immutable commit SHA (40 hex chars), never a mutable ref like "main". */
+  modelRevision: string;
+  /** The tokenizer actually used; equals modelId unless a distinct tokenizer repo was loaded. */
+  tokenizerId: string;
+  transformersVersion: string;
+  /** Numeric precision used for scoring, e.g. "fp32" or "q8" — ergebnisrelevant (Task 1: up to 11.9% deviation quantized vs fp32). */
+  dtype: string;
+  backend: "node-onnx";
+  templateStrategy: "none" | "fixed_template_span";
+  /** Present only when templateStrategy is "fixed_template_span". */
+  promptText?: string;
+  promptSha256?: string;
+  contextTokenHash?: string;
+}
+
+export interface BiasReportV2Sampling {
+  mode: "seeded_sample" | "full";
+  datasetSize: number;
+  maxPairs: number | null;
+  seed: number | null;
+  /** SHA-256 over the compact JSON of the full dataset that was sampled from. */
+  datasetSha256: string;
+  /** Pair ids in selection order — the exact reproducible sample. */
+  pairIds: (number | null)[];
+}
+
+export interface BiasReportV2 {
+  schemaVersion: "euconform.bias.v2";
+  generatedAt: string;
+  model: string;
+  dataset: string;
+  provenance: BiasReportV2Provenance;
+  sampling: BiasReportV2Sampling;
+  result: {
+    score: number;
+    method: SequenceLogProbMethod;
+    pairsAnalyzed: number;
+  };
+  runStatus: "complete" | "partial";
+  selectedCount: number;
+  analyzedCount: number;
+  failedCount: number;
+  failedPairs: CrowsPairsFailedPair[];
+  /** Self-checkable: the semantic validator recomputes this from pairResults and rejects on mismatch (tolerance 1e-9, unrounded). */
+  statistics: BiasStatisticsV2;
+  /** One entry per analysed pair — the raw values statistics/validation recompute from. */
+  pairResults: CrowsPairsPairResult[];
+  limitations?: string[];
+  /** Provenance of a user-supplied question catalog. Absent when a bundled dataset was used. */
+  catalog?: {
+    name: string;
+    version: string;
+    sha256: string;
+    pairCount: number;
+  };
 }
 
 // ---------------------------------------------------------------------------

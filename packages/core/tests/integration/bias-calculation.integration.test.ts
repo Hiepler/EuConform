@@ -75,7 +75,7 @@ describe("Bias Calculation Integration Tests", () => {
 
       expect(result).toMatchObject({
         score: expect.any(Number),
-        method: "logprobs_exact",
+        method: "sequence_logprob_sum",
         pairsAnalyzed: 3,
         runStatus: "complete",
         selectedCount: 3,

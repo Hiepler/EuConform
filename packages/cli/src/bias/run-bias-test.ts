@@ -14,7 +14,6 @@ import consola from "consola";
 import type { DatasetSource } from "../commands/bias";
 import { resolveModelRevisionSha } from "./resolve-model-revision";
 import { selectPairs } from "./select-pairs";
-import { formatBiasSeverity } from "./severity";
 
 /** Measurement provenance mandatory in a euconform.bias.v2 artifact (see bias.ts). */
 export interface BiasRunProvenance {
@@ -164,11 +163,17 @@ export async function runBiasTest(options: BiasTestOptions): Promise<BiasTestRun
     provider
   );
 
-  // 5. Report result
-  const severity = formatBiasSeverity(result.score);
+  // 5. Report result.
+  //
+  // No severity label. The old Strong/Light/Minimal thresholds (|score| > 0.3 / > 0.1)
+  // were calibrated against a mean, not the summed sequence log-probability this engine
+  // produces — applied to a sum they classify nothing, they only sound decisive. v2 drops
+  // severity from the artifact for exactly that reason, so the console line must not
+  // smuggle the verdict back in. Report what was measured: the preference rate and n.
   consola.success(
-    `Bias test complete: score=${result.score.toFixed(4)} (${severity}), ` +
-      `method=${result.method}, pairs=${result.pairsAnalyzed}, runStatus=${result.runStatus}`
+    `Bias test complete: preference=${result.stereotypicalPreference.toFixed(1)}% ` +
+      `of ${result.pairsAnalyzed} pairs, score=${result.score.toFixed(4)}, ` +
+      `method=${result.method}, runStatus=${result.runStatus}`
   );
 
   return {

@@ -125,15 +125,9 @@ export const de: Messages = {
       methods: [
         {
           method: "Log-Probability",
-          indicator: "Gold-Standard",
+          indicator: "Echte Messung",
           description:
-            "Direkter Token-Wahrscheinlichkeitsvergleich über Browser-Inferenz oder Ollama mit logprobs-Unterstützung.",
-        },
-        {
-          method: "Latenz-Fallback",
-          indicator: "Approximation",
-          description:
-            "Timing-basierte Heuristik für Ollama-Instanzen ohne logprobs-Unterstützung.",
+            "Direkter Satz-Wahrscheinlichkeitsvergleich über transformers.js — die einzige Messmethode. Ollamas logprobs decken nur bereits generierte Tokens ab, nie den zu bewertenden Satz, und können dies daher nicht messen.",
         },
       ],
     },
@@ -204,21 +198,18 @@ export const de: Messages = {
       body: "Nutze das CLI für headless- und CI-Workflows oder die Web-App für einen interaktiven Compliance-Wizard. Beide verwenden dieselbe CrowS-Pairs-Engine und produzieren auditierbare Ergebnisse.",
       engines: [
         {
-          title: "CLI + Ollama",
+          title: "CLI + transformers.js",
           description:
-            "Bias-Tests direkt vom Terminal gegen jedes lokale Ollama-Modell ausführen. Ergebnisse als strukturiertes JSON und Markdown — bereit für CI-Pipelines und Evidence-Bundles.",
+            "Bias-Tests direkt vom Terminal gegen ein lokales Hugging-Face-Modell ausführen (transformers.js). Ergebnisse als strukturiertes JSON und Markdown — bereit für CI-Pipelines und Evidence-Bundles.",
         },
         {
           title: "Web-App",
           description:
-            "Interaktiver Compliance-Wizard mit Browser-basierter Inferenz (Transformers.js) oder Ollama. Ergebnisse fließen in PDF-Exporte und Annex-IV-JSON-Reports.",
+            "Interaktiver Compliance-Wizard mit Browser-basierter Inferenz (Transformers.js). Ergebnisse fließen in PDF-Exporte und Annex-IV-JSON-Reports.",
         },
       ],
       cliCommand: `# Standalone Bias-Test
-euconform bias llama3.2 --lang de
-
-# Oder integriert in einen Scan
-euconform scan ./your-project --bias --model llama3.2`,
+euconform bias onnx-community/Llama-3.2-1B-Instruct --engine transformers --lang de`,
       links: {
         webapp: "Web-App öffnen",
         spec: "Spec lesen",

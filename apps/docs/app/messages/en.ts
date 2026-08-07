@@ -123,14 +123,9 @@ export const en = {
       methods: [
         {
           method: "Log-Probability",
-          indicator: "Gold Standard",
+          indicator: "Real measurement",
           description:
-            "Direct token probability comparison via browser inference or Ollama with logprobs support.",
-        },
-        {
-          method: "Latency Fallback",
-          indicator: "Approximation",
-          description: "Timing-based heuristic for Ollama instances without logprobs support.",
+            "Direct sentence log-probability via transformers.js (the only measurement engine — Ollama's logprobs cover only generated tokens, never the sentence being scored, so it cannot measure this).",
         },
       ],
     },
@@ -201,21 +196,18 @@ export const en = {
       body: "Use the CLI for headless and CI workflows, or the web app for an interactive compliance wizard. Both use the same CrowS-Pairs engine and produce auditable results.",
       engines: [
         {
-          title: "CLI + Ollama",
+          title: "CLI + transformers.js",
           description:
-            "Run bias tests from the terminal against any local Ollama model. Results are written as structured JSON and Markdown — ready for CI pipelines and evidence bundles.",
+            "Run bias tests from the terminal against a local Hugging Face model (transformers.js). Results are written as structured JSON and Markdown — ready for CI pipelines and evidence bundles.",
         },
         {
           title: "Web App",
           description:
-            "Interactive compliance wizard with browser-based inference (Transformers.js) or Ollama. Results flow into PDF exports and Annex IV JSON reports.",
+            "Interactive compliance wizard with browser-based inference (Transformers.js). Results flow into PDF exports and Annex IV JSON reports.",
         },
       ],
       cliCommand: `# Standalone bias test
-euconform bias llama3.2 --lang de
-
-# Or integrated into a scan
-euconform scan ./your-project --bias --model llama3.2`,
+euconform bias onnx-community/Llama-3.2-1B-Instruct --engine transformers --lang de`,
       links: {
         webapp: "Open the web app",
         spec: "Read the spec",

@@ -33,7 +33,6 @@ import {
   getAnnexIIIQuestions,
   getGPAIQuestions,
   getHumanOversightAndLoggingTemplate,
-  runCrowsPairsLogProbTest,
 } from "@euconform/core";
 import { PDFDocument, type PDFFont, type PDFPage, StandardFonts, rgb } from "pdf-lib";
 import { useCallback, useEffect, useState } from "react";
@@ -354,25 +353,20 @@ export function useComplianceWizard(
     return data.pairs;
   };
 
-  const executeBiasTest = async (pairs: StereotypePair[]) => {
-    setBiasCurrentStep(t("bias_initializing_model"));
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    setBiasCurrentStep(t("bias_analyzing_pairs"));
-    if (!inferenceClient) return;
-
-    const result = await runCrowsPairsLogProbTest(inferenceClient, pairs, {
-      maxPairs: language === "de" ? 20 : 30,
-      seed: 42,
-      onProgress: (completed, total) => {
-        setBiasProgress(Math.round((completed / total) * 100));
-      },
-    });
-
-    setBiasCurrentStep(t("bias_finalizing"));
-    setBiasProgress(100);
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    setBiasResult(result);
+  /**
+   * The web bias-measurement path is temporarily disabled (Messmotor-Sanierung):
+   * it ran through Ollama's "log-probability" endpoint, which only ever covers
+   * generated tokens — never the prompt/sentence being scored — so it measured
+   * nothing real. Rather than run a broken measurement and hide that in the
+   * result, this throws a clear, honest error and produces no result at all
+   * (no score, no severity, no passed/failed). Bias measurement is available via
+   * the CLI: `euconform bias <model> --engine transformers`.
+   */
+  const executeBiasTest = async (_pairs: StereotypePair[]) => {
+    throw new Error(
+      "Die Bias-Messung im Web wird gerade saniert und ist vorübergehend deaktiviert. " +
+        "Nutze stattdessen die CLI: euconform bias <model> --engine transformers."
+    );
   };
 
   const handleBiasTestError = (err: unknown) => {

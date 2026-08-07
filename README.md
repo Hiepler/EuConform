@@ -178,10 +178,12 @@ Typical use:
 
 ### Workflow 3: Evaluate Model Bias Locally
 
-Run a reproducible CrowS-Pairs bias evaluation against a local Ollama model:
+Run a reproducible CrowS-Pairs bias evaluation against a Hugging Face model,
+measured locally via transformers.js (the only supported measurement engine —
+see the note below):
 
 ```bash
-node packages/cli/dist/index.js bias llama3.2 --lang de --output all
+node packages/cli/dist/index.js bias onnx-community/Llama-3.2-1B-Instruct --lang de --output all
 ```
 
 This is EuConform's distinctive empirical evidence layer. It produces model-behavior data that no other open-source compliance tool currently offers — completely offline, reproducible, and independent of any vendor API.
@@ -236,16 +238,15 @@ pnpm dev
 For a retrieval-first example, replace `examples/ollama-chatbot` with
 `examples/rag-assistant`.
 
-### Using with Local AI Models (Optional)
+### Bias Measurement: transformers.js Only
 
-For enhanced bias detection with your own models:
-
-1. **Install Ollama**: Download from [ollama.ai](https://ollama.ai)
-2. **Pull a model**: `ollama pull llama3.2`
-3. **Start Ollama**: `ollama serve`
-4. **Select "Ollama"** in the web interface
-
-Supports Llama, Mistral, and Qwen variants with automatic log-probability detection.
+Bias measurement runs entirely locally via [transformers.js](https://github.com/xenova/transformers.js),
+which loads a Hugging Face model (e.g. `onnx-community/Llama-3.2-1B-Instruct`,
+`Xenova/distilgpt2`) and computes real sentence log-probabilities. Ollama is
+**not** a bias-measurement engine: its `logprobs` field covers only
+already-generated tokens, never the prompt/sentence being scored, so it never
+measured anything real here — `bias --engine ollama` is rejected with that
+explanation before any network access is attempted.
 
 > [!WARNING]
 > **Vercel / Cloud Deployment**: This feature requires running EuConform **locally** (`pnpm dev`).
@@ -330,11 +331,15 @@ We use the **CrowS-Pairs** methodology ([Nangia et al., 2020](https://aclantholo
 
 | Method | Indicator | Accuracy | When Used |
 |--------|-----------|----------|-----------|
-| **Log-Probability** | ✅ | Gold Standard | Browser inference, Ollama with logprobs support |
-| **Latency Fallback** | ⚡ | Approximation | Ollama without logprobs support |
+| **Log-Probability** | ✅ | Real sentence log-probability | `bias --engine transformers` (transformers.js, the only measurement engine) |
 
-> [!TIP]
-> For best accuracy, use Ollama v0.1.26+ with models supporting the `logprobs` parameter (Llama 3.2+, Mistral 7B+).
+> [!NOTE]
+> Ollama is not a bias-measurement engine: its `logprobs` field covers only
+> already-generated tokens, never the prompt/sentence being scored, so it never
+> measured a real sentence log-probability (`bias --engine ollama` is rejected
+> with an explanation, before any network access). Use `bias --engine
+> transformers` with a Hugging Face model id, e.g. `onnx-community/Llama-3.2-1B-Instruct`
+> or `Xenova/distilgpt2`.
 
 #### Ethics Statement
 

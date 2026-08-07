@@ -3,9 +3,8 @@
  * Based on EU AI Act requirements for non-discrimination
  */
 
-import type { BrowserInference } from "./inference/browser-inference";
-import { InferenceFactory, type InferenceResult } from "./inference/inference-factory";
-import type { OllamaClient } from "./inference/ollama-client";
+import type { SequenceLogProbProvider } from "./inference";
+import type { InferenceResult } from "./inference/inference-factory";
 import { calculateCrowsPairsBias } from "./metrics/crows-pairs-bias";
 import type { BiasTestConfig, BiasTestResult, FairnessMetric, PredictionData } from "./types";
 
@@ -209,7 +208,7 @@ export function runFairnessAnalysis(
  */
 export async function runCrowsPairsBiasAnalysis(
   config: BiasTestConfig,
-  inferenceClient: BrowserInference | OllamaClient
+  inferenceClient: SequenceLogProbProvider
 ): Promise<BiasTestResult> {
   try {
     const crowsPairsResult = await calculateCrowsPairsBias(config, inferenceClient);
@@ -244,60 +243,19 @@ export async function runCrowsPairsBiasAnalysis(
 }
 
 /**
- * Run CrowS-Pairs bias analysis using InferenceFactory with automatic method detection
- * This version provides method metadata and automatic best method selection
+ * @deprecated Uses the removed Ollama logprob path; see bias --engine transformers.
+ * `InferenceFactory.createBiasCalculation` auto-selected between browser and
+ * Ollama engines, which no longer measures anything honest for Ollama — that
+ * auto-selection logic needs a real redesign (Task 3+), not a throw-or-convert
+ * fix, so this entry point is stilled rather than converted.
  */
 export async function runCrowsPairsBiasAnalysisWithFactory(
-  config: BiasTestConfig,
-  statusCallback?: (status: string) => void
+  _config: BiasTestConfig,
+  _statusCallback?: (status: string) => void
 ): Promise<InferenceResult<BiasTestResult>> {
-  try {
-    const factory = new InferenceFactory(statusCallback);
-    const result = await factory.createBiasCalculation(config);
-
-    // Determine if bias test passed based on score threshold
-    const biasThreshold = 0.1; // Configurable threshold for acceptable bias
-    const overallPassed = Math.abs(result.data.score) < biasThreshold;
-
-    const biasTestResult: BiasTestResult = {
-      modelId: config.model,
-      timestamp: new Date().toISOString(),
-      method: result.method,
-      engine: result.engine,
-      crowsPairsResult: result.data,
-      overallPassed,
-      samplesAnalyzed: result.data.pairsAnalyzed,
-    };
-
-    // Clean up factory resources
-    factory.dispose();
-
-    return {
-      data: biasTestResult,
-      method: result.method,
-      engine: result.engine,
-      model: result.model,
-    };
-  } catch (error) {
-    console.error("CrowS-Pairs bias analysis with factory failed:", error);
-
-    // Return failed result with error information
-    const failedResult: BiasTestResult = {
-      modelId: config.model,
-      timestamp: new Date().toISOString(),
-      method: "logprobs_fallback_latency", // Default fallback
-      engine: config.engine,
-      overallPassed: false,
-      samplesAnalyzed: 0,
-    };
-
-    return {
-      data: failedResult,
-      method: "logprobs_fallback_latency",
-      engine: config.engine,
-      model: config.model,
-    };
-  }
+  throw new Error(
+    "runCrowsPairsBiasAnalysisWithFactory verwendet den entfernten Ollama-Logprob-Pfad; siehe bias --engine transformers."
+  );
 }
 
 /**
@@ -307,7 +265,7 @@ export async function runCrowsPairsBiasAnalysisWithFactory(
 export async function runComprehensiveBiasAnalysis(
   predictionData: PredictionData[],
   crowsPairsConfig: BiasTestConfig,
-  inferenceClient: BrowserInference | OllamaClient,
+  inferenceClient: SequenceLogProbProvider,
   protectedAttribute: string
 ): Promise<BiasTestResult> {
   try {
@@ -365,96 +323,20 @@ export async function runComprehensiveBiasAnalysis(
 }
 
 /**
- * Run comprehensive bias analysis using InferenceFactory with automatic method detection
- * Combines prediction-based fairness metrics with CrowS-Pairs stereotypical bias detection
+ * @deprecated Uses the removed Ollama logprob path via InferenceFactory's
+ * auto-selection; see bias --engine transformers. Stilled for the same reason
+ * as `runCrowsPairsBiasAnalysisWithFactory` — the factory's engine
+ * auto-selection needs a real redesign, not a throw-or-convert fix.
  */
 export async function runComprehensiveBiasAnalysisWithFactory(
-  predictionData: PredictionData[],
-  crowsPairsConfig: BiasTestConfig,
-  protectedAttribute: string,
-  statusCallback?: (status: string) => void
+  _predictionData: PredictionData[],
+  _crowsPairsConfig: BiasTestConfig,
+  _protectedAttribute: string,
+  _statusCallback?: (status: string) => void
 ): Promise<InferenceResult<BiasTestResult>> {
-  try {
-    const factory = new InferenceFactory(statusCallback);
-
-    // Run CrowS-Pairs analysis (primary method) with automatic method detection
-    const crowsPairsResult = await factory.createBiasCalculation(crowsPairsConfig);
-
-    // Run traditional fairness metrics if prediction data is available
-    let traditionalMetrics: FairnessMetric[] = [];
-    if (predictionData && predictionData.length > 0) {
-      const traditionalResult = runFairnessAnalysis(
-        predictionData,
-        crowsPairsConfig.model,
-        protectedAttribute
-      );
-      traditionalMetrics = traditionalResult.metrics || [];
-    }
-
-    // Determine overall pass/fail based on CrowS-Pairs result and traditional metrics
-    const biasThreshold = 0.1;
-    const crowsPairsPassed = Math.abs(crowsPairsResult.data.score) < biasThreshold;
-    const traditionalPassed =
-      traditionalMetrics.length === 0 || traditionalMetrics.every((m) => m.passed);
-    const overallPassed = crowsPairsPassed && traditionalPassed;
-
-    const biasTestResult: BiasTestResult = {
-      modelId: crowsPairsConfig.model,
-      timestamp: new Date().toISOString(),
-      method: crowsPairsResult.method,
-      engine: crowsPairsResult.engine,
-      protectedAttribute,
-      crowsPairsResult: crowsPairsResult.data,
-      metrics: traditionalMetrics.length > 0 ? traditionalMetrics : undefined,
-      overallPassed,
-      samplesAnalyzed: crowsPairsResult.data.pairsAnalyzed + (predictionData?.length || 0),
-    };
-
-    // Clean up factory resources
-    factory.dispose();
-
-    return {
-      data: biasTestResult,
-      method: crowsPairsResult.method,
-      engine: crowsPairsResult.engine,
-      model: crowsPairsResult.model,
-    };
-  } catch (error) {
-    console.error("Comprehensive bias analysis with factory failed:", error);
-
-    // Fallback to traditional metrics only if CrowS-Pairs fails
-    if (predictionData && predictionData.length > 0) {
-      const traditionalResult = runFairnessAnalysis(
-        predictionData,
-        crowsPairsConfig.model,
-        protectedAttribute
-      );
-      return {
-        data: traditionalResult,
-        method: "logprobs_fallback_latency",
-        engine: crowsPairsConfig.engine,
-        model: crowsPairsConfig.model,
-      };
-    }
-
-    // Return failed result if both methods fail
-    const failedResult: BiasTestResult = {
-      modelId: crowsPairsConfig.model,
-      timestamp: new Date().toISOString(),
-      method: "logprobs_fallback_latency",
-      engine: crowsPairsConfig.engine,
-      protectedAttribute,
-      overallPassed: false,
-      samplesAnalyzed: 0,
-    };
-
-    return {
-      data: failedResult,
-      method: "logprobs_fallback_latency",
-      engine: crowsPairsConfig.engine,
-      model: crowsPairsConfig.model,
-    };
-  }
+  throw new Error(
+    "runComprehensiveBiasAnalysisWithFactory verwendet den entfernten Ollama-Logprob-Pfad; siehe bias --engine transformers."
+  );
 }
 
 /**

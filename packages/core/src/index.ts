@@ -21,6 +21,7 @@ export type {
   BiasCalculationMethod,
   BiasTestConfig,
   CrowsPairsBiasResult,
+  CrowsPairsFailedPair,
   ModelCapabilityCache,
 } from "./types";
 
@@ -126,6 +127,7 @@ export {
   listOllamaModels,
   OllamaClient,
   BrowserInference,
+  TransformersInference,
   checkWebGPU,
   BROWSER_MODELS,
   detectCapabilities,
@@ -139,6 +141,9 @@ export {
   type InferenceEngine,
   type InferenceCapabilities,
   type InferenceClient,
+  type SequenceLogProbProvider,
+  type ScoredLogProb,
+  type ScoredLogProbProvenance,
   type CapabilityDetectionService,
   type ModelCapability,
   type ModelSelectionState,

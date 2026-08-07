@@ -11,8 +11,7 @@
 
 import { disparateImpact, equalizedOdds, statisticalParityDifference } from "../fairness-metrics";
 import type { InferenceClient } from "../inference";
-import type { BiasType, PairTestResult, StereotypeBiasResult, StereotypePair } from "../metrics";
-import { runStereotypeBiasTest } from "../metrics";
+import type { BiasType, PairTestResult, StereotypePair } from "../metrics";
 import type { BiasTestResult, FairnessMetric, PredictionData } from "../types";
 
 export type SensitiveAttribute =
@@ -195,32 +194,6 @@ export function runArticle10NumericBiasSuite(params: {
 // Text / Generative model metrics (LLM)
 // ============================================================================
 
-function mulberry32(seed: number) {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function seededSample<T>(arr: T[], n: number, seed: number): T[] {
-  const rng = mulberry32(seed);
-  const copy = arr.slice();
-  // Fisher-Yates
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    const a = copy[i];
-    const b = copy[j];
-    if (a === undefined || b === undefined) continue;
-    copy[i] = b;
-    copy[j] = a;
-  }
-  return copy.slice(0, Math.min(n, copy.length));
-}
-
 export interface CrowsPairsLogProbOptions {
   maxPairs?: number;
   seed?: number;
@@ -255,77 +228,18 @@ export interface CrowsPairsLogProbResult {
 }
 
 /**
- * CrowS-Pairs-DE (or compatible) test: log-prob difference stereotype vs anti-stereotype.
- *
- * Reproducibility:
- * - deterministic sampling with seed (default 42)
- * - modelId + engine recorded
+ * @deprecated Verwendet den entfernten Ollama-Logprob-Pfad (via `runStereotypeBiasTest`
+ * / `testPair`, and directly built its own `OllamaClient` for methodology detection);
+ * siehe bias --engine transformers.
  */
 export async function runCrowsPairsLogProbTest(
-  client: InferenceClient,
-  pairs: StereotypePair[],
-  options: CrowsPairsLogProbOptions = {}
+  _client: InferenceClient,
+  _pairs: StereotypePair[],
+  _options: CrowsPairsLogProbOptions = {}
 ): Promise<CrowsPairsLogProbResult> {
-  const seed = options.seed ?? 42;
-  const maxPairs = options.maxPairs ?? pairs.length;
-  const sampled = seededSample(pairs, maxPairs, seed);
-
-  const result: StereotypeBiasResult = await runStereotypeBiasTest(client, sampled, {
-    maxPairs: sampled.length,
-    onProgress: options.onProgress,
-  });
-
-  // Determine methodology based on engine and actual capability
-  let methodology: CrowsPairsLogProbResult["methodology"] = "logits";
-  if (client.engine === "ollama") {
-    // For Ollama, we need to check if the model actually supports log-probabilities
-    // The OllamaClient.getLogProb now uses getLogProbWithFallback internally,
-    // which returns exact log-probs if supported. We can detect this by checking
-    // if the client has capability detection.
-    try {
-      // Import OllamaClient to check capability
-      const { OllamaClient } = await import("../inference/ollama-client");
-      const ollamaClient = new OllamaClient(client.modelId);
-      const supportsLogProbs = await ollamaClient.detectLogProbSupport();
-      methodology = supportsLogProbs ? "logits" : "latency-proxy";
-    } catch {
-      // Fallback to latency-proxy if we can't detect
-      methodology = "latency-proxy";
-    }
-  }
-  if (client.engine === "demo") methodology = "simulation";
-
-  return {
-    engine: client.engine,
-    modelId: client.modelId,
-    timestamp: result.timestamp,
-    dataset: {
-      name: "CrowS-Pairs-DE (compatible)",
-      version: "local",
-      maxPairs: sampled.length,
-      seed,
-    },
-    methodology,
-    overall: {
-      averageBiasScore: Number(result.overallBiasScore.toFixed(6)),
-      stereotypePreferencePercent: Number(result.overallStereotypePreference.toFixed(2)),
-      thresholdPercent: result.threshold,
-      passed: result.passed,
-      severity: result.overallSeverity,
-    },
-    byBiasType: result.categoryResults.map((c) => ({
-      biasType: c.biasType,
-      pairsCount: c.pairsCount,
-      stereotypePreferencePercent: Number(c.stereotypePreference.toFixed(2)),
-      averageBiasScore: Number(c.averageBiasScore.toFixed(6)),
-      passed: c.passed,
-      thresholdPercent: c.threshold,
-      severity: c.severity,
-    })),
-    pairResults: result.pairResults,
-    sources: AI_ACT_SOURCES,
-    metricSources: METRIC_SOURCES,
-  };
+  throw new Error(
+    "runCrowsPairsLogProbTest verwendet den entfernten Ollama-Logprob-Pfad; siehe bias --engine transformers."
+  );
 }
 
 // Regard & Toxicity: we expose interfaces so callers can use browser-side classifiers

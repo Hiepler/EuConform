@@ -105,6 +105,13 @@ export class DefaultCapabilityDetectionService implements CapabilityDetectionSer
       // Import browser models dynamically
       const { BROWSER_MODELS } = await import("./browser-inference");
 
+      // NOTE: these entries are declared from the static BROWSER_MODELS list, not
+      // measured — no model has actually been loaded/tested at this point. Since
+      // this (transformers.js) is now the only engine that can honestly produce a
+      // ScoredLogProb (see Messmotor-Sanierung Task 2), "available"/"logprobs_exact"
+      // here means "declared supported", not "verified". `lastTested` is misleading
+      // in that sense; a real per-model verification step is future work, not this
+      // task's scope — do not read this as a live capability probe.
       for (const model of BROWSER_MODELS) {
         if (!model.supported) continue;
         capabilities.push({

@@ -3,7 +3,6 @@
  * Provides unified interface for bias calculations across engines with automatic method detection
  */
 
-import { calculateCrowsPairsBias } from "../metrics/crows-pairs-bias";
 import type { BiasCalculationMethod, BiasTestConfig, CrowsPairsBiasResult } from "../types";
 import { BrowserInference } from "./browser-inference";
 import type { ModelCapability } from "./capability-detection";
@@ -42,38 +41,18 @@ export class InferenceFactory {
   }
 
   /**
-   * Create a bias calculation with automatic method detection
-   * Returns InferenceResult with both data and method metadata
+   * @deprecated Uses the removed Ollama logprob path: this method auto-selected
+   * between browser and Ollama engines via `getInferenceClient`, which no longer
+   * measures anything honest for Ollama (see Messmotor-Sanierung Task 2). The
+   * auto-selection logic itself needs a real redesign, not a throw-or-convert
+   * fix — see bias --engine transformers for the supported path.
    */
   async createBiasCalculation(
-    config: BiasTestConfig
+    _config: BiasTestConfig
   ): Promise<InferenceResult<CrowsPairsBiasResult>> {
-    const { engine, model } = config;
-
-    this.validateConfiguration(config);
-
-    const inferenceClient = await this.getInferenceClient(engine, model);
-    let _detectedMethod: BiasCalculationMethod;
-
-    if (engine === "browser") {
-      _detectedMethod = "logprobs_exact";
-    } else {
-      // Use capability method if available, otherwise detect
-      _detectedMethod =
-        this.selectedCapability?.method ?? (await this.detectBestMethod(inferenceClient));
-    }
-
-    // Perform bias calculation
-    const biasResult = await calculateCrowsPairsBias(config, inferenceClient);
-
-    // Return result with metadata including capability information
-    return {
-      data: biasResult,
-      method: biasResult.method, // Use the method determined during calculation
-      engine,
-      model,
-      capability: this.selectedCapability || undefined,
-    };
+    throw new Error(
+      "InferenceFactory.createBiasCalculation verwendet den entfernten Ollama-Logprob-Pfad; siehe bias --engine transformers."
+    );
   }
 
   /**

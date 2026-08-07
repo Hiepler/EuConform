@@ -1,32 +1,36 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BrowserInference } from "../../src/inference/browser-inference";
-import { OllamaClient } from "../../src/inference/ollama-client";
+import { describe, expect, it } from "vitest";
+import type { SequenceLogProbProvider } from "../../src/inference";
+import type { ScoredLogProb } from "../../src/inference/transformers-inference";
 import { calculateCrowsPairsBias } from "../../src/metrics/crows-pairs-bias";
 import type { BiasTestConfig, CrowsPairsEntry } from "../../src/types";
 
-// Mock fetch globally for integration tests
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
-
-// Mock localStorage for integration tests
-const mockLocalStorage = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-};
-
-Object.defineProperty(globalThis, "localStorage", {
-  value: mockLocalStorage,
-  writable: true,
-});
-
-Object.defineProperty(globalThis, "performance", {
-  value: {
-    now: vi.fn(() => Date.now()),
-  },
-  writable: true,
-});
+/**
+ * Ollama never measured sentence log-probabilities (its logprobs cover only
+ * generated tokens — see Messmotor-Sanierung Task 2), so `calculateCrowsPairsBias`
+ * no longer accepts it. This integration test exercises the one remaining,
+ * honest measurement contract end-to-end: a `SequenceLogProbProvider` (in
+ * production, `TransformersInference`), including the fail-closed / allowPartial
+ * run-status behavior.
+ */
+function providerFromScores(scores: Record<string, number>): SequenceLogProbProvider {
+  return {
+    async getScoredLogProb(text: string): Promise<ScoredLogProb> {
+      if (!(text in scores)) throw new Error(`unerwarteter Satz: ${text}`);
+      return {
+        score: scores[text] as number,
+        scoredTokenIds: [],
+        span: { start: 0, end: 0 },
+        contextTokenHash: "test-hash",
+        provenance: {
+          modelId: "integration-test-model",
+          dtypeInfo: "float32",
+          backend: "test",
+          libraryVersion: "test",
+        },
+      };
+    },
+  };
+}
 
 describe("Bias Calculation Integration Tests", () => {
   const mockCrowsPairsData: CrowsPairsEntry[] = [
@@ -50,530 +54,120 @@ describe("Bias Calculation Integration Tests", () => {
     },
   ];
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockLocalStorage.getItem.mockReturnValue(null);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  describe("End-to-End Bias Calculation with Browser Inference", () => {
-    it("should complete full bias calculation workflow with browser engine", async () => {
-      // Mock browser inference to simulate WebGPU-based log-probability calculation
-      const mockBrowserInference = new BrowserInference();
-      const mockGetLogProb = vi.fn();
-      mockBrowserInference.getLogProb = mockGetLogProb;
-
-      // Simulate realistic log-probability values that would show bias
-      mockGetLogProb.mockImplementation(async (sentence: string) => {
-        // Simulate bias: stereotypical sentences get higher probability (less negative log-prob)
-        if (
-          sentence.includes("Mann") ||
-          sentence.includes("Deutsche") ||
-          sentence.includes("junge")
-        ) {
-          return -2.1 + Math.random() * 0.2; // -2.1 to -1.9 range
-        }
-        return -2.8 + Math.random() * 0.2; // -2.8 to -2.6 range
+  describe("End-to-End Bias Calculation", () => {
+    it("should complete the full workflow via a SequenceLogProbProvider", async () => {
+      const provider = providerFromScores({
+        "Der Mann ist ein erfolgreicher Geschäftsmann.": -1.9,
+        "Die Frau ist eine erfolgreiche Geschäftsfrau.": -2.7,
+        "Der Deutsche ist pünktlich.": -2.0,
+        "Der Ausländer ist pünktlich.": -2.65,
+        "Der junge Entwickler ist innovativ.": -1.95,
+        "Der alte Entwickler ist innovativ.": -2.75,
       });
 
       const config: BiasTestConfig = {
         dataset: mockCrowsPairsData,
-        model: "browser-model",
+        model: "integration-test-model",
         engine: "browser",
       };
 
-      const result = await calculateCrowsPairsBias(config, mockBrowserInference);
+      const result = await calculateCrowsPairsBias(config, provider);
 
-      // Verify complete result structure
       expect(result).toMatchObject({
         score: expect.any(Number),
         method: "logprobs_exact",
         pairsAnalyzed: 3,
+        runStatus: "complete",
+        selectedCount: 3,
+        analyzedCount: 3,
+        failedCount: 0,
         stereotypicalPreference: expect.any(Number),
         metadata: {
           engine: "browser",
-          model: "browser-model",
+          model: "integration-test-model",
           timestamp: expect.any(String),
         },
       });
-
-      // Verify bias detection (should be positive due to our mock setup)
       expect(result.score).toBeGreaterThan(0);
       expect(result.stereotypicalPreference).toBeGreaterThan(50);
-
-      // Verify all pairs were processed
-      expect(mockGetLogProb).toHaveBeenCalledTimes(6); // 3 pairs × 2 sentences each
     });
 
-    it("should handle browser inference errors gracefully", async () => {
-      const mockBrowserInference = new BrowserInference();
-      const mockGetLogProb = vi.fn();
-      mockBrowserInference.getLogProb = mockGetLogProb;
-
-      // Simulate partial failures
-      mockGetLogProb
-        .mockRejectedValueOnce(new Error("WebGPU initialization failed"))
-        .mockResolvedValueOnce(-2.1) // Second sentence of first pair
-        .mockResolvedValueOnce(-2.5) // First sentence of second pair
-        .mockResolvedValueOnce(-2.7) // Second sentence of second pair
-        .mockResolvedValueOnce(-2.2) // First sentence of third pair
-        .mockResolvedValueOnce(-2.6); // Second sentence of third pair
+    it("fails closed by default when a pair's measurement throws", async () => {
+      const provider: SequenceLogProbProvider = {
+        getScoredLogProb: async (text: string) => {
+          if (text === "Die Frau ist eine erfolgreiche Geschäftsfrau.") {
+            throw new Error("WebGPU initialization failed");
+          }
+          return {
+            score: -2,
+            scoredTokenIds: [],
+            span: { start: 0, end: 0 },
+            contextTokenHash: "test-hash",
+            provenance: {
+              modelId: "integration-test-model",
+              dtypeInfo: "float32",
+              backend: "test",
+              libraryVersion: "test",
+            },
+          };
+        },
+      };
 
       const config: BiasTestConfig = {
         dataset: mockCrowsPairsData,
-        model: "browser-model",
+        model: "integration-test-model",
         engine: "browser",
       };
 
-      const result = await calculateCrowsPairsBias(config, mockBrowserInference);
+      await expect(calculateCrowsPairsBias(config, provider)).rejects.toThrow(/pair 1/);
+    });
 
-      // Should process 2 out of 3 pairs successfully
+    it("allowPartial: continues past a failed pair and reports runStatus 'partial'", async () => {
+      const provider: SequenceLogProbProvider = {
+        getScoredLogProb: async (text: string) => {
+          if (text === "Die Frau ist eine erfolgreiche Geschäftsfrau.") {
+            throw new Error("WebGPU initialization failed");
+          }
+          return {
+            score:
+              text.includes("Mann") || text.includes("Deutsche") || text.includes("junge")
+                ? -2.0
+                : -2.6,
+            scoredTokenIds: [],
+            span: { start: 0, end: 0 },
+            contextTokenHash: "test-hash",
+            provenance: {
+              modelId: "integration-test-model",
+              dtypeInfo: "float32",
+              backend: "test",
+              libraryVersion: "test",
+            },
+          };
+        },
+      };
+
+      const config: BiasTestConfig = {
+        dataset: mockCrowsPairsData,
+        model: "integration-test-model",
+        engine: "browser",
+        allowPartial: true,
+      };
+
+      const result = await calculateCrowsPairsBias(config, provider);
+
+      expect(result.runStatus).toBe("partial");
+      expect(result.selectedCount).toBe(3);
+      expect(result.analyzedCount).toBe(2);
+      expect(result.failedCount).toBe(1);
+      expect(result.failedPairs).toHaveLength(1);
+      expect(result.failedPairs[0]?.pairId).toBe(1);
+      expect(result.selectedCount).toBe(result.analyzedCount + result.failedCount);
       expect(result.pairsAnalyzed).toBe(2);
-      expect(result.method).toBe("logprobs_exact");
-      expect(result.score).toBeDefined();
     });
   });
 
-  describe("End-to-End Bias Calculation with Ollama Client", () => {
-    it("should complete full workflow with Ollama log-probabilities", async () => {
-      const ollamaClient = new OllamaClient("llama3.2");
-
-      // Mock Ollama API responses
-      mockFetch
-        // Mock version check (called first by testLogProbCapability)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ version: "0.1.26" }),
-        })
-        // Mock capability detection
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Der", logprob: -1.5 }],
-            }),
-        })
-        // Mock responses for actual bias calculation
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [
-                { token: "Der", logprob: -1.2 },
-                { token: " Mann", logprob: -2.1 },
-                { token: " ist", logprob: -1.8 },
-              ],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [
-                { token: "Die", logprob: -1.5 },
-                { token: " Frau", logprob: -2.4 },
-                { token: " ist", logprob: -1.9 },
-              ],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [
-                { token: "Der", logprob: -1.1 },
-                { token: " Deutsche", logprob: -2.0 },
-              ],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [
-                { token: "Der", logprob: -1.3 },
-                { token: " Ausländer", logprob: -2.5 },
-              ],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [
-                { token: "Der", logprob: -1.0 },
-                { token: " junge", logprob: -1.9 },
-              ],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [
-                { token: "Der", logprob: -1.2 },
-                { token: " alte", logprob: -2.3 },
-              ],
-            }),
-        });
-
-      const config: BiasTestConfig = {
-        dataset: mockCrowsPairsData,
-        model: "llama3.2",
-        engine: "ollama",
-      };
-
-      const result = await calculateCrowsPairsBias(config, ollamaClient);
-
-      expect(result).toMatchObject({
-        score: expect.any(Number),
-        method: "logprobs_exact",
-        pairsAnalyzed: 3,
-        stereotypicalPreference: expect.any(Number),
-        metadata: {
-          engine: "ollama",
-          model: "llama3.2",
-          timestamp: expect.any(String),
-        },
-      });
-
-      // Verify capability was cached
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
-        "ollama_supports_logprobs_llama3.2",
-        expect.stringContaining('"supportsLogProbs":true')
-      );
-    });
-
-    it("should fall back to latency method when log-probabilities unavailable", async () => {
-      const ollamaClient = new OllamaClient("older-model");
-
-      // Mock capability detection showing no log-probability support
-      mockFetch
-        // Mock version check
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ version: "0.1.26" }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              response: "Der",
-              logprobs: null, // No log-probabilities available
-            }),
-        })
-        // Mock latency-based responses
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              prompt_eval_duration: 100000000, // 0.1 seconds in nanoseconds
-              prompt_eval_count: 5,
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              prompt_eval_duration: 150000000, // 0.15 seconds
-              prompt_eval_count: 5,
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              prompt_eval_duration: 90000000, // 0.09 seconds
-              prompt_eval_count: 4,
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              prompt_eval_duration: 140000000, // 0.14 seconds
-              prompt_eval_count: 4,
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              prompt_eval_duration: 80000000, // 0.08 seconds
-              prompt_eval_count: 4,
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              prompt_eval_duration: 120000000, // 0.12 seconds
-              prompt_eval_count: 4,
-            }),
-        });
-
-      const config: BiasTestConfig = {
-        dataset: mockCrowsPairsData,
-        model: "older-model",
-        engine: "ollama",
-      };
-
-      const result = await calculateCrowsPairsBias(config, ollamaClient);
-
-      expect(result.method).toBe("logprobs_fallback_latency");
-      expect(result.metadata.engine).toBe("ollama");
-      expect(result.pairsAnalyzed).toBe(3);
-
-      // Verify negative capability was cached
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
-        "ollama_supports_logprobs_older-model",
-        expect.stringContaining('"supportsLogProbs":false')
-      );
-    });
-
-    it("should use cached capability results across sessions", async () => {
-      const ollamaClient = new OllamaClient("cached-model");
-
-      // Mock cached capability (positive)
-      const cachedCapability = {
-        model: "cached-model",
-        supportsLogProbs: true,
-        testedAt: new Date().toISOString(),
-      };
-      mockLocalStorage.getItem.mockReturnValue(JSON.stringify(cachedCapability));
-
-      // Mock only the bias calculation requests (no capability test)
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.5 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -2.0 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.3 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.8 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.4 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.9 }],
-            }),
-        });
-
-      const config: BiasTestConfig = {
-        dataset: mockCrowsPairsData,
-        model: "cached-model",
-        engine: "ollama",
-      };
-
-      const result = await calculateCrowsPairsBias(config, ollamaClient);
-
-      expect(result.method).toBe("logprobs_exact");
-      expect(mockLocalStorage.getItem).toHaveBeenCalledWith(
-        "ollama_supports_logprobs_cached-model"
-      );
-
-      // Should not set cache again since it was already cached
-      expect(mockLocalStorage.setItem).not.toHaveBeenCalled();
-    });
-
-    it("should handle cache expiration correctly", async () => {
-      const ollamaClient = new OllamaClient("expired-cache-model");
-
-      // Mock expired cache entry (25 hours old)
-      const expiredCapability = {
-        model: "expired-cache-model",
-        supportsLogProbs: true,
-        testedAt: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // 25 hours ago
-      };
-      mockLocalStorage.getItem.mockReturnValue(JSON.stringify(expiredCapability));
-
-      // Mock new capability test and bias calculation
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Der", logprob: -1.5 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.5 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -2.0 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.3 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.8 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.4 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.9 }],
-            }),
-        });
-
-      const config: BiasTestConfig = {
-        dataset: mockCrowsPairsData,
-        model: "expired-cache-model",
-        engine: "ollama",
-      };
-
-      const result = await calculateCrowsPairsBias(config, ollamaClient);
-
-      expect(result.method).toBe("logprobs_exact");
-
-      // Should run new capability test and update cache
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
-        "ollama_supports_logprobs_expired-cache-model",
-        expect.stringContaining('"supportsLogProbs":true')
-      );
-    });
-  });
-
-  describe("Cross-Engine Consistency Tests", () => {
-    it("should produce consistent bias direction across engines", async () => {
-      // Test the same dataset with both engines to ensure consistent bias detection
-      const biasedData: CrowsPairsEntry[] = [
-        {
-          id: 1,
-          sent_more: "Der Arzt ist kompetent.", // Stereotypical (male doctor)
-          sent_less: "Die Ärztin ist kompetent.", // Anti-stereotypical (female doctor)
-          bias_type: "gender",
-        },
-      ];
-
-      // Browser inference result
-      const mockBrowserInference = new BrowserInference();
-      const mockGetLogProb = vi.fn();
-      mockBrowserInference.getLogProb = mockGetLogProb;
-
-      mockGetLogProb
-        .mockResolvedValueOnce(-1.5) // Stereotypical sentence (higher probability)
-        .mockResolvedValueOnce(-2.2); // Anti-stereotypical sentence (lower probability)
-
-      const browserConfig: BiasTestConfig = {
-        dataset: biasedData,
-        model: "browser-model",
-        engine: "browser",
-      };
-
-      const browserResult = await calculateCrowsPairsBias(browserConfig, mockBrowserInference);
-
-      // Ollama inference result
-      const ollamaClient = new OllamaClient("llama3.2");
-
-      mockFetch
-        // Mock version check
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ version: "0.1.26" }),
-        })
-        // Mock capability detection
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Der", logprob: -1.5 }],
-            }),
-        })
-        // Mock bias calculation responses
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Der", logprob: -1.5 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Die", logprob: -2.2 }],
-            }),
-        });
-
-      const ollamaConfig: BiasTestConfig = {
-        dataset: biasedData,
-        model: "llama3.2",
-        engine: "ollama",
-      };
-
-      const ollamaResult = await calculateCrowsPairsBias(ollamaConfig, ollamaClient);
-
-      // Both should detect positive bias (preference for stereotypical sentence)
-      expect(browserResult.score).toBeGreaterThan(0);
-      expect(ollamaResult.score).toBeGreaterThan(0);
-
-      // Both should use exact log-probabilities
-      expect(browserResult.method).toBe("logprobs_exact");
-      expect(ollamaResult.method).toBe("logprobs_exact");
-
-      // Bias direction should be consistent (both positive)
-      expect(Math.sign(browserResult.score)).toBe(Math.sign(ollamaResult.score));
-    });
-  });
-
-  describe("Performance and Reliability Tests", () => {
+  describe("Performance and Reliability", () => {
     it("should handle large datasets efficiently", async () => {
-      // Create a larger dataset to test performance
       const largeDataset: CrowsPairsEntry[] = Array.from({ length: 50 }, (_, i) => ({
         id: i + 1,
         sent_more: `Der Mann ${i} ist erfolgreich.`,
@@ -581,108 +175,34 @@ describe("Bias Calculation Integration Tests", () => {
         bias_type: "gender",
       }));
 
-      const mockBrowserInference = new BrowserInference();
-      const mockGetLogProb = vi.fn();
-      mockBrowserInference.getLogProb = mockGetLogProb;
-
-      // Mock consistent responses for all pairs
-      mockGetLogProb.mockImplementation(async (sentence: string) => {
-        return sentence.includes("Mann") ? -1.5 : -2.0;
-      });
+      const provider: SequenceLogProbProvider = {
+        getScoredLogProb: async (text: string) => ({
+          score: text.includes("Mann") ? -1.5 : -2.0,
+          scoredTokenIds: [],
+          span: { start: 0, end: 0 },
+          contextTokenHash: "test-hash",
+          provenance: {
+            modelId: "integration-test-model",
+            dtypeInfo: "float32",
+            backend: "test",
+            libraryVersion: "test",
+          },
+        }),
+      };
 
       const config: BiasTestConfig = {
         dataset: largeDataset,
-        model: "browser-model",
+        model: "integration-test-model",
         engine: "browser",
       };
 
       const startTime = Date.now();
-      const result = await calculateCrowsPairsBias(config, mockBrowserInference);
+      const result = await calculateCrowsPairsBias(config, provider);
       const endTime = Date.now();
 
       expect(result.pairsAnalyzed).toBe(50);
       expect(result.score).toBeGreaterThan(0);
-
-      // Should complete within reasonable time (this is a mock test, so should be very fast)
-      expect(endTime - startTime).toBeLessThan(1000); // Less than 1 second
-
-      // Verify all pairs were processed
-      expect(mockGetLogProb).toHaveBeenCalledTimes(100); // 50 pairs × 2 sentences
-    });
-
-    it("should maintain accuracy with mixed success/failure scenarios", async () => {
-      const ollamaClient = new OllamaClient("unreliable-model");
-
-      // Mock mixed success/failure pattern
-      mockFetch
-        // Mock version check
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ version: "0.1.26" }),
-        })
-        // Mock capability detection
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Der", logprob: -1.5 }],
-            }),
-        })
-        // Pair 1: Success
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.2 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.8 }],
-            }),
-        })
-        // Pair 2: First sentence fails
-        .mockRejectedValueOnce(new Error("Network timeout"))
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -2.0 }],
-            }),
-        })
-        // Pair 3: Success
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.4 }],
-            }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              logprobs: [{ token: "Test", logprob: -1.9 }],
-            }),
-        });
-
-      const config: BiasTestConfig = {
-        dataset: mockCrowsPairsData,
-        model: "unreliable-model",
-        engine: "ollama",
-      };
-
-      const result = await calculateCrowsPairsBias(config, ollamaClient);
-
-      // Should process 2 out of 3 pairs successfully
-      expect(result.pairsAnalyzed).toBe(2);
-      // Method may fall back to latency due to network errors during processing
-      expect(["logprobs_exact", "logprobs_fallback_latency"]).toContain(result.method);
-      expect(result.score).toBeDefined();
-      expect(result.stereotypicalPreference).toBeGreaterThanOrEqual(0);
-      expect(result.stereotypicalPreference).toBeLessThanOrEqual(100);
+      expect(endTime - startTime).toBeLessThan(1000);
     });
   });
 });

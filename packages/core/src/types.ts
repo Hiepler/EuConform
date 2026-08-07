@@ -122,6 +122,12 @@ export interface CrowsPairsBiasTypeSummary {
   averageBiasScore: number;
 }
 
+/** A pair that was selected for measurement but whose scoring failed (allowPartial runs only). */
+export interface CrowsPairsFailedPair {
+  pairId: number | null;
+  reason: string;
+}
+
 /** CrowS-Pairs bias calculation result */
 export interface CrowsPairsBiasResult {
   score: number;
@@ -132,6 +138,21 @@ export interface CrowsPairsBiasResult {
   pairResults: CrowsPairsPairResult[];
   /** Per-category aggregates. The whole point: the overall score hides these. */
   byBiasType: CrowsPairsBiasTypeSummary[];
+  /**
+   * "complete": every selected pair was analysed. "partial": at least one pair
+   * failed and `allowPartial` was set — this run is a diagnostic, not a full
+   * measurement. Fail-closed by default: without `allowPartial`, any failure
+   * aborts the whole run rather than producing a "partial" result.
+   */
+  runStatus: "complete" | "partial";
+  /** Pairs selected for measurement after dataset-extraction filtering. */
+  selectedCount: number;
+  /** Pairs successfully measured; the statistical denominator for score/preference. */
+  analyzedCount: number;
+  /** Pairs selected but that failed measurement (only possible with allowPartial). */
+  failedCount: number;
+  /** One entry per failed pair. Invariant: selectedCount === analyzedCount + failedCount. */
+  failedPairs: CrowsPairsFailedPair[];
   metadata: {
     engine: "browser" | "ollama";
     model: string;
@@ -144,6 +165,12 @@ export interface BiasTestConfig {
   dataset: CrowsPairsEntry[];
   model: string;
   engine: "browser" | "ollama";
+  /**
+   * Diagnostic mode: a pair that fails measurement is recorded in `failedPairs`
+   * instead of aborting the whole run. NOT suitable as a complete measurement —
+   * see `runStatus: "partial"`. Default: false (fail-closed).
+   */
+  allowPartial?: boolean;
 }
 
 /** Annex IV Technical Documentation Report */

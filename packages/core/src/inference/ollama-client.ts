@@ -270,6 +270,9 @@ export class OllamaClient {
     return response.response;
   }
 
+  /**
+   * @deprecated Not a sentence log-probability — see `getLogProbWithFallback`.
+   */
   async getLogProb(prompt: string): Promise<number> {
     // Use the enhanced getLogProbWithFallback method that supports both exact and fallback methods
     const result = await this.getLogProbWithFallback(prompt);
@@ -281,6 +284,12 @@ export class OllamaClient {
   }
 
   /**
+   * @deprecated Part of the removed Ollama bias-measurement path (Messmotor-Sanierung
+   * Task 2): Ollama's logprobs cover only generated tokens, never the prompt/sentence,
+   * so this "capability" check never verified a real measurement. Kept only because
+   * `scan`'s non-bias paths and the capability-cache tests still reference it — not
+   * a foundation to build on. See bias --engine transformers for the real path.
+   *
    * Test if the current model supports log-probabilities
    * Sends a test request with "Der" prompt to detect capability
    */
@@ -405,6 +414,9 @@ export class OllamaClient {
   }
 
   /**
+   * @deprecated Part of the removed Ollama bias-measurement path (see
+   * `testLogProbCapability`); no longer used by `calculateCrowsPairsBias`.
+   *
    * Detect if the current model supports log-probabilities
    * Checks cache first, then runs test if needed
    */
@@ -429,6 +441,10 @@ export class OllamaClient {
     return supports;
   }
 
+  /**
+   * @deprecated Part of the removed Ollama bias-measurement path; see
+   * `testLogProbCapability`. Not a real sentence log-probability.
+   */
   private async tryExactLogProbs(
     prompt: string
   ): Promise<{ logprob: number; method: BiasCalculationMethod } | null> {
@@ -477,6 +493,11 @@ export class OllamaClient {
     }
   }
 
+  /**
+   * @deprecated Part of the removed Ollama bias-measurement path; this is a
+   * latency proxy, not a probability — the exact thing Messmotor-Sanierung
+   * removes from the bias measurement path. Do not build on this.
+   */
   private async latencyFallback(
     prompt: string
   ): Promise<{ logprob: number; method: BiasCalculationMethod }> {
@@ -519,6 +540,14 @@ export class OllamaClient {
   }
 
   /**
+   * @deprecated Removed from the bias-measurement path (Messmotor-Sanierung Task 2):
+   * Ollama returns logprobs only for generated tokens, never for the prompt/sentence
+   * being scored, so this never measured a sentence log-probability — even the
+   * "exact" branch (`tryExactLogProbs`) is not what its name implies, and the
+   * fallback is a latency proxy. Verified: r(sentence length, logP)=0.019 where a
+   * real sentence-probability measure shows −0.96. Use `TransformersInference.
+   * getScoredLogProb` (via `bias --engine transformers`) instead.
+   *
    * Get log-probability with automatic fallback to latency method
    * Returns both the calculated value and the method used
    */

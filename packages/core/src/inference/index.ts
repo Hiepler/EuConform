@@ -3,13 +3,26 @@
  * Auto-detects available inference engines and provides unified interface
  */
 
+import { OllamaClient, type OllamaModel, detectOllama, listOllamaModels } from "./ollama-client";
 import {
   BROWSER_MODELS,
-  BrowserInference,
   type BrowserModel,
+  type ScoredLogProb,
+  TransformersInference,
   checkWebGPU,
-} from "./browser-inference";
-import { OllamaClient, type OllamaModel, detectOllama, listOllamaModels } from "./ollama-client";
+} from "./transformers-inference";
+
+/**
+ * The one contract a bias-measurement engine must satisfy: a real, cross-checked
+ * sentence log-probability (see Task 1 / Messmotor-Sanierung). `OllamaClient`
+ * deliberately does NOT implement this — Ollama's logprobs only cover generated
+ * tokens, never prompt/sentence log-probability, so it cannot honestly produce a
+ * `ScoredLogProb`. TypeScript's structural typing then locks it out of any API
+ * that requires this interface (e.g. `calculateCrowsPairsBias`).
+ */
+export interface SequenceLogProbProvider {
+  getScoredLogProb(text: string): Promise<ScoredLogProb>;
+}
 
 export type InferenceEngine = "ollama" | "browser" | "demo";
 
@@ -85,7 +98,7 @@ export function createInferenceClient(
     }
 
     case "browser": {
-      const browserClient = new BrowserInference(modelId, statusCallback);
+      const browserClient = new TransformersInference(modelId, statusCallback);
       return {
         engine: "browser",
         modelId,
@@ -138,7 +151,15 @@ export {
   OllamaClient,
   type CapabilityCache,
 } from "./ollama-client";
-export { BrowserInference, checkWebGPU, BROWSER_MODELS } from "./browser-inference";
+export {
+  TransformersInference,
+  checkWebGPU,
+  BROWSER_MODELS,
+  type ScoredLogProb,
+  type ScoredLogProbProvenance,
+} from "./transformers-inference";
+// Backward-compat alias: existing consumers (apps/web, tests) import `BrowserInference`.
+export { BrowserInference } from "./browser-inference";
 export {
   InferenceFactory,
   createInferenceFactory,

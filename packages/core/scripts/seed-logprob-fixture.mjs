@@ -79,7 +79,9 @@ async function resolveModelRevisionSha(modelId, { attempts = 3 } = {}) {
 }
 
 // 5 sentences per the binding spec:
-// - 2 German sentences from docs/talks/froscon2026/katalog-neuro-de.v1.json, pair id 1
+// - 2 German sentences forming a gender minimal pair, taken from a clinical
+//   question catalogue; they differ in exactly one token so the fixture also
+//   covers the equal-token path
 // - 1 additional German sentence, umlaut-heavy
 // - 1 English sentence
 // - 1 long German sentence

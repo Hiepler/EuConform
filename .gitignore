@@ -83,3 +83,8 @@ lerna-debug.log*
 tmp/
 .euconform/
 .euconform-ci/
+.playwright-cli/
+output/
+
+# Talk sources and decks stay local; they are not part of the public repo
+docs/talks/

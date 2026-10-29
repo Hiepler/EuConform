@@ -55,6 +55,15 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "ignore": ["node_modules", "dist", ".next", "coverage", ".vscode", "*.min.js", "pnpm-lock.yaml"]
+    "ignore": [
+      "node_modules",
+      "dist",
+      ".next",
+      "coverage",
+      ".vscode",
+      ".superpowers",
+      "*.min.js",
+      "pnpm-lock.yaml"
+    ]
   }
 }

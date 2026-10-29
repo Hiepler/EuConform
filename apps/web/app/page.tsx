@@ -107,7 +107,6 @@ function ComplianceWizard() {
           modelLoadingStatus={wizard.modelLoadingStatus}
           error={wizard.error}
           selectedModel={wizard.selectedModel}
-          onRunTest={wizard.handleRunBiasTest}
           onSkip={wizard.handleSkipBiasTest}
         />
       );

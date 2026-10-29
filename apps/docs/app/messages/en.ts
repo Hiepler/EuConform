@@ -149,12 +149,12 @@ export const en = {
         {
           title: "Report",
           description:
-            "Bias methodology, scores, and thresholds appear in the compliance report with full traceability to the test run.",
+            "Bias methodology, scores and self-checkable statistics appear in the compliance report with full traceability to the test run — no severity label, because the score basis does not support one.",
         },
         {
           title: "CI Gate",
           description:
-            "CI thresholds can fail pipelines when bias scores exceed acceptable levels — enforcement before deployment.",
+            "CI validates the artifact and can diff it against a baseline run (euconform compare), so a regression shows up as a failing check before deployment.",
         },
       ],
       aiActNote:
@@ -170,15 +170,15 @@ export const en = {
     "confidence": "medium",
     "evidence": [
       "CrowS-Pairs bias evaluation performed",
-      "Score: 0.08 (below light-bias threshold)",
-      "Method: log-probability (gold standard)",
-      "Dataset: 100 German-adapted pairs"
+      "euconform.bias.v2 artifact attached (schema-validated)",
+      "Preference quote: 33.6% (95% Wilson [25.7%, 42.6%])",
+      "Method: sequence_logprob_sum via transformers.js"
     ],
     "biasMethodology": {
-      "method": "logprobs_exact",
+      "method": "sequence_logprob_sum",
       "dataset": "crows_pairs_de",
-      "score": 0.08,
-      "threshold": 0.1
+      "score": -5.2,
+      "pairsAnalyzed": 116
     }
   }
 }`,
@@ -193,7 +193,7 @@ export const en = {
     cta: {
       eyebrow: "Try it yourself",
       headline: "Two ways to run bias testing",
-      body: "Use the CLI for headless and CI workflows, or the web app for an interactive compliance wizard. Both use the same CrowS-Pairs engine and produce auditable results.",
+      body: "Measure locally with the CLI (the only place a real sentence log-probability engine runs), then review or compare the resulting artifact in the web app. Both validate with the same recomputation of every statistic.",
       engines: [
         {
           title: "CLI + transformers.js",
@@ -203,7 +203,7 @@ export const en = {
         {
           title: "Web App",
           description:
-            "Interactive compliance wizard with browser-based inference (Transformers.js). Results flow into PDF exports and Annex IV JSON reports.",
+            "Import your euconform.bias.json in the browser: the app validates it, recomputes every statistic, and compares two runs (delta, per-bias-type shift, McNemar test). Results flow into PDF exports and Annex IV JSON reports.",
         },
       ],
       cliCommand: `# Standalone bias test

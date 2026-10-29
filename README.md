@@ -81,7 +81,8 @@
 | Command | Primary output | Use case |
 |---------|----------------|----------|
 | `scan` | Native EuConform artifacts | Generate structured evidence from a real repository |
-| `bias` | Bias report JSON and/or Markdown | Run reproducible local model evaluation with Ollama — EuConform's distinctive empirical layer |
+| `bias` | Bias report JSON and/or Markdown | Run reproducible local model evaluation via transformers.js — EuConform's distinctive empirical layer |
+| `compare` | Comparison JSON and/or Markdown | Compare two bias runs: score/preference deltas, per-bias-type shifts, McNemar significance |
 | `validate` | Valid/invalid status per JSON file | Check EuConform JSON files against published schemas |
 | `verify` | Bundle integrity status | Check a manifest, extracted bundle, or ZIP archive |
 | `import` | `euconform.aibom.json` | Map an external CycloneDX SBOM into the EuConform AI BOM layer |
@@ -193,7 +194,33 @@ Typical use:
 - reproducible local evaluation before and after model updates
 - adding a behavioral evidence layer on top of structural evidence from `scan`
 
-### Workflow 4: Import An External CycloneDX SBOM
+### Workflow 4: Compare Two Bias Runs
+
+Compare a baseline measurement against a candidate (same model after an update,
+or a different model on the same catalogue):
+
+```bash
+node packages/cli/dist/index.js compare \
+  ./.euconform-baseline/ \
+  ./.euconform-candidate/ \
+  --output all --out-dir ./comparison
+```
+
+`compare` accepts either the artifact file (`euconform.bias.json`) or the
+directory a bias run wrote it to, and reports:
+
+- mean-score and preference-quote deltas with both Wilson intervals
+- per-bias-type shifts
+- the largest per-pair changes
+- a McNemar exact test over preference flips, so a shift is not mistaken for noise
+
+The comparison refuses to run when the two artifacts do not answer the same
+question with the same measurement setup (different catalogue, scoring method or
+template strategy). Different models, dtypes or library versions are expected and
+are listed as environment differences instead. `--allow-incomparable` writes the
+report anyway, explicitly marked `comparable: false`.
+
+### Workflow 5: Import An External CycloneDX SBOM
 
 Map an external CycloneDX JSON file into the EuConform AI BOM layer:
 

@@ -30,6 +30,7 @@ EuConform supports native artifact generation, empirical model evaluation, and e
 
 - `scan` generates native EuConform artifacts from a repository
 - `bias` produces reproducible model-behavior evidence via local CrowS-Pairs evaluation — EuConform's distinctive empirical layer
+- `compare` derives a human- and machine-readable comparison of two `euconform.bias.v2` artifacts (deltas, per-bias-type shifts, McNemar exact test). It is a derived report (`reportType: "bias-comparison"`), not a new evidence document type, and therefore carries no `schemaVersion`.
 - `validate` checks EuConform JSON documents against the published schemas
 - `verify` checks bundle integrity for manifests, extracted directories, and ZIP archives
 - `import` maps external CycloneDX JSON into the AIBOM layer (emits `euconform.aibom.v1.1`) as an interoperability bridge

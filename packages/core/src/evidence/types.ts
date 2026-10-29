@@ -469,3 +469,71 @@ export interface ScanBundle {
   target: { name: string; rootPath: string };
   artifacts: BundleArtifactRef[];
 }
+
+// ---------------------------------------------------------------------------
+// External observations (euconform.external-observation.v1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Provider-neutral envelope for an externally produced observation of a
+ * machine-readable declaration (rights, AI use, licence metadata, robots policy).
+ *
+ * It records what was visible at a point in time. It is NOT a licence, NOT an
+ * ownership determination, NOT proof of use and NOT permission — `result` only
+ * says whether a declaration was visible, and `unknown` must never be read as
+ * permission. The shape intentionally has no field that could express permission.
+ */
+export interface ExternalObservation {
+  schemaVersion: "euconform.external-observation.v1";
+  /** Provider-scoped unique id, so the exact record can be cited and re-fetched. */
+  observationId: string;
+  /** When the provider observed the declaration (not when the artifact was exported). */
+  observedAt: string;
+  /** Who produced the observation. Identification only; it does not change the meaning. */
+  provider: {
+    name: string;
+    version: string;
+    endpoint?: string;
+    contact?: string;
+  };
+  subject: {
+    kind: "url" | "repository" | "dataset" | "artifact";
+    identifier: string;
+    /** When the subject content was fetched; bounds the validity of the statement. */
+    retrievedAt: string;
+    /** Optional hash of the observed content. */
+    contentSha256?: string;
+  };
+  observation: {
+    kind:
+      | "rights-declaration"
+      | "ai-use-declaration"
+      | "license-metadata"
+      | "robots-policy"
+      | "terms-of-service";
+    /** Query vocabulary of the provider (e.g. ai-input, ai-train). Free-form on purpose. */
+    intendedUse: string[];
+    /**
+     * `declared` = a supported machine-readable declaration was visible — NOT that
+     * the use is permitted. `unknown` must never be converted into permission.
+     */
+    result: "declared" | "not-declared" | "unknown" | "not-applicable";
+    /** Present exactly when `result` is `declared`, so the claim stays checkable. */
+    declaration?: {
+      text: string;
+      sha256: string;
+      url?: string;
+      license?: string;
+    };
+  };
+  /** Mandatory coverage limits; an observation without stated limits is not reviewable. */
+  limitations: string[];
+  /** Optional integrity proof. Unsigned observations are valid but must be treated as unverified. */
+  signature?: {
+    algorithm: string;
+    keyId: string;
+    value: string;
+    signedPayloadSha256: string;
+    verifyUrl?: string;
+  };
+}

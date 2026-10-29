@@ -18,6 +18,7 @@ EuConform implements the **EuConform Evidence Format**, an open specification fo
 | Document | Purpose |
 |----------|---------|
 | `euconform.bundle.v1` | Integrity and transport manifest binding artifacts from a single scan run |
+| `euconform.external-observation.v1` | Third-party, time-stamped observation of a machine-readable declaration on a source (not a licence, not permission) |
 
 ## Positioning
 
@@ -34,11 +35,13 @@ EuConform supports native artifact generation, empirical model evaluation, and e
 - `validate` checks EuConform JSON documents against the published schemas
 - `verify` checks bundle integrity for manifests, extracted directories, and ZIP archives
 - `import` maps external CycloneDX JSON into the AIBOM layer (emits `euconform.aibom.v1.1`) as an interoperability bridge
+- `euconform.external-observation.v1` documents ingest third-party rights/AI-use observations; EuConform validates their shape but never interprets them as permission
 
 Important boundaries:
 - `bias` is independent of `scan` and can be used standalone for model evaluation
 - `import` does **not** replace a full native EuConform scan of a repository
 - `validate` and `verify` complement each other: schema checks for individual documents, integrity checks for artifact sets
+- external observations are standalone: they are not bundle roles in `bundle.v1`, and EuConform never adjudicates what they mean
 
 ## Versioning and compatibility
 
@@ -55,6 +58,7 @@ Important boundaries:
 - [AI BOM v1.1 schema](./schemas/aibom-v1.1.schema.json)
 - [CI schema](./schemas/ci-v1.schema.json)
 - [Bundle schema](./schemas/bundle-v1.schema.json)
+- [External observation schema](./schemas/external-observation-v1.schema.json)
 
 ## Examples
 
@@ -69,6 +73,7 @@ Important boundaries:
 - [AI BOM v1 guide](./aibom-v1.md)
 - [CI v1 guide](./ci-v1.md)
 - [Bundle v1 guide](./bundle-v1.md)
+- [External observation v1 guide](./external-observation-v1.md)
 
 ## Verification flow
 

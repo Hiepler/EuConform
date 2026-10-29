@@ -22,6 +22,7 @@ export type {
   ConfidenceLevel,
   DetectedSignal,
   DetectorContext,
+  ExternalObservation,
   FailOnLevel,
   FileProvenance,
   GapCounts,
@@ -75,6 +76,7 @@ export {
   validateBiasReport,
   validateCiReport,
   validateEcefJsonDocument,
+  validateExternalObservation,
   validateScanBundle,
   validateScanReport,
 } from "./validate";

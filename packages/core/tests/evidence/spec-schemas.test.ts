@@ -175,8 +175,9 @@ describe("EuConform Evidence Format schemas", () => {
   ]) as Array<[keyof typeof SCHEMA_FILES, JsonSchema]>;
 
   it("validates every documented example artifact set", () => {
+    // "external-observation" holds a standalone document, not a scan artifact set.
     const exampleDirs = readdirSync(EXAMPLES_DIR, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
+      .filter((entry) => entry.isDirectory() && entry.name !== "external-observation")
       .map((entry) => entry.name)
       .sort();
 
@@ -232,6 +233,38 @@ describe("EuConform Evidence Format schemas", () => {
     expect(errors.some((e) => e.includes("unknownField"))).toBe(true);
   });
 
+  it("validates the published external observation example", () => {
+    const schema = readJson<JsonSchema>(
+      resolve(SCHEMAS_DIR, "external-observation-v1.schema.json")
+    );
+    const example = readJson<Record<string, unknown>>(
+      resolve(EXAMPLES_DIR, "external-observation/observation.json")
+    );
+
+    expect(validateAgainstSchema(schema, schema, example)).toEqual([]);
+    expect(example.schemaVersion).toBe("euconform.external-observation.v1");
+  });
+
+  it("rejects an external observation that could be read as permission", () => {
+    const schema = readJson<JsonSchema>(
+      resolve(SCHEMAS_DIR, "external-observation-v1.schema.json")
+    );
+    const example = readJson<Record<string, unknown>>(
+      resolve(EXAMPLES_DIR, "external-observation/observation.json")
+    );
+
+    const withPermission = { ...example, permission: true };
+    const extraFieldErrors = validateAgainstSchema(schema, schema, withPermission);
+    expect(extraFieldErrors.some((error) => error.includes("permission"))).toBe(true);
+
+    const permittedResult = {
+      ...example,
+      observation: { ...(example.observation as Record<string, unknown>), result: "permitted" },
+    };
+    const badResultErrors = validateAgainstSchema(schema, schema, permittedResult);
+    expect(badResultErrors.some((error) => error.includes("result"))).toBe(true);
+  });
+
   it("rejects invalid enum values", () => {
     const ciSchema = schemaEntries.find(([kind]) => kind === "ci")?.[1];
     if (!ciSchema) throw new Error("ci schema not found");
@@ -255,7 +288,7 @@ describe("EuConform Evidence Format schemas", () => {
     } as const;
 
     const exampleDirs = readdirSync(EXAMPLES_DIR, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
+      .filter((entry) => entry.isDirectory() && entry.name !== "external-observation")
       .map((entry) => entry.name);
 
     for (const exampleDir of exampleDirs) {

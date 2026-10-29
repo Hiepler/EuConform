@@ -1,12 +1,10 @@
 "use client";
 
 import { AlertTriangle, Loader2, Scale } from "lucide-react";
-import { useCustomTestSuite } from "../../lib/contexts/CustomTestSuiteContext";
+import Link from "next/link";
 import { useLanguage } from "../../lib/i18n/LanguageContext";
 import type { ModelLoadingStatus } from "../../lib/types/wizard";
 import { BackgroundElements } from "../shared";
-import { FileUploader } from "../shared/FileUploader";
-import { FormatHelp } from "../shared/FormatHelp";
 
 /**
  * Props for the BiasTestScreen component
@@ -24,8 +22,6 @@ export interface BiasTestScreenProps {
   error: string | null;
   /** Selected model identifier */
   selectedModel: string;
-  /** Handler for running the bias test */
-  onRunTest: () => void;
   /** Handler for skipping the bias test */
   onSkip: () => void;
 }
@@ -41,11 +37,9 @@ export function BiasTestScreen({
   modelLoadingStatus,
   error,
   selectedModel,
-  onRunTest,
   onSkip,
 }: BiasTestScreenProps) {
   const { t } = useLanguage();
-  const { testCases, isActive, setCustomTestCases, clearCustomTestCases } = useCustomTestSuite();
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
@@ -135,34 +129,15 @@ export function BiasTestScreen({
             </div>
           ) : (
             <>
-              {/* Custom Test Suite Upload */}
-              <div className="mb-6">
-                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-3">
-                  Custom Test Suite (Optional)
-                </h3>
-                <FileUploader
-                  onUploadComplete={setCustomTestCases}
-                  onClear={clearCustomTestCases}
-                  isActive={isActive}
-                />
-                {isActive && (
-                  <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
-                    Using custom test suite with {testCases.length} test cases
-                  </p>
-                )}
-                <FormatHelp />
-              </div>
-
               <div className="space-y-4 max-w-xs mx-auto">
-                <button
-                  type="button"
-                  onClick={onRunTest}
+                <Link
+                  href="/bias"
                   className="group w-full relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl bg-slate-deep dark:bg-paper text-paper dark:text-slate-deep font-bold hover:shadow-lg hover:shadow-slate-900/20 transition-all duration-300 overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                   <Scale className="w-5 h-5" />
-                  {t("bias_start_test")}
-                </button>
+                  {t("bias_evidence_cta")}
+                </Link>
                 <button
                   type="button"
                   onClick={onSkip}
@@ -171,6 +146,10 @@ export function BiasTestScreen({
                   {t("skip")}
                 </button>
               </div>
+
+              <p className="mt-6 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                {t("bias_web_notice")}
+              </p>
             </>
           )}
         </div>

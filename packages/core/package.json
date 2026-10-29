@@ -23,6 +23,7 @@
     "./types": "./src/types.ts",
     "./scanner": "./src/scanner/index.ts",
     "./evidence": "./src/evidence/index.ts",
+    "./evidence/browser": "./src/evidence/browser.ts",
     "./datasets": "./src/datasets/crows-pairs.ts",
     "./validation": "./src/validation/index.ts",
     "./sbom": "./src/sbom/index.ts"

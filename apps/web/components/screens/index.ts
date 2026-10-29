@@ -15,6 +15,8 @@ export type { QuizScreenProps } from "./QuizScreen";
 export { BiasTestScreen } from "./BiasTestScreen";
 export type { BiasTestScreenProps } from "./BiasTestScreen";
 
+export { BiasEvidenceScreen } from "./BiasEvidenceScreen";
+
 export { ResultsScreen } from "./ResultsScreen";
 export type { ResultsScreenProps } from "./ResultsScreen";
 

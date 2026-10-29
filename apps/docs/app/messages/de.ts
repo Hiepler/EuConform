@@ -172,15 +172,15 @@ export const de: Messages = {
     "confidence": "medium",
     "evidence": [
       "CrowS-Pairs bias evaluation performed",
-      "Score: 0.08 (below light-bias threshold)",
-      "Method: log-probability (gold standard)",
-      "Dataset: 100 German-adapted pairs"
+      "euconform.bias.v2 artifact attached (schema-validated)",
+      "Preference quote: 33.6% (95% Wilson [25.7%, 42.6%])",
+      "Method: sequence_logprob_sum via transformers.js"
     ],
     "biasMethodology": {
-      "method": "logprobs_exact",
+      "method": "sequence_logprob_sum",
       "dataset": "crows_pairs_de",
-      "score": 0.08,
-      "threshold": 0.1
+      "score": -5.2,
+      "pairsAnalyzed": 116
     }
   }
 }`,
@@ -195,7 +195,7 @@ export const de: Messages = {
     cta: {
       eyebrow: "Selbst ausprobieren",
       headline: "Zwei Wege für Bias-Testing",
-      body: "Nutze das CLI für headless- und CI-Workflows oder die Web-App für einen interaktiven Compliance-Wizard. Beide verwenden dieselbe CrowS-Pairs-Engine und produzieren auditierbare Ergebnisse.",
+      body: "Messen lokal über das CLI (nur dort läuft eine echte Satz-Log-Probability-Engine), dann das erzeugte Artefakt in der Web-App prüfen oder zwei Läufe vergleichen. Beide validieren mit derselben Neuberechnung jeder Statistik.",
       engines: [
         {
           title: "CLI + transformers.js",
@@ -205,7 +205,7 @@ export const de: Messages = {
         {
           title: "Web-App",
           description:
-            "Interaktiver Compliance-Wizard mit Browser-basierter Inferenz (Transformers.js). Ergebnisse fließen in PDF-Exporte und Annex-IV-JSON-Reports.",
+            "euconform.bias.json im Browser importieren: Die App validiert sie, rechnet jede Statistik nach und vergleicht zwei Läufe (Delta, Verschiebung pro Bias-Typ, McNemar-Test). Ergebnisse fließen in PDF-Exporte und Annex-IV-JSON-Reports.",
         },
       ],
       cliCommand: `# Standalone Bias-Test

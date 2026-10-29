@@ -358,6 +358,44 @@ export interface Dictionary {
   scan_viewer_start_classification: string;
   scan_viewer_ignored_files: string;
   scan_viewer_no_report: string;
+
+  // Bias Evidence Viewer
+  bias_evidence_cta: string;
+  bias_web_notice: string;
+  bias_evidence_title: string;
+  bias_evidence_subtitle: string;
+  bias_evidence_back: string;
+  bias_evidence_baseline: string;
+  bias_evidence_candidate: string;
+  bias_evidence_choose_file: string;
+  bias_evidence_clear: string;
+  bias_evidence_optional: string;
+  bias_evidence_report: string;
+  bias_evidence_comparison: string;
+  bias_evidence_comparable: string;
+  bias_evidence_not_comparable: string;
+  bias_evidence_metric: string;
+  bias_evidence_value: string;
+  bias_evidence_delta: string;
+  bias_evidence_mean_score: string;
+  bias_evidence_preference: string;
+  bias_evidence_analyzed: string;
+  bias_evidence_ties: string;
+  bias_evidence_run_status: string;
+  bias_evidence_catalog: string;
+  bias_evidence_generated: string;
+  bias_evidence_by_type: string;
+  bias_evidence_provenance: string;
+  bias_evidence_failed_pairs: string;
+  bias_evidence_paired: string;
+  bias_evidence_pairs_compared: string;
+  bias_evidence_flips: string;
+  bias_evidence_mcnemar: string;
+  bias_evidence_significant: string;
+  bias_evidence_not_significant: string;
+  bias_evidence_env_diff: string;
+  bias_evidence_changes: string;
+  bias_evidence_no_changes: string;
 }
 
 export const dictionaries: Record<Language, Dictionary> = {
@@ -772,6 +810,46 @@ export const dictionaries: Record<Language, Dictionary> = {
     scan_viewer_start_classification: "Start Guided Classification",
     scan_viewer_ignored_files: "Ignored files",
     scan_viewer_no_report: "euconform.report.json is required but was not found or is invalid.",
+
+    // Bias Evidence Viewer
+    bias_evidence_cta: "Open Bias Evidence",
+    bias_web_notice:
+      "Bias measurement runs locally via the CLI (euconform bias --engine transformers). Here you can review the resulting euconform.bias.json — including a comparison of two runs.",
+    bias_evidence_title: "Bias Evidence",
+    bias_evidence_subtitle:
+      "Import one euconform.bias.v2 artifact to review it, or two to compare them. Validation runs locally and recomputes every statistic from the raw per-pair results.",
+    bias_evidence_back: "Back",
+    bias_evidence_baseline: "Baseline run",
+    bias_evidence_candidate: "Candidate run",
+    bias_evidence_choose_file: "Choose euconform.bias.json",
+    bias_evidence_clear: "Remove",
+    bias_evidence_optional: "optional — enables the comparison",
+    bias_evidence_report: "Bias Report",
+    bias_evidence_comparison: "Run Comparison",
+    bias_evidence_comparable: "Comparable",
+    bias_evidence_not_comparable: "Not comparable",
+    bias_evidence_metric: "Metric",
+    bias_evidence_value: "Value",
+    bias_evidence_delta: "Delta",
+    bias_evidence_mean_score: "Mean bias score",
+    bias_evidence_preference: "Preference quote (bias > 0)",
+    bias_evidence_analyzed: "Analyzed / selected / failed",
+    bias_evidence_ties: "Ties (bias = 0)",
+    bias_evidence_run_status: "Run status",
+    bias_evidence_catalog: "Catalog",
+    bias_evidence_generated: "Generated",
+    bias_evidence_by_type: "Preference by bias type",
+    bias_evidence_provenance: "Measurement provenance",
+    bias_evidence_failed_pairs: "Failed pairs",
+    bias_evidence_paired: "Paired comparison",
+    bias_evidence_pairs_compared: "Pairs measured in both runs",
+    bias_evidence_flips: "Preference flips (baseline only / candidate only)",
+    bias_evidence_mcnemar: "McNemar exact test",
+    bias_evidence_significant: "significant shift",
+    bias_evidence_not_significant: "no significant shift",
+    bias_evidence_env_diff: "Environment differences",
+    bias_evidence_changes: "Largest per-pair changes",
+    bias_evidence_no_changes: "No pair changed between the two runs.",
   },
   de: {
     title: "EuConform",
@@ -1190,5 +1268,45 @@ export const dictionaries: Record<Language, Dictionary> = {
     scan_viewer_ignored_files: "Ignorierte Dateien",
     scan_viewer_no_report:
       "euconform.report.json ist erforderlich, wurde aber nicht gefunden oder ist ungültig.",
+
+    // Bias Evidence Viewer
+    bias_evidence_cta: "Bias-Evidence öffnen",
+    bias_web_notice:
+      "Die Bias-Messung läuft lokal über die CLI (euconform bias --engine transformers). Hier prüfst du das erzeugte euconform.bias.json — inklusive Vergleich zweier Läufe.",
+    bias_evidence_title: "Bias-Evidence",
+    bias_evidence_subtitle:
+      "Ein euconform.bias.v2 Artefakt importieren und prüfen – oder zwei, um sie zu vergleichen. Die Validierung läuft lokal und rechnet jede Statistik aus den Rohwerten pro Paar nach.",
+    bias_evidence_back: "Zurück",
+    bias_evidence_baseline: "Baseline-Lauf",
+    bias_evidence_candidate: "Kandidaten-Lauf",
+    bias_evidence_choose_file: "euconform.bias.json auswählen",
+    bias_evidence_clear: "Entfernen",
+    bias_evidence_optional: "optional – aktiviert den Vergleich",
+    bias_evidence_report: "Bias-Report",
+    bias_evidence_comparison: "Lauf-Vergleich",
+    bias_evidence_comparable: "Vergleichbar",
+    bias_evidence_not_comparable: "Nicht vergleichbar",
+    bias_evidence_metric: "Kennzahl",
+    bias_evidence_value: "Wert",
+    bias_evidence_delta: "Delta",
+    bias_evidence_mean_score: "Mittlerer Bias-Score",
+    bias_evidence_preference: "Präferenzquote (Bias > 0)",
+    bias_evidence_analyzed: "Analysiert / ausgewählt / fehlgeschlagen",
+    bias_evidence_ties: "Gleichstand (Bias = 0)",
+    bias_evidence_run_status: "Lauf-Status",
+    bias_evidence_catalog: "Katalog",
+    bias_evidence_generated: "Erzeugt",
+    bias_evidence_by_type: "Präferenz nach Bias-Typ",
+    bias_evidence_provenance: "Mess-Provenienz",
+    bias_evidence_failed_pairs: "Fehlgeschlagene Paare",
+    bias_evidence_paired: "Gepaarter Vergleich",
+    bias_evidence_pairs_compared: "In beiden Läufen gemessene Paare",
+    bias_evidence_flips: "Präferenz-Wechsel (nur Baseline / nur Kandidat)",
+    bias_evidence_mcnemar: "Exakter McNemar-Test",
+    bias_evidence_significant: "signifikante Verschiebung",
+    bias_evidence_not_significant: "keine signifikante Verschiebung",
+    bias_evidence_env_diff: "Umgebungs-Unterschiede",
+    bias_evidence_changes: "Größte Änderungen pro Paar",
+    bias_evidence_no_changes: "Kein Paar hat sich zwischen den Läufen geändert.",
   },
 };

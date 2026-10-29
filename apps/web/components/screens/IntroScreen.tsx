@@ -1,7 +1,8 @@
 "use client";
 
 import type { InferenceCapabilities } from "@euconform/core";
-import { ArrowRight, Bot, Cpu, FileText, Github, Server, Shield } from "lucide-react";
+import { ArrowRight, Bot, Cpu, FileText, Github, Scale, Server, Shield } from "lucide-react";
+import Link from "next/link";
 import { useLanguage } from "../../lib/i18n/LanguageContext";
 import type { InferenceEngine, WizardStep } from "../../lib/types/wizard";
 import { BackgroundElements, PageHeader } from "../shared";
@@ -138,8 +139,8 @@ export function IntroScreen({
           </button>
         </div>
 
-        {/* Scan Viewer CTA */}
-        <div className="mt-6">
+        {/* Scan Viewer + Bias Evidence CTAs */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <button
             type="button"
             onClick={() => setStep("scan-viewer")}
@@ -148,6 +149,13 @@ export function IntroScreen({
             <FileText className="w-4 h-4" />
             {t("scan_viewer_cta")}
           </button>
+          <Link
+            href="/bias"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border dark:border-border-dark text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100 transition-all"
+          >
+            <Scale className="w-4 h-4" />
+            {t("bias_evidence_cta")}
+          </Link>
         </div>
 
         {/* Footer */}

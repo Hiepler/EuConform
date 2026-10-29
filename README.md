@@ -334,6 +334,7 @@ EuConform implements the **EuConform Evidence Format**, an open specification fo
 - `euconform.aibom.v1` is the AI Bill of Materials (AI BOM) inventory layer
 - `euconform.ci.v1` captures CI thresholds, status, and top findings
 - `euconform.bundle.v1` binds artifact sets into a portable, integrity-aware manifest
+- `euconform.external-observation.v1` ingests third-party, time-stamped observations of rights/AI-use declarations — validated for shape, never interpreted as permission
 
 Current workflow boundaries:
 - `scan` **produces** native EuConform artifacts from source repositories

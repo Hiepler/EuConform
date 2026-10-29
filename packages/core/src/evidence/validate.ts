@@ -3,6 +3,7 @@ import type {
   BiasReport,
   BiasReportV2,
   CiReport,
+  ExternalObservation,
   ScanBundle,
   ScanReport,
 } from "./types";
@@ -321,6 +322,63 @@ export function validateBiasArtifact(data: unknown): BiasValidationResult {
   };
 }
 
+/**
+ * Shape check for `euconform.external-observation.v1`. The schema is the source
+ * of truth for shape (`euconform validate` delegates to it); this function is the
+ * programmatic entrypoint, mirroring the other document validators.
+ *
+ * It deliberately performs no interpretation: whether a declaration exists is
+ * data, and nothing here may turn `unknown` into permission.
+ */
+export function validateExternalObservation(data: unknown): ExternalObservation {
+  const label = "external observation";
+  const obj = assertObject(data, label);
+  requireSchemaVersion(obj, "euconform.external-observation.v1", label);
+  requireField(obj, "observationId", "string", label);
+  requireField(obj, "observedAt", "string", label);
+
+  const provider = requireField(obj, "provider", "object", label) as Record<string, unknown>;
+  requireField(provider, "name", "string", label, "provider.name");
+  requireField(provider, "version", "string", label, "provider.version");
+
+  const subject = requireField(obj, "subject", "object", label) as Record<string, unknown>;
+  requireField(subject, "kind", "string", label, "subject.kind");
+  requireField(subject, "identifier", "string", label, "subject.identifier");
+  requireField(subject, "retrievedAt", "string", label, "subject.retrievedAt");
+
+  const observation = requireField(obj, "observation", "object", label) as Record<string, unknown>;
+  requireField(observation, "kind", "string", label, "observation.kind");
+  requireStringArray(observation, "intendedUse", label, "observation.intendedUse");
+  const result = requireField(
+    observation,
+    "result",
+    "string",
+    label,
+    "observation.result"
+  ) as string;
+
+  if (result === "declared") {
+    const declaration = requireField(
+      observation,
+      "declaration",
+      "object",
+      label,
+      "observation.declaration"
+    ) as Record<string, unknown>;
+    requireField(declaration, "text", "string", label, "observation.declaration.text");
+    requireField(declaration, "sha256", "string", label, "observation.declaration.sha256");
+  }
+
+  const limitations = requireStringArray(obj, "limitations", label);
+  if (limitations.length === 0) {
+    throw new Error(
+      `Invalid ${label}: 'limitations' must name at least one coverage limit — an observation without stated limits is not reviewable`
+    );
+  }
+
+  return data as ExternalObservation;
+}
+
 export function validateScanBundle(data: unknown): ScanBundle {
   const obj = assertObject(data, "bundle");
   validateBundleHeader(obj);
@@ -357,7 +415,7 @@ export function validateScanBundle(data: unknown): ScanBundle {
 export function validateEcefJsonDocument(
   schemaVersion: string,
   data: unknown
-): ScanReport | AiBillOfMaterials | CiReport | ScanBundle {
+): ScanReport | AiBillOfMaterials | CiReport | ScanBundle | ExternalObservation {
   switch (schemaVersion) {
     case "euconform.report.v1":
       return validateScanReport(data);
@@ -368,6 +426,8 @@ export function validateEcefJsonDocument(
       return validateCiReport(data);
     case "euconform.bundle.v1":
       return validateScanBundle(data);
+    case "euconform.external-observation.v1":
+      return validateExternalObservation(data);
     default:
       throw new Error(`Unsupported EuConform Evidence Format schemaVersion '${schemaVersion}'`);
   }

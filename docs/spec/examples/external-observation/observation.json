@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "euconform.external-observation.v1",
+  "observationId": "obs_example_0001",
+  "observedAt": "2026-10-29T12:00:00Z",
+  "provider": {
+    "name": "example-rights-observer",
+    "version": "1.0.0",
+    "endpoint": "https://api.example.com/v1/rights/preflight",
+    "contact": "https://example.com/contact"
+  },
+  "subject": {
+    "kind": "url",
+    "identifier": "https://example.com/dataset",
+    "retrievedAt": "2026-10-29T11:59:41Z",
+    "contentSha256": "4f1c2f8f8b0f8e4d6b0d6a3c1e2f7a9b3c5d7e9f1a3b5c7d9e1f3a5b7c9d1e3f"
+  },
+  "observation": {
+    "kind": "rights-declaration",
+    "intendedUse": ["ai-input", "ai-train"],
+    "result": "declared",
+    "declaration": {
+      "text": "AI training permitted for non-commercial research only.",
+      "sha256": "9ab3c5d7e9f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a9b1c3d5e7f9a1b3",
+      "url": "https://example.com/dataset/terms",
+      "license": "CC-BY-NC-4.0"
+    }
+  },
+  "limitations": [
+    "Coverage limited to reviewed origins.",
+    "Declarations can change after observedAt; re-observe before relying on this."
+  ],
+  "signature": {
+    "algorithm": "ed25519",
+    "keyId": "provider-2026-01",
+    "value": "ZXhhbXBsZS1zaWduYXR1cmU=",
+    "signedPayloadSha256": "c07d1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+    "verifyUrl": "https://api.example.com/keys/provider-2026-01"
+  }
+}

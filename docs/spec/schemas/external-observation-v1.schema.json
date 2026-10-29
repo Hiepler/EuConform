@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://euconform.eu/schemas/external-observation-v1.schema.json",
+  "title": "EuConform External Observation v1",
+  "description": "Provider-neutral envelope for an externally produced, time-stamped observation of a machine-readable declaration (rights, AI use, licence metadata, robots policy). An observation is NOT a licence, NOT an ownership determination, NOT proof of use and NOT permission. Absence of a declaration is recorded as such ('not-declared'/'unknown') and MUST never be read as permission. The envelope carries no field that could express permission on purpose.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "observationId",
+    "observedAt",
+    "provider",
+    "subject",
+    "observation",
+    "limitations"
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "properties": {
+    "schemaVersion": { "const": "euconform.external-observation.v1" },
+    "observationId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Provider-scoped unique id for this observation, so the exact record can be cited and re-fetched."
+    },
+    "observedAt": {
+      "$ref": "#/$defs/dateTime",
+      "description": "When the provider observed the declaration. Not when the artifact was exported."
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "description": "Who produced the observation. Identification only — no field here changes the meaning of the result.",
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "endpoint": { "type": "string", "minLength": 1 },
+        "contact": { "type": "string", "minLength": 1 }
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "identifier", "retrievedAt"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["url", "repository", "dataset", "artifact"]
+        },
+        "identifier": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What was observed, e.g. the source URL or repository identifier."
+        },
+        "retrievedAt": {
+          "$ref": "#/$defs/dateTime",
+          "description": "When the subject content was fetched. Together with observedAt this bounds the validity of the statement."
+        },
+        "contentSha256": {
+          "$ref": "#/$defs/sha256",
+          "description": "Optional hash of the observed subject content, so a third party can check that the same bytes were seen."
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "intendedUse", "result"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "rights-declaration",
+            "ai-use-declaration",
+            "license-metadata",
+            "robots-policy",
+            "terms-of-service"
+          ]
+        },
+        "intendedUse": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "What the declaration was queried about, in the provider's own vocabulary (e.g. ai-input, ai-train). Deliberately free-form: no shared vocabulary exists yet, and inventing one here would hide provider-specific gaps."
+        },
+        "result": {
+          "type": "string",
+          "enum": ["declared", "not-declared", "unknown", "not-applicable"],
+          "description": "'declared' means a supported machine-readable declaration was visible at observedAt — NOT that the intended use is permitted. 'unknown' means the provider could not determine anything and MUST NOT be turned into permission."
+        },
+        "declaration": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text", "sha256"],
+          "description": "The declaration as observed. Required when result is 'declared' so the claim is checkable rather than asserted.",
+          "properties": {
+            "text": { "type": "string", "minLength": 1 },
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "url": { "type": "string", "minLength": 1 },
+            "license": { "type": "string", "minLength": 1 }
+          }
+        }
+      },
+      "if": {
+        "required": ["result"],
+        "properties": { "result": { "const": "declared" } }
+      },
+      "then": { "required": ["declaration"] }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Mandatory coverage limits of this observation (e.g. 'coverage limited to reviewed origins'). An observation without stated limits is not reviewable."
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "keyId", "value", "signedPayloadSha256"],
+      "description": "Optional integrity proof over the observation payload. Unsigned observations are still valid evidence, but a consumer must treat them as unverified.",
+      "properties": {
+        "algorithm": { "type": "string", "minLength": 1 },
+        "keyId": { "type": "string", "minLength": 1 },
+        "value": { "type": "string", "minLength": 1 },
+        "signedPayloadSha256": { "$ref": "#/$defs/sha256" },
+        "verifyUrl": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

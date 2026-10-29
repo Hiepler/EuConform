@@ -19,7 +19,8 @@ export type SchemaType =
   | "ci.v1"
   | "bundle.v1"
   | "bias.v1"
-  | "bias.v2";
+  | "bias.v2"
+  | "external-observation.v1";
 
 export interface ValidationResult {
   valid: boolean;
@@ -54,6 +55,10 @@ const SCHEMA_MAP: Record<string, { schemaFile: string; type: SchemaType }> = {
   "euconform.bundle.v1": { schemaFile: "bundle-v1.schema.json", type: "bundle.v1" },
   "euconform.bias.v1": { schemaFile: "bias-v1.schema.json", type: "bias.v1" },
   "euconform.bias.v2": { schemaFile: "bias-v2.schema.json", type: "bias.v2" },
+  "euconform.external-observation.v1": {
+    schemaFile: "external-observation-v1.schema.json",
+    type: "external-observation.v1",
+  },
 };
 
 let ajvInstance: Ajv2020 | null = null;

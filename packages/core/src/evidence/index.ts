@@ -46,6 +46,14 @@ export type {
   Quartiles,
   WilsonInterval,
 } from "./bias-statistics";
+export type {
+  BiasComparison,
+  BiasComparisonPaired,
+  BiasPairChange,
+  BiasRunSummary,
+  BiasTypeComparison,
+  CompareBiasRunsOptions,
+} from "./bias-comparison";
 export type { BiasValidationResult } from "./validate";
 
 export { generateScanOutput } from "./output";
@@ -53,6 +61,12 @@ export { generateSummaryMarkdown } from "./markdown";
 export { buildBundleManifest } from "./bundle";
 export { sha256Hex } from "./hash";
 export { buildBiasStatistics, quartilesType7, wilson95, WILSON_Z95 } from "./bias-statistics";
+export {
+  compareBiasRuns,
+  mcnemarExactPValue,
+  summarizeBiasRun,
+} from "./bias-comparison";
+export { formatBiasComparisonMarkdown } from "./bias-comparison-markdown";
 export { validateBiasReportV2, isPartialRun } from "./validate-bias-v2";
 export {
   getSchemaMajorVersion,

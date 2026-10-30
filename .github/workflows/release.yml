@@ -3,6 +3,9 @@ name: Release
 on:
   push:
     branches: [main]
+  # Allows re-running a failed publish without pushing an empty commit, e.g. after
+  # rotating NPM_TOKEN. A dispatch run publishes any version already bumped on main.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,24 +16,29 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
-          cache: "pnpm"
+          node-version: 24
+          cache: pnpm
+          # changesets/action v2 no longer writes an .npmrc from NPM_TOKEN, so the
+          # registry has to be configured here. setup-node writes
+          # //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN} and npm/pnpm expand it
+          # at publish time — NODE_AUTH_TOKEN is set on the publish step below.
+          registry-url: "https://registry.npmjs.org"
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: Create Release Pull Request or Publish
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
-          publish: pnpm ci:publish
-          commit: "chore: release"
-          title: "chore: release"
+          publish-script: pnpm ci:publish
+          commit-message: "chore: release"
+          pr-title: "chore: release"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

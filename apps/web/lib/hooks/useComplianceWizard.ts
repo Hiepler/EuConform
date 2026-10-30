@@ -10,23 +10,15 @@
 
 import {
   AI_ACT_SOURCES,
-  type BiasCalculationMethod,
-  type CrowsPairsLogProbResult,
   type GPAIComplianceResult,
   type GapAnalysisResult,
   type InferenceCapabilities,
-  type InferenceClient,
-  type InferenceFactory,
-  type ModelCapability,
   type QuizAnswer,
   type RiskAssessment,
   type RiskLevel,
-  type StereotypePair,
   buildAnnexIVReportV1,
   classifyAnnexIIIRisk,
   classifyGPAICompliance,
-  createInferenceClient,
-  createInferenceFactory,
   detectCapabilities,
   generateAnnexIIIGapAnalysis,
   generateGPAIGapAnalysis,
@@ -37,14 +29,7 @@ import {
 import { PDFDocument, type PDFFont, type PDFPage, StandardFonts, rgb } from "pdf-lib";
 import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "../i18n/LanguageContext";
-import type { NormalizedTestCase } from "../types/custom-test-suite";
-import type {
-  InferenceEngine,
-  ModelLoadingStatus,
-  UseComplianceWizardReturn,
-  UserRole,
-  WizardStep,
-} from "../types/wizard";
+import type { UseComplianceWizardReturn, UserRole, WizardStep } from "../types/wizard";
 
 // Static question lists — defined once at module scope to avoid re-allocation on every render
 const ANNEX_III_QUESTIONS = getAnnexIIIQuestions();
@@ -69,13 +54,10 @@ function wrapText(text: string, maxChars: number): string[] {
 
 /**
  * Custom hook for managing the compliance wizard state and actions
- * @param customTestCases - Optional custom test cases to use instead of default dataset
  * @returns Combined wizard state and action handlers
  */
-export function useComplianceWizard(
-  customTestCases?: NormalizedTestCase[]
-): UseComplianceWizardReturn {
-  const { t, language } = useLanguage();
+export function useComplianceWizard(): UseComplianceWizardReturn {
+  const { t } = useLanguage();
 
   // ============================================================================
   // State Declarations
@@ -87,13 +69,8 @@ export function useComplianceWizard(
 
   // Capabilities and engine state
   const [capabilities, setCapabilities] = useState<InferenceCapabilities | null>(null);
-  const [selectedEngine, setSelectedEngine] = useState<InferenceEngine>("ollama");
+  // Metadata for the report; no model is loaded in the browser.
   const [selectedModel, setSelectedModel] = useState("");
-  const [selectedCapability, setSelectedCapability] = useState<ModelCapability | null>(null);
-
-  // Inference clients
-  const [inferenceClient, setInferenceClient] = useState<InferenceClient | null>(null);
-  const [inferenceFactory, setInferenceFactory] = useState<InferenceFactory | null>(null);
 
   // Annex III quiz state
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -105,14 +82,7 @@ export function useComplianceWizard(
   const [gpaiAnswers, setGpaiAnswers] = useState<QuizAnswer[]>([]);
   const [gpaiAssessment, setGpaiAssessment] = useState<GPAIComplianceResult | null>(null);
 
-  // Bias test state
-  const [isRunningBiasTest, setIsRunningBiasTest] = useState(false);
-  const [biasProgress, setBiasProgress] = useState(0);
-  const [biasCurrentStep, setBiasCurrentStep] = useState<string>("");
-  const [biasResult, setBiasResult] = useState<CrowsPairsLogProbResult | null>(null);
-
-  // Loading and error state
-  const [modelLoadingStatus, setModelLoadingStatus] = useState<ModelLoadingStatus>("idle");
+  // Error state
   const [error, setError] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
@@ -132,74 +102,28 @@ export function useComplianceWizard(
   /**
    * Handle inference engine selection and set a sensible default model
    */
-  const handleEngineSelect = useCallback(
-    (engine: InferenceEngine) => {
-      setSelectedEngine(engine);
-      if (engine === "ollama" && capabilities?.ollama.models[0]) {
-        setSelectedModel(capabilities.ollama.models[0].name);
-      } else if (engine === "browser") {
-        setSelectedModel("Xenova/distilgpt2");
-      }
-    },
-    [capabilities]
-  );
-
   /**
-   * Handle model selection from capability list
+   * Select GPAI provider role and start the GPAI questionnaire directly.
+   * There is no inference-engine or model selection step: the wizard collects
+   * regulatory context, bias evidence is imported separately.
    */
-  const handleModelSelect = useCallback((capability: ModelCapability) => {
-    setSelectedCapability(capability);
-    setSelectedModel(capability.modelId);
-    setSelectedEngine(capability.engine);
+  const handleSelectGpaiRole = useCallback(() => {
+    setUserRole("gpai-provider");
+    setStep("gpai-quiz");
   }, []);
 
   /**
-   * Select GPAI provider role and navigate to model-select
-   */
-  const handleSelectGpaiRole = useCallback(
-    (engine: InferenceEngine) => {
-      setUserRole("gpai-provider");
-      handleEngineSelect(engine);
-      setStep("model-select");
-    },
-    [handleEngineSelect]
-  );
-
-  /**
-   * Start the quiz after model selection.
-   * Branches on userRole: "gpai-provider" → "gpai-quiz", else → "quiz"
+   * Start the questionnaire. Branches on userRole: "gpai-provider" → "gpai-quiz",
+   * else → "quiz". No model is loaded: bias measurement is a CLI concern.
    */
   const handleStartQuiz = useCallback(() => {
-    // "unverified" (declared-supported, not yet load-tested — e.g. browser
-    // models) is a usable selection; only unavailable/error/detecting block here.
-    if (
-      !selectedCapability ||
-      (selectedCapability.status !== "available" && selectedCapability.status !== "unverified")
-    ) {
-      setError("Please select an available model before continuing");
-      return;
-    }
-
-    const client = createInferenceClient(selectedEngine, selectedModel, (status: string) => {
-      setModelLoadingStatus(status as ModelLoadingStatus);
-    });
-
-    const factory = createInferenceFactory((status: string) => {
-      setModelLoadingStatus(status as ModelLoadingStatus);
-    });
-
-    factory.setSelectedCapability(selectedCapability);
-
-    setInferenceClient(client);
-    setInferenceFactory(factory);
-
     if (userRole === "gpai-provider") {
       setStep("gpai-quiz");
     } else {
       setUserRole("annex-iii");
       setStep("quiz");
     }
-  }, [selectedCapability, selectedEngine, selectedModel, userRole]);
+  }, [userRole]);
 
   const handleAnswer = useCallback(
     (value: string) => {
@@ -291,105 +215,6 @@ export function useComplianceWizard(
     [gpaiAnswers, gpaiCurrentQuestion]
   );
 
-  const convertToStereotypePairs = useCallback(
-    (testCases: NormalizedTestCase[]): StereotypePair[] => {
-      return testCases.map((tc) => ({
-        id: tc.id,
-        stereotype: tc.prompt,
-        antiStereotype: tc.prompt,
-        biasType: "socioeconomic" as const,
-        attribute: tc.label ?? undefined,
-      }));
-    },
-    []
-  );
-
-  const handleRunBiasTest = useCallback(async () => {
-    if (!inferenceClient || modelLoadingStatus === "loading") return;
-
-    if (
-      selectedCapability &&
-      selectedCapability.status !== "available" &&
-      selectedCapability.status !== "unverified"
-    ) {
-      setError(
-        `Selected model ${selectedCapability.modelId} is no longer available (status: ${selectedCapability.status})`
-      );
-      return;
-    }
-
-    resetBiasState();
-
-    try {
-      const pairs =
-        customTestCases && customTestCases.length > 0
-          ? convertToStereotypePairs(customTestCases)
-          : await loadBiasDataset();
-      await executeBiasTest(pairs);
-      setStep("results");
-    } catch (err: unknown) {
-      handleBiasTestError(err);
-    } finally {
-      if (step === "bias-test") {
-        setIsRunningBiasTest(false);
-      }
-    }
-  }, [
-    inferenceClient,
-    modelLoadingStatus,
-    selectedCapability,
-    step,
-    customTestCases,
-    convertToStereotypePairs,
-  ]);
-
-  const resetBiasState = () => {
-    setIsRunningBiasTest(true);
-    setBiasProgress(0);
-    setBiasCurrentStep("");
-    setError(null);
-  };
-
-  const loadBiasDataset = async (): Promise<StereotypePair[]> => {
-    setBiasCurrentStep(t("bias_loading_dataset"));
-    const datasetFile =
-      language === "de" ? "/datasets/crows-pairs-de.json" : "/datasets/crows-pairs-en.json";
-
-    const response = await fetch(datasetFile);
-    if (!response.ok) throw new Error("Failed to load dataset");
-
-    const data = await response.json();
-    return data.pairs;
-  };
-
-  /**
-   * The web bias-measurement path is temporarily disabled (Messmotor-Sanierung):
-   * it ran through Ollama's "log-probability" endpoint, which only ever covers
-   * generated tokens — never the prompt/sentence being scored — so it measured
-   * nothing real. Rather than run a broken measurement and hide that in the
-   * result, this throws a clear, honest error and produces no result at all
-   * (no score, no severity, no passed/failed). Bias measurement is available via
-   * the CLI: `euconform bias <model> --engine transformers`.
-   */
-  const executeBiasTest = async (_pairs: StereotypePair[]) => {
-    throw new Error(
-      "Die Bias-Messung im Web wird gerade saniert und ist vorübergehend deaktiviert. " +
-        "Nutze stattdessen die CLI: euconform bias <model> --engine transformers."
-    );
-  };
-
-  const handleBiasTestError = (err: unknown) => {
-    console.error("Bias test failed:", err);
-    const errorMessage = err instanceof Error ? err.message : t("bias_error_unexpected");
-
-    if (errorMessage.includes("not found") || errorMessage.includes("unavailable")) {
-      setError(`${errorMessage} - The selected model may no longer be available.`);
-    } else {
-      setError(errorMessage);
-    }
-    setIsRunningBiasTest(false);
-  };
-
   /**
    * Skip bias test and proceed to results
    */
@@ -398,7 +223,6 @@ export function useComplianceWizard(
   }, []);
 
   const buildPdfPages = useCallback(
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: PDF layout requires sequential page-overflow checks per section
     async (pdfDoc: PDFDocument, font: PDFFont, fontBold: PDFFont) => {
       let page = pdfDoc.addPage([595.28, 841.89]);
       let y = drawPdfHeader(page, fontBold, font);
@@ -406,15 +230,6 @@ export function useComplianceWizard(
       y = gpaiAssessment
         ? drawPdfGpaiSection(page, fontBold, font, y)
         : drawPdfRiskSection(page, fontBold, font, y);
-
-      if (biasResult) {
-        if (y < 200) {
-          drawPdfFooter(page, font);
-          page = pdfDoc.addPage([595.28, 841.89]);
-          y = page.getSize().height - 50;
-        }
-        y = drawPdfBiasSection(page, fontBold, font, y);
-      }
 
       const gapResult: GapAnalysisResult | null = gpaiAssessment
         ? generateGPAIGapAnalysis(gpaiAssessment)
@@ -433,7 +248,7 @@ export function useComplianceWizard(
 
       drawPdfFooter(page, font);
     },
-    [assessment, gpaiAssessment, biasResult]
+    [assessment, gpaiAssessment]
   );
 
   const handleGeneratePdf = useCallback(async () => {
@@ -488,8 +303,6 @@ export function useComplianceWizard(
       size: 12,
       font: fontBold,
     });
-    y -= 20;
-    page.drawText(`${t("pdf_engine")}: ${selectedEngine}`, { x: 50, y, size: 10, font });
     y -= 20;
     page.drawText(`${t("pdf_generated")}: ${new Date().toLocaleDateString()}`, {
       x: 50,
@@ -582,24 +395,6 @@ export function useComplianceWizard(
     return y - 20;
   };
 
-  const drawPdfBiasSection = (
-    page: PDFPage,
-    fontBold: PDFFont,
-    font: PDFFont,
-    startY: number
-  ): number => {
-    if (!biasResult) return startY;
-    let y = startY;
-
-    page.drawText(t("bias_fairness_title_pdf"), { x: 50, y, size: 14, font: fontBold });
-    y -= 20;
-
-    y = drawPdfMethodology(page, fontBold, font, y);
-    y = drawPdfMetrics(page, font, y);
-
-    return y;
-  };
-
   const drawPdfGapSection = (
     page: PDFPage,
     fontBold: PDFFont,
@@ -648,72 +443,6 @@ export function useComplianceWizard(
     return y;
   };
 
-  const drawPdfMethodology = (page: PDFPage, fontBold: PDFFont, font: PDFFont, startY: number) => {
-    if (!biasResult) return startY;
-    let y = startY;
-
-    page.drawText(t("pdf_methodology"), { x: 50, y, size: 12, font: fontBold });
-    y -= 15;
-
-    const methodologyText =
-      biasResult.methodology === "logits"
-        ? t("pdf_methodology_logprobs")
-        : biasResult.methodology === "latency-proxy"
-          ? t("pdf_methodology_latency")
-          : `${t("pdf_methodology_default")} ${biasResult.methodology}`;
-
-    page.drawText(methodologyText, { x: 60, y, size: 10, font });
-    y -= 15;
-    page.drawText(t("pdf_dataset"), { x: 60, y, size: 10, font });
-    y -= 15;
-    page.drawText(t("pdf_citation"), { x: 60, y, size: 10, font });
-    y -= 25;
-
-    page.drawText(t("bias_disclaimer"), { x: 50, y, size: 8, font, color: rgb(0.4, 0.4, 0.4) });
-    y -= 20;
-    return y;
-  };
-
-  const drawPdfMetrics = (page: PDFPage, font: PDFFont, startY: number) => {
-    if (!biasResult) return startY;
-    let y = startY;
-
-    page.drawText(
-      `${t("results_score")}: ${biasResult.overall.stereotypePreferencePercent.toFixed(1)}%`,
-      { x: 60, y, size: 10, font }
-    );
-    y -= 15;
-    page.drawText(
-      `${t("pdf_status")}: ${biasResult.overall.passed ? t("results_passed") : t("results_failed")}`,
-      { x: 60, y, size: 10, font }
-    );
-    y -= 15;
-    const severityLabel =
-      biasResult.overall.severity === "strong"
-        ? t("results_severity_strong")
-        : biasResult.overall.severity === "light"
-          ? t("results_severity_light")
-          : t("pdf_severity_none");
-    page.drawText(`${t("pdf_severity")}: ${severityLabel}`, { x: 60, y, size: 10, font });
-    y -= 30;
-
-    return drawPdfBiasCategories(page, font, y);
-  };
-
-  const drawPdfBiasCategories = (page: PDFPage, font: PDFFont, startY: number): number => {
-    if (!biasResult) return startY;
-    let y = startY;
-    for (const cat of biasResult.byBiasType) {
-      const status = cat.passed ? "\u2713" : "\u2717";
-      page.drawText(
-        `${status} ${cat.biasType}: ${cat.stereotypePreferencePercent.toFixed(0)}% stereo. pref.`,
-        { x: 60, y, size: 9, font, color: cat.passed ? rgb(0, 0.5, 0.2) : rgb(0.7, 0.1, 0.1) }
-      );
-      y -= 12;
-    }
-    return y;
-  };
-
   const drawPdfFooter = (page: PDFPage, font: PDFFont) => {
     page.drawText(t("pdf_generated_by"), {
       x: 50,
@@ -754,7 +483,6 @@ export function useComplianceWizard(
         },
         model: {
           name: selectedModel || t("annex_iv_unspecified_system"),
-          engine: selectedEngine,
         },
         compliance: {
           level: gpaiAssessment.level,
@@ -763,10 +491,8 @@ export function useComplianceWizard(
           notes: gpaiAssessment.notes,
         },
         gapAnalysis: gapResult,
-        biasAssessment: biasResult
-          ? { result: biasResult, methodology: getBiasMethodologyData() }
-          : null,
-        reproducibility: getReproducibilityData(),
+        biasAssessment: null,
+        reproducibility: { notes: [t("annex_iv_no_seed")] },
       };
       downloadJson(gpaiReport);
       return;
@@ -779,7 +505,7 @@ export function useComplianceWizard(
       tool: { name: "EuConform" },
       disclaimer: t("disclaimer_non_legal_advice"),
       legalSources: AI_ACT_SOURCES,
-      reproducibility: getReproducibilityData(),
+      reproducibility: { notes: [t("annex_iv_no_seed")] },
       provider: { name: t("annex_iv_provider") },
       system: {
         name: selectedModel || t("annex_iv_unspecified_system"),
@@ -792,50 +518,17 @@ export function useComplianceWizard(
         loggingNotes: [t("annex_iv_logging_notes")],
       },
       performanceAndFairness: {
-        biasAndFairness: biasResult ? [biasResult] : [],
+        biasAndFairness: [],
         thresholdsAndInterpretationNotes: [
           t("annex_iv_disparate_impact"),
           t("annex_iv_crows_pairs_note"),
         ],
       },
-      biasMethodology: getBiasMethodologyData(),
       gapAnalysis: gapResult,
     });
 
     downloadJson(report);
-  }, [answers, assessment, gpaiAssessment, biasResult, selectedModel, selectedEngine, userRole, t]);
-
-  const getReproducibilityData = () => {
-    const seed = biasResult?.dataset?.seed;
-    if (!seed) return { notes: [t("annex_iv_no_seed")] };
-    return {
-      seed,
-      notes: [
-        `CrowS-Pairs sampling seed: ${seed}`,
-        `Max pairs: ${biasResult?.dataset?.maxPairs ?? "n/a"}`,
-      ],
-    };
-  };
-
-  const getBiasMethodologyData = () => {
-    if (!biasResult) return undefined;
-    return {
-      method: (biasResult.methodology === "logits"
-        ? "logprobs_exact"
-        : biasResult.methodology === "latency-proxy"
-          ? "logprobs_fallback_latency"
-          : "logprobs_exact") as BiasCalculationMethod,
-      engine: biasResult.engine === "browser" ? ("browser" as const) : ("ollama" as const),
-      dataset: "CrowS-Pairs (German adaptation)",
-      citation: "Nangia, N., Vania, C., Bhalerao, R., & Bowman, S. R. (2020). CrowS-Pairs.",
-      description:
-        biasResult.methodology === "logits"
-          ? t("annex_bias_logprobs_desc")
-          : biasResult.methodology === "latency-proxy"
-            ? t("annex_bias_latency_desc")
-            : t("annex_bias_default_desc"),
-    };
-  };
+  }, [answers, assessment, gpaiAssessment, selectedModel, userRole, t]);
 
   const downloadJson = (report: unknown) => {
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
@@ -856,20 +549,13 @@ export function useComplianceWizard(
   const resetAll = useCallback(() => {
     setStep("intro");
     setUserRole(null);
-    setSelectedEngine("ollama");
     setSelectedModel("");
-    setSelectedCapability(null);
-    setInferenceClient(null);
-    setInferenceFactory(null);
     setCurrentQuestion(0);
     setAnswers([]);
     setAssessment(null);
     setGpaiCurrentQuestion(0);
     setGpaiAnswers([]);
     setGpaiAssessment(null);
-    setBiasResult(null);
-    setBiasProgress(0);
-    setModelLoadingStatus("idle");
     setError(null);
   }, []);
 
@@ -877,12 +563,8 @@ export function useComplianceWizard(
   // Additional Exposed State Setters (for screen components)
   // ============================================================================
 
-  /** Shared reset for inference + error state used by all back-navigation handlers */
+  /** Shared reset for error state used by all back-navigation handlers */
   const resetSharedState = useCallback(() => {
-    setInferenceClient(null);
-    setInferenceFactory(null);
-    setModelLoadingStatus("idle");
-    setBiasResult(null);
     setError(null);
   }, []);
 
@@ -898,12 +580,6 @@ export function useComplianceWizard(
     setGpaiAssessment(null);
   }, []);
 
-  const navigateBackToModelSelect = useCallback(() => {
-    setStep("model-select");
-    resetSharedState();
-    resetAnnexIIIQuiz();
-  }, [resetSharedState, resetAnnexIIIQuiz]);
-
   const navigateBackToIntro = useCallback(() => {
     setStep("intro");
     setUserRole(null);
@@ -915,12 +591,6 @@ export function useComplianceWizard(
   const navigateToPreviousQuestion = useCallback(() => {
     setCurrentQuestion((prev) => Math.max(0, prev - 1));
   }, []);
-
-  const navigateGpaiBack = useCallback(() => {
-    setStep("model-select");
-    resetSharedState();
-    resetGpaiQuiz();
-  }, [resetSharedState, resetGpaiQuiz]);
 
   /**
    * Navigate to previous question in GPAI quiz
@@ -937,22 +607,13 @@ export function useComplianceWizard(
     // State
     step,
     userRole,
-    selectedEngine,
     selectedModel,
-    selectedCapability,
-    inferenceClient,
-    inferenceFactory,
     currentQuestion,
     answers,
     assessment,
     gpaiCurrentQuestion,
     gpaiAnswers,
     gpaiAssessment,
-    isRunningBiasTest,
-    biasProgress,
-    biasCurrentStep,
-    biasResult,
-    modelLoadingStatus,
     error,
     isGeneratingPdf,
 
@@ -965,25 +626,19 @@ export function useComplianceWizard(
 
     // Actions
     setStep,
-    handleEngineSelect,
-    handleModelSelect,
     handleStartQuiz,
     handleAnswer,
     handleGpaiAnswer,
     handleSelectGpaiRole,
-    handleRunBiasTest,
     handleSkipBiasTest,
     handleGeneratePdf,
     handleDownloadAnnexIvJson,
     resetAll,
 
     // Additional navigation helpers
-    navigateBackToModelSelect,
     navigateBackToIntro,
     navigateToPreviousQuestion,
-    navigateGpaiBack,
     navigateToPreviousGpaiQuestion,
-    setSelectedEngine,
     setSelectedModel,
     setError,
   };

@@ -18,12 +18,10 @@ import {
   BiasTestScreen,
   GpaiQuizScreen,
   IntroScreen,
-  ModelSelectScreen,
   QuizScreen,
   ResultsScreen,
   ScanViewerScreen,
 } from "../components/screens";
-import { useCustomTestSuite } from "../lib/contexts/CustomTestSuiteContext";
 import { useComplianceWizard } from "../lib/hooks";
 import { LanguageProvider } from "../lib/i18n/LanguageContext";
 
@@ -43,33 +41,18 @@ export default function Page() {
  * and renders the appropriate screen component based on the current step.
  */
 function ComplianceWizard() {
-  const { testCases: customTestCases } = useCustomTestSuite();
-  const wizard = useComplianceWizard(customTestCases);
+  const wizard = useComplianceWizard();
 
   // Render the appropriate screen based on current step
   switch (wizard.step) {
     case "intro":
       return (
         <IntroScreen
-          selectedEngine={wizard.selectedEngine}
-          capabilities={wizard.capabilities}
-          onEngineSelect={wizard.handleEngineSelect}
-          setSelectedModel={wizard.setSelectedModel}
           setStep={wizard.setStep}
+          onStart={wizard.handleStartQuiz}
           onSelectGpaiRole={wizard.handleSelectGpaiRole}
-        />
-      );
-
-    case "model-select":
-      return (
-        <ModelSelectScreen
           selectedModel={wizard.selectedModel}
-          selectedCapability={wizard.selectedCapability}
-          selectedEngine={wizard.selectedEngine}
-          error={wizard.error}
-          onModelSelect={wizard.handleModelSelect}
-          onBack={wizard.navigateBackToIntro}
-          onContinue={wizard.handleStartQuiz}
+          onModelChange={wizard.setSelectedModel}
         />
       );
 
@@ -81,7 +64,7 @@ function ComplianceWizard() {
           answers={wizard.answers}
           selectedModel={wizard.selectedModel}
           onAnswer={wizard.handleAnswer}
-          onBack={wizard.navigateBackToModelSelect}
+          onBack={wizard.navigateBackToIntro}
           onNavigateBack={wizard.navigateToPreviousQuestion}
         />
       );
@@ -93,23 +76,13 @@ function ComplianceWizard() {
           totalQuestions={wizard.gpaiTotalQuestions}
           answers={wizard.gpaiAnswers}
           onAnswer={wizard.handleGpaiAnswer}
-          onBack={wizard.navigateGpaiBack}
+          onBack={wizard.navigateBackToIntro}
           onNavigateBack={wizard.navigateToPreviousGpaiQuestion}
         />
       );
 
     case "bias-test":
-      return (
-        <BiasTestScreen
-          isRunning={wizard.isRunningBiasTest}
-          progress={wizard.biasProgress}
-          currentStep={wizard.biasCurrentStep}
-          modelLoadingStatus={wizard.modelLoadingStatus}
-          error={wizard.error}
-          selectedModel={wizard.selectedModel}
-          onSkip={wizard.handleSkipBiasTest}
-        />
-      );
+      return <BiasTestScreen onSkip={wizard.handleSkipBiasTest} />;
 
     case "results": {
       const isGpaiPath = wizard.userRole === "gpai-provider";
@@ -120,9 +93,7 @@ function ComplianceWizard() {
           assessment={wizard.assessment}
           gpaiAssessment={wizard.gpaiAssessment}
           userRole={wizard.userRole}
-          biasResult={wizard.biasResult}
           selectedModel={wizard.selectedModel}
-          selectedCapability={wizard.selectedCapability}
           isGeneratingPdf={wizard.isGeneratingPdf}
           onGeneratePdf={wizard.handleGeneratePdf}
           onDownloadJson={wizard.handleDownloadAnnexIvJson}

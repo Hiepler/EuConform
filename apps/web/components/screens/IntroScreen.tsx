@@ -1,28 +1,25 @@
 "use client";
 
-import type { InferenceCapabilities } from "@euconform/core";
-import { ArrowRight, Bot, Cpu, FileText, Github, Scale, Server, Shield } from "lucide-react";
+import { ArrowRight, Bot, FileText, Github, Scale, Shield } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "../../lib/i18n/LanguageContext";
-import type { InferenceEngine, WizardStep } from "../../lib/types/wizard";
+import type { WizardStep } from "../../lib/types/wizard";
 import { BackgroundElements, PageHeader } from "../shared";
 
 /**
  * Props for the IntroScreen component
  */
 export interface IntroScreenProps {
-  /** Currently selected inference engine */
-  selectedEngine: InferenceEngine;
-  /** Detected inference capabilities */
-  capabilities: InferenceCapabilities | null;
-  /** Handler for engine selection and navigation */
-  onEngineSelect: (engine: InferenceEngine) => void;
-  /** Handler for setting selected model */
-  setSelectedModel: (model: string) => void;
-  /** Handler for navigating to a step */
+  /** Handler for navigating to a wizard step (scan viewer) */
   setStep: (step: WizardStep) => void;
-  /** Handler for selecting GPAI provider role */
-  onSelectGpaiRole: (engine: InferenceEngine) => void;
+  /** Start the classification questionnaire */
+  onStart: () => void;
+  /** Start the GPAI provider questionnaire */
+  onSelectGpaiRole: () => void;
+  /** Optional system/model identifier for the Annex IV report */
+  selectedModel: string;
+  /** Update the system/model identifier */
+  onModelChange: (value: string) => void;
 }
 
 /**
@@ -30,12 +27,11 @@ export interface IntroScreenProps {
  * and CTA to start the EU AI Act compliance assessment.
  */
 export function IntroScreen({
-  selectedEngine,
-  capabilities,
-  onEngineSelect,
-  setSelectedModel,
   setStep,
+  onStart,
   onSelectGpaiRole,
+  selectedModel,
+  onModelChange,
 }: IntroScreenProps) {
   const { t } = useLanguage();
 
@@ -69,55 +65,31 @@ export function IntroScreen({
           {t("intro_desc")}
         </p>
 
-        {/* Clean Toggle for Mode Selection */}
-        <div className="mb-12 inline-flex items-center gap-0 border border-border dark:border-border-dark rounded-lg p-1 bg-white/50 dark:bg-slate-medium/50">
-          <button
-            type="button"
-            onClick={() => {
-              onEngineSelect("browser");
-              setSelectedModel("Xenova/distilgpt2");
-              setStep("model-select");
-            }}
-            className={`px-6 py-3 rounded-md text-sm font-medium transition-all ${
-              selectedEngine === "browser"
-                ? "bg-slate-deep dark:bg-paper text-paper dark:text-slate-deep"
-                : "hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
+        {/* System identifier (metadata for the Annex IV report) */}
+        <div className="mb-8 max-w-md mx-auto text-left">
+          <label
+            htmlFor="system-name"
+            className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2"
           >
-            <Cpu className="w-4 h-4 inline mr-2" />
-            {t("browser_engine")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onEngineSelect("ollama");
-              setStep("model-select");
-            }}
-            className={`px-6 py-3 rounded-md text-sm font-medium transition-all relative ${
-              selectedEngine === "ollama"
-                ? "bg-slate-deep dark:bg-paper text-paper dark:text-slate-deep"
-                : "hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
-          >
-            <Server className="w-4 h-4 inline mr-2" />
-            {t("ollama_engine")}
-            <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-[10px] font-bold rounded-full gold-bg text-white">
-              ★
-            </span>
-          </button>
+            {t("system_name_label")}
+          </label>
+          <input
+            id="system-name"
+            type="text"
+            value={selectedModel}
+            onChange={(event) => onModelChange(event.target.value)}
+            placeholder={t("system_name_placeholder")}
+            className="w-full px-4 py-3 rounded-lg border border-border dark:border-border-dark bg-white/70 dark:bg-slate-medium/50 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-gold/40"
+          />
+          <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+            {t("system_name_hint")}
+          </p>
         </div>
 
         {/* Single CTA */}
         <button
           type="button"
-          onClick={() => {
-            if (selectedEngine === "browser") {
-              setSelectedModel("Xenova/distilgpt2");
-            } else if (selectedEngine === "ollama" && capabilities?.ollama.models?.[0]) {
-              setSelectedModel(capabilities.ollama.models[0].name);
-            }
-            setStep("model-select");
-          }}
+          onClick={onStart}
           className="inline-flex items-center gap-2 px-8 py-4 border-2 border-slate-deep dark:border-paper text-slate-deep dark:text-paper font-medium rounded-lg hover:bg-slate-deep hover:text-paper dark:hover:bg-paper dark:hover:text-slate-deep transition-all duration-300"
         >
           {t("intro_start")}
@@ -131,7 +103,7 @@ export function IntroScreen({
           </p>
           <button
             type="button"
-            onClick={() => onSelectGpaiRole(selectedEngine)}
+            onClick={onSelectGpaiRole}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border dark:border-border-dark text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100 transition-all"
           >
             <Bot className="w-4 h-4" />

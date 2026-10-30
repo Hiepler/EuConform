@@ -4,11 +4,7 @@
  */
 
 import type {
-  CrowsPairsLogProbResult,
   GPAIComplianceResult,
-  InferenceClient,
-  InferenceFactory,
-  ModelCapability,
   QuizAnswer,
   QuizQuestion,
   RiskAssessment,
@@ -17,14 +13,7 @@ import type {
 /**
  * Wizard step type union representing each screen in the compliance flow
  */
-export type WizardStep =
-  | "intro"
-  | "model-select"
-  | "quiz"
-  | "bias-test"
-  | "results"
-  | "gpai-quiz"
-  | "scan-viewer";
+export type WizardStep = "intro" | "quiz" | "bias-test" | "results" | "gpai-quiz" | "scan-viewer";
 
 /**
  * User role for branching between Annex III and GPAI provider paths
@@ -49,16 +38,8 @@ export interface WizardState {
   step: WizardStep;
   /** User role: annex-iii (default) or gpai-provider */
   userRole: UserRole;
-  /** Selected inference engine (ollama, browser, or demo) */
-  selectedEngine: InferenceEngine;
-  /** Selected model identifier */
+  /** System or model identifier used in the Annex IV report */
   selectedModel: string;
-  /** Full capability information for the selected model */
-  selectedCapability: ModelCapability | null;
-  /** Legacy inference client for bias testing */
-  inferenceClient: InferenceClient | null;
-  /** Enhanced inference factory with capability tracking */
-  inferenceFactory: InferenceFactory | null;
   /** Current question index in the quiz (0-based) */
   currentQuestion: number;
   /** Array of user answers to quiz questions */
@@ -71,16 +52,6 @@ export interface WizardState {
   gpaiAnswers: QuizAnswer[];
   /** GPAI compliance result after GPAI quiz completion */
   gpaiAssessment: GPAIComplianceResult | null;
-  /** Whether bias test is currently running */
-  isRunningBiasTest: boolean;
-  /** Bias test progress percentage (0-100) */
-  biasProgress: number;
-  /** Current step description during bias test */
-  biasCurrentStep: string;
-  /** Bias test result after completion */
-  biasResult: CrowsPairsLogProbResult | null;
-  /** Model loading status for inference client */
-  modelLoadingStatus: ModelLoadingStatus;
   /** Error message if any operation failed */
   error: string | null;
   /** Whether PDF generation is in progress */
@@ -93,20 +64,14 @@ export interface WizardState {
 export interface WizardActions {
   /** Navigate to a specific wizard step */
   setStep: (step: WizardStep) => void;
-  /** Handle inference engine selection */
-  handleEngineSelect: (engine: InferenceEngine) => void;
-  /** Handle model selection from capability list */
-  handleModelSelect: (capability: ModelCapability) => void;
   /** Start the quiz after model selection (branches on userRole) */
   handleStartQuiz: () => void;
   /** Handle quiz answer submission */
   handleAnswer: (value: string) => void;
   /** Handle GPAI quiz answer submission */
   handleGpaiAnswer: (value: string) => void;
-  /** Select GPAI provider role and navigate to model-select */
-  handleSelectGpaiRole: (engine: InferenceEngine) => void;
-  /** Execute the bias test */
-  handleRunBiasTest: () => Promise<void>;
+  /** Select GPAI provider role and start the GPAI questionnaire */
+  handleSelectGpaiRole: () => void;
   /** Skip bias test and proceed to results */
   handleSkipBiasTest: () => void;
   /** Generate and download PDF report */
@@ -137,18 +102,12 @@ export interface ExtendedWizardState extends WizardState {
  * Extended wizard actions with navigation helpers
  */
 export interface ExtendedWizardActions extends WizardActions {
-  /** Navigate back to model selection and reset quiz state */
-  navigateBackToModelSelect: () => void;
   /** Navigate to previous question in quiz */
   navigateToPreviousQuestion: () => void;
   /** Navigate back to intro and reset role selection */
   navigateBackToIntro: () => void;
-  /** Navigate back from GPAI quiz to model-select */
-  navigateGpaiBack: () => void;
   /** Navigate to previous question in GPAI quiz */
   navigateToPreviousGpaiQuestion: () => void;
-  /** Direct setter for selected engine */
-  setSelectedEngine: (engine: InferenceEngine) => void;
   /** Direct setter for selected model */
   setSelectedModel: (model: string) => void;
   /** Direct setter for error state */

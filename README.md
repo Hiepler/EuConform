@@ -64,7 +64,7 @@
 | Feature | Description |
 |---------|-------------|
 | 🧾 **Open Evidence Format** | Produce portable `report`, `aibom`, `ci`, and `bundle` artifacts as inspectable JSON documents |
-| 🧪 **Local Bias Evaluation** | CrowS-Pairs-based model evaluation with log-probability and latency fallback — reproducible, offline, no vendor dependency |
+| 🧪 **Local Bias Evaluation** | CrowS-Pairs-based model evaluation with real sentence log-probabilities — reproducible, offline, no vendor dependency |
 | ✅ **Schema Validation** | Validate EuConform JSON documents against the published schemas with `euconform validate` |
 | 📦 **Bundle Verification** | Verify manifest, directory, or ZIP bundle integrity before handing artifacts to CI, reviewers, or auditors |
 | 🚦 **Compliance CI Gate** | Turn `euconform scan` into GitHub-native annotations, CI summaries, and machine-readable artifacts |
@@ -475,7 +475,7 @@ No. This tool provides technical guidance only. Always consult qualified legal p
 <details>
 <summary><strong>Does my data leave my browser?</strong></summary>
 
-Never. All processing happens locally in your browser or via your local Ollama instance. No data is sent to external servers.
+Never. The questionnaire runs entirely in your browser. Bias measurement runs locally via the CLI against a local model; the web app only imports the resulting artifact. No data is sent to external servers.
 </details>
 
 <details>

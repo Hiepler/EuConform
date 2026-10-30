@@ -16,6 +16,9 @@ export interface Dictionary {
   intro_title: string;
   intro_desc: string;
   intro_start: string;
+  system_name_label: string;
+  system_name_placeholder: string;
+  system_name_hint: string;
 
   // Bias Test
   bias_title: string;
@@ -136,7 +139,6 @@ export interface Dictionary {
   detecting_capabilities: string;
   selected_model_capability: string;
   method_consistent: string;
-  method_fallback_used: string;
 
   // Model Selector & Recommendations
   select_model_description: string;
@@ -155,7 +157,6 @@ export interface Dictionary {
   // Model Grid Badges & Text
   badge_exact_calculation: string;
   badge_exact_logprobs: string;
-  badge_latency_fallback: string;
   last_tested: string;
   select_model_aria: string;
   no_models_available: string;
@@ -169,8 +170,6 @@ export interface Dictionary {
   rec_browser_desc: string;
   rec_exact_title: string;
   rec_exact_desc: string;
-  rec_fallback_title: string;
-  rec_fallback_desc: string;
   rec_available_title: string;
   rec_available_desc: string;
   rec_none_title: string;
@@ -180,8 +179,6 @@ export interface Dictionary {
   rec_advice_browser: string;
   rec_summary_exact: string;
   rec_advice_exact: string;
-  rec_summary_fallback: string;
-  rec_advice_fallback: string;
   accuracy_highest: string;
   accuracy_high: string;
   accuracy_medium: string;
@@ -213,14 +210,12 @@ export interface Dictionary {
   // PDF Methodology
   pdf_methodology: string;
   pdf_methodology_logprobs: string;
-  pdf_methodology_latency: string;
   pdf_methodology_default: string;
   pdf_dataset: string;
   pdf_citation: string;
 
   // Annex IV Bias Methodology
   annex_bias_logprobs_desc: string;
-  annex_bias_latency_desc: string;
   annex_bias_default_desc: string;
 
   // Header Badge
@@ -413,6 +408,10 @@ export const dictionaries: Record<Language, Dictionary> = {
     intro_desc:
       "The open-source tool for EU AI Act compliance. Check risk classes, measure bias, and generate technical documentation - 100% offline.",
     intro_start: "Start Assessment",
+    system_name_label: "System or model name (optional)",
+    system_name_placeholder: "e.g. Triage Assistant 1.4",
+    system_name_hint:
+      "Used in the Annex IV report. Bias evidence is measured separately via the CLI and imported in the viewer.",
 
     bias_title: "Bias & Fairness Check",
     bias_desc:
@@ -540,7 +539,6 @@ export const dictionaries: Record<Language, Dictionary> = {
     detecting_capabilities: "Detecting model capabilities...",
     selected_model_capability: "Selected Model Capability",
     method_consistent: "Method Consistent",
-    method_fallback_used: "Fallback Method Used",
 
     // Model Selector & Recommendations
     select_model_description: "Select a model for bias analysis",
@@ -560,7 +558,6 @@ export const dictionaries: Record<Language, Dictionary> = {
     // Model Grid Badges & Text
     badge_exact_calculation: "Guaranteed exact calculation",
     badge_exact_logprobs: "Exact Log-Probabilities",
-    badge_latency_fallback: "Latency Estimation (Fallback)",
     last_tested: "Last tested:",
     select_model_aria: "Select Model",
     no_models_available: "No models available",
@@ -576,9 +573,6 @@ export const dictionaries: Record<Language, Dictionary> = {
     rec_exact_title: "Scientifically precise method",
     rec_exact_desc:
       "This Ollama model supports true log-probabilities for highest scientific accuracy in bias measurements.",
-    rec_fallback_title: "Fallback method available",
-    rec_fallback_desc:
-      "Uses latency-based estimation as a proxy for bias measurement. Less precise but functional.",
     rec_available_title: "Model available",
     rec_available_desc: "This model can be used for bias analysis.",
     rec_none_title: "No recommended models available",
@@ -588,8 +582,6 @@ export const dictionaries: Record<Language, Dictionary> = {
     rec_advice_browser: "Guarantees exact calculations with maximum data security.",
     rec_summary_exact: "Model(s) with exact log-probabilities available",
     rec_advice_exact: "Select a recommended model for scientifically precise bias measurements.",
-    rec_summary_fallback: "Fallback methods available",
-    rec_advice_fallback: "For better accuracy, we recommend an Ollama update or browser inference.",
     accuracy_highest: "Highest",
     accuracy_high: "High",
     accuracy_medium: "Medium",
@@ -621,7 +613,6 @@ export const dictionaries: Record<Language, Dictionary> = {
     // PDF Methodology
     pdf_methodology: "Methodology:",
     pdf_methodology_logprobs: "Bias score calculated using log-probability difference",
-    pdf_methodology_latency: "Latency proxy fallback used",
     pdf_methodology_default: "Method:",
     pdf_dataset: "Dataset: CrowS-Pairs (German adaptation)",
     pdf_citation: "Citation: Nangia et al. (2020) - CrowS-Pairs methodology",
@@ -629,8 +620,6 @@ export const dictionaries: Record<Language, Dictionary> = {
     // Annex IV Bias Methodology
     annex_bias_logprobs_desc:
       "Bias score calculated using log-probability difference between stereotypical and anti-stereotypical sentences",
-    annex_bias_latency_desc:
-      "Latency proxy fallback used - Model or Ollama version does not support log-probabilities",
     annex_bias_default_desc: "Bias calculation using available methodology",
 
     // Header Badge
@@ -865,6 +854,10 @@ export const dictionaries: Record<Language, Dictionary> = {
     intro_desc:
       "Das Open-Source-Tool für EU AI Act Compliance. Prüfen Sie Risikoklassen, messen Sie Bias und generieren Sie technische Dokumentation – 100% offline.",
     intro_start: "Bewertung starten",
+    system_name_label: "System- oder Modellbezeichnung (optional)",
+    system_name_placeholder: "z. B. Triage-Assistent 1.4",
+    system_name_hint:
+      "Wird im Annex-IV-Report verwendet. Bias-Evidence wird separat über die CLI gemessen und im Viewer importiert.",
 
     bias_title: "Bias & Fairness Prüfung",
     bias_desc:
@@ -992,7 +985,6 @@ export const dictionaries: Record<Language, Dictionary> = {
     detecting_capabilities: "Erkenne Modell-Fähigkeiten...",
     selected_model_capability: "Ausgewählte Modell-Fähigkeit",
     method_consistent: "Methode konsistent",
-    method_fallback_used: "Fallback-Methode verwendet",
 
     // Model Selector & Recommendations
     select_model_description: "Wählen Sie ein Modell für die Bias-Analyse aus",
@@ -1012,7 +1004,6 @@ export const dictionaries: Record<Language, Dictionary> = {
     // Model Grid Badges & Text
     badge_exact_calculation: "Garantierte exakte Berechnung",
     badge_exact_logprobs: "Exakte Log-Probabilities",
-    badge_latency_fallback: "Latenz-Schätzung (Fallback)",
     last_tested: "Zuletzt getestet:",
     select_model_aria: "Modell auswählen",
     no_models_available: "Keine Modelle verfügbar",
@@ -1029,9 +1020,6 @@ export const dictionaries: Record<Language, Dictionary> = {
     rec_exact_title: "Wissenschaftlich präzise Methode",
     rec_exact_desc:
       "Dieses Ollama-Modell unterstützt echte Log-Probabilities für höchste wissenschaftliche Genauigkeit bei Bias-Messungen.",
-    rec_fallback_title: "Fallback-Methode verfügbar",
-    rec_fallback_desc:
-      "Verwendet Latenz-basierte Schätzung als Proxy für Bias-Messung. Weniger präzise, aber funktional.",
     rec_available_title: "Modell verfügbar",
     rec_available_desc: "Dieses Modell kann für Bias-Analysen verwendet werden.",
     rec_none_title: "Keine empfohlenen Modelle verfügbar",
@@ -1044,9 +1032,6 @@ export const dictionaries: Record<Language, Dictionary> = {
     rec_summary_exact: "Modell(e) mit exakten Log-Probabilities verfügbar",
     rec_advice_exact:
       "Wählen Sie ein empfohlenes Modell für wissenschaftlich präzise Bias-Messungen.",
-    rec_summary_fallback: "Fallback-Methoden verfügbar",
-    rec_advice_fallback:
-      "Für bessere Genauigkeit empfehlen wir ein Ollama-Update oder Browser-Inferenz.",
     accuracy_highest: "Höchste",
     accuracy_high: "Hoch",
     accuracy_medium: "Mittel",
@@ -1078,7 +1063,6 @@ export const dictionaries: Record<Language, Dictionary> = {
     // PDF Methodology
     pdf_methodology: "Methodik:",
     pdf_methodology_logprobs: "Bias-Score berechnet mittels Log-Probability-Differenz",
-    pdf_methodology_latency: "Latency-Proxy-Fallback verwendet",
     pdf_methodology_default: "Methode:",
     pdf_dataset: "Datensatz: CrowS-Pairs (deutsche Adaption)",
     pdf_citation: "Zitat: Nangia et al. (2020) - CrowS-Pairs Methodik",
@@ -1086,8 +1070,6 @@ export const dictionaries: Record<Language, Dictionary> = {
     // Annex IV Bias Methodology
     annex_bias_logprobs_desc:
       "Bias-Score berechnet mittels Log-Probability-Differenz zwischen stereotypischen und anti-stereotypischen Sätzen",
-    annex_bias_latency_desc:
-      "Latency-Proxy-Fallback verwendet - Modell oder Ollama-Version unterstützt keine Log-Probabilities",
     annex_bias_default_desc: "Bias-Berechnung mit verfügbarer Methodik",
 
     // Header Badge

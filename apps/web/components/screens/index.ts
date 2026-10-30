@@ -6,9 +6,6 @@
 export { IntroScreen } from "./IntroScreen";
 export type { IntroScreenProps } from "./IntroScreen";
 
-export { ModelSelectScreen } from "./ModelSelectScreen";
-export type { ModelSelectScreenProps } from "./ModelSelectScreen";
-
 export { QuizScreen } from "./QuizScreen";
 export type { QuizScreenProps } from "./QuizScreen";
 

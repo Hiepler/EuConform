@@ -97,7 +97,7 @@ export const de: Messages = {
       },
       {
         title: "Log-Probability-Scoring",
-        body: "Gold-Standard-Metrik, die Token-Wahrscheinlichkeiten zwischen stereotypen und anti-stereotypen Sätzen vergleicht.",
+        body: "Vergleicht Satz-Log-Probabilities zwischen stereotypen und anti-stereotypen Sätzen. v2 weist die Präferenzquote mit 95-%-Wilson-Intervall aus statt eines Severity-Labels.",
       },
     ],
     cta: "Mehr über Bias-Testing erfahren",
@@ -111,7 +111,7 @@ export const de: Messages = {
     hero: {
       eyebrow: "Bias-Testing",
       headline: "Bias-Testing für europäische KI-Systeme.",
-      body: "Die einzige Open-Source Bias-Testing-Pipeline mit kulturell adaptierten europäischen Satzpaaren. Basierend auf CrowS-Pairs (Nangia et al., 2020) mit ~100 deutsch-adaptierten Paaren zu Gender, Religion, Nationalität und sozioökonomischer Verzerrung. Läuft lokal auf deiner Infrastruktur — keine Cloud-Abhängigkeit, auditierbare AI-Act-Evidenz.",
+      body: "Open-Source Bias-Testing mit kulturell adaptierten europäischen Satzpaaren. Basierend auf CrowS-Pairs (Nangia et al., 2020) mit ~100 deutsch-adaptierten Paaren zu Gender, Religion, Nationalität und sozioökonomischer Verzerrung. Läuft lokal auf deiner Infrastruktur — keine Cloud-Abhängigkeit, auditierbare AI-Act-Evidenz.",
     },
     methodology: {
       eyebrow: "So funktioniert es",
@@ -119,15 +119,23 @@ export const de: Messages = {
       body: "CrowS-Pairs (Nangia et al., 2020) misst soziale Verzerrungen, indem verglichen wird, wie ein Sprachmodell stereotype vs. anti-stereotype Satzpaare bewertet. EuConform berechnet die mittlere Log-Probability-Differenz über alle Paare und erzeugt einen einzelnen, interpretierbaren Bias-Score.",
       metric: "Score = mean(logprob_stereo − logprob_anti)",
       thresholds: [
-        { label: "> 0,1", description: "Leichte Verzerrung" },
-        { label: "> 0,3", description: "Starke Verzerrung" },
+        {
+          label: "Präferenzquote",
+          description:
+            "Anteil der Paare, in denen der stereotype Satz höher bewertet wird, mit 95-%-Wilson-Intervall",
+        },
+        {
+          label: "kein Severity-Label",
+          description:
+            "Die Score-Basis trägt keines — stattdessen Läufe vergleichen und Deltas ausweisen",
+        },
       ],
       methods: [
         {
           method: "Log-Probability",
           indicator: "Echte Messung",
           description:
-            "Direkter Satz-Wahrscheinlichkeitsvergleich über transformers.js — die einzige Messmethode. Ollamas logprobs decken nur bereits generierte Tokens ab, nie den zu bewertenden Satz, und können dies daher nicht messen.",
+            "Direkter Satz-Wahrscheinlichkeitsvergleich über transformers.js — die Messmethode. Ollamas logprobs decken nur bereits generierte Tokens ab, nie den zu bewertenden Satz, und können dies daher nicht messen.",
         },
       ],
     },
@@ -195,7 +203,7 @@ export const de: Messages = {
     cta: {
       eyebrow: "Selbst ausprobieren",
       headline: "Zwei Wege für Bias-Testing",
-      body: "Messen lokal über das CLI (nur dort läuft eine echte Satz-Log-Probability-Engine), dann das erzeugte Artefakt in der Web-App prüfen oder zwei Läufe vergleichen. Beide validieren mit derselben Neuberechnung jeder Statistik.",
+      body: "Messen lokal über das CLI (dort läuft die Satz-Log-Probability-Engine), dann das erzeugte Artefakt in der Web-App prüfen oder zwei Läufe vergleichen. Beide validieren mit derselben Neuberechnung jeder Statistik.",
       engines: [
         {
           title: "CLI + transformers.js",

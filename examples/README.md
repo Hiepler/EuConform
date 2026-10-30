@@ -3,6 +3,11 @@
 These projects are intentionally small OSS builder targets for `euconform scan`,
 `euconform verify`, and the Web Viewer.
 
+They demonstrate **structural** evidence: what a repository contains and what that implies.
+They are not bias-measurement fixtures — bias measurement is a separate CLI command against
+a Hugging Face model (`euconform bias <model> --engine transformers`), and the Ollama
+backend of these examples is a scanned runtime, not a measurement engine.
+
 ## Included projects
 
 | Project | Focus | Path | Canonical EuConform Evidence Format artifacts |

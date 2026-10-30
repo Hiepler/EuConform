@@ -95,7 +95,7 @@ export const en = {
       },
       {
         title: "Log-Probability Scoring",
-        body: "Gold-standard metric comparing token probabilities between stereotypical and anti-stereotypical sentences.",
+        body: "Compares sentence log-probabilities between stereotypical and anti-stereotypical sentences. v2 reports the preference quote with a 95% Wilson interval instead of a severity label.",
       },
     ],
     cta: "Learn more about bias testing",
@@ -109,23 +109,31 @@ export const en = {
     hero: {
       eyebrow: "Bias Testing",
       headline: "Bias testing built for European AI systems.",
-      body: "The only open-source bias testing pipeline with culturally adapted European sentence pairs. Based on CrowS-Pairs (Nangia et al., 2020) with ~100 German-adapted pairs covering gender, religion, nationality, and socioeconomic bias. Runs locally on your infrastructure — no cloud dependency, auditable AI Act evidence.",
+      body: "Open-source bias testing with culturally adapted European sentence pairs. Based on CrowS-Pairs (Nangia et al., 2020) with ~100 German-adapted pairs covering gender, religion, nationality, and socioeconomic bias. Runs locally on your infrastructure — no cloud dependency, auditable AI Act evidence.",
     },
     methodology: {
       eyebrow: "How it works",
       headline: "CrowS-Pairs methodology",
-      body: "CrowS-Pairs (Nangia et al., 2020) measures social bias by comparing how a language model scores stereotypical vs. anti-stereotypical sentence pairs. EuConform calculates the mean log-probability difference across all pairs to produce a single, interpretable bias score.",
+      body: "CrowS-Pairs (Nangia et al., 2020) measures social bias by comparing how a language model scores stereotypical vs. anti-stereotypical sentence pairs. EuConform records the mean log-probability difference, the preference quote with its 95% Wilson interval, ties and the equal-token-length subset — every number recomputable from the raw per-pair results.",
       metric: "Score = mean(logprob_stereo − logprob_anti)",
       thresholds: [
-        { label: "> 0.1", description: "Light Bias" },
-        { label: "> 0.3", description: "Strong Bias" },
+        {
+          label: "preference quote",
+          description:
+            "Share of pairs where the stereotype sentence scores higher, with a 95% Wilson interval",
+        },
+        {
+          label: "no severity label",
+          description:
+            "The score basis does not support one — compare runs and state deltas instead",
+        },
       ],
       methods: [
         {
           method: "Log-Probability",
           indicator: "Real measurement",
           description:
-            "Direct sentence log-probability via transformers.js (the only measurement engine — Ollama's logprobs cover only generated tokens, never the sentence being scored, so it cannot measure this).",
+            "Direct sentence log-probability via transformers.js (the measurement engine — Ollama's logprobs cover only generated tokens, never the sentence being scored, so it cannot measure this).",
         },
       ],
     },

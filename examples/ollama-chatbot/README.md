@@ -3,6 +3,10 @@
 A minimal local AI chatbot that acts as a EuConform and EuConform Evidence Format reference project for
 offline-first inference.
 
+> This example exists to be **scanned**. Ollama is the runtime under inspection, not a
+> bias-measurement engine: its logprobs cover only generated tokens, never the sentence
+> being scored. Bias measurement runs against Hugging Face models via `transformers.js`.
+
 ## What this example demonstrates
 
 - local inference with [Ollama](https://ollama.ai)

@@ -25,20 +25,25 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          # changesets/action v2 no longer writes an .npmrc from NPM_TOKEN, so the
-          # registry has to be configured here. setup-node writes
-          # //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN} and npm/pnpm expand it
-          # at publish time — NODE_AUTH_TOKEN is set on the publish step below.
+          # Configure the registry explicitly: npm/pnpm read the auth token from the
+          # project .npmrc that setup-node writes, with NODE_AUTH_TOKEN expanded from
+          # the environment at publish time.
           registry-url: "https://registry.npmjs.org"
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: Create Release Pull Request or Publish
         id: changesets
-        uses: changesets/action@v2
+        # v1 on purpose: changesets/action v2 requires Changesets CLI v3, and this
+        # repo is still on @changesets/cli v2. Moving to v2 needs a separate CLI
+        # major upgrade; until then v1 is the compatible release.
+        uses: changesets/action@v1
         with:
-          publish-script: pnpm ci:publish
-          commit-message: "chore: release"
-          pr-title: "chore: release"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          publish: pnpm ci:publish
+          commit: "chore: release"
+          title: "chore: release"
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Both names on purpose: the action's own .npmrc handling reads NPM_TOKEN,
+          # while setup-node's registry config and pnpm/npm expand NODE_AUTH_TOKEN.
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,5 +1,15 @@
 # @euconform/web
 
+## 1.2.5
+
+### Patch Changes
+
+- Updated dependencies [27048f0]
+- Updated dependencies [987c603]
+- Updated dependencies [2431a0d]
+- Updated dependencies [6308581]
+  - @euconform/core@1.6.0
+
 ## 1.2.4
 
 ### Patch Changes

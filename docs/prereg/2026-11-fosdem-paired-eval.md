@@ -1,7 +1,19 @@
 # Pre-registration: paired decision eval ("right for the wrong reasons"), FOSDEM 2027
 
-Status: **draft, not frozen.** Fields marked _open_ are filled in before the first `run` on the
-test split. Every change after that goes to [Deviations](#deviations) with date and reason.
+Status: **stage 1 frozen (before any model run), stages 2 and 3 open.** Fields marked _open_ are
+filled in before the first `run` on the test split. Every change after that goes to
+[Deviations](#deviations) with date and reason.
+
+**Freeze stages.** Each stage is committed before the runs that depend on it; the commit time
+can be checked against `started_at` in every `run.json`.
+
+| Stage | Fixed | Committed before |
+|---|---|---|
+| 1 | Hypotheses, metrics, model ids and revision SHAs, dev and pilot seeds and SHA-256, frame wording, label-token rule, pilot subsets | the first model run (P0) |
+| 2 | Label tokens per model (`scripts/paired-eval/paired-eval.config.json`), measured time per prompt, H0 on dev | the pilot run |
+| 3 | N and k (power simulation on the pilot), test and test2 SHA-256 | the first run on the test split |
+
+Run order and commands: [`docs/prereg/2026-11-run-guide-macos.md`](2026-11-run-guide-macos.md).
 
 Source: measurement plan v2.1 (2 Nov 2026), sections 1, 2 and 5, translated from German. Where the
 translation and the plan differ, the plan's meaning is intended; the translation is the
@@ -78,13 +90,22 @@ stated in the prompt (English). Generator: `euconform paired-eval generate`
 
 | Split | Families | Base cases | Seed | items.jsonl SHA-256 |
 |---|---|---|---|---|
-| dev | D1, D2 | 48 | `dev` (assumption; the plan names no dev seed) | _open (P0)_ |
-| pilot | T1–T8 | 96 (half cells, gender alternating) | `pilot` | _open (pilot run)_ |
+| dev | D1, D2 | 48 (`--per-family 24`, 1,152 prompts) | `dev` (assumption; the plan names no dev seed) | `d88817d6d81c6edee668805cc19885257c2cdbeb7eac32e67425365e1f562084` |
+| pilot | T1–T8 | 96 (`--per-family 12`, half cells, gender alternating, 2,304 prompts) | `pilot` | `16abe77edecd23f9931563c1893fb3facd1dfaee435bf04c959bdb91de6da74d` |
+| pilot, `word` arm | T1–T8 | 96 (robust-n capped from 200, 192 prompts) | `pilot` | `85e0058c7499f75c1b77af7bb01998d0d6da95666e5175bd9e370ccae216fdf4` |
+| pilot, `decomp` arm | T1–T8 | 96 (robust-n capped from 200, 384 prompts) | `pilot` | `163b385ac7c4043ee0dd33c6e0df62b445b4193910f2073def9ffa67b693dcdf` |
 | test | T1–T8 | 24·b per family (b from section 4) | `test` | _open: generated only after freezing; must equal `manifest.json`_ |
 | test2 | T1–T8 | as test | `test2` | _open_ |
 
 - Family RNG seed: `${seed}|${split}|${family}`; robustness subset: `${seed}|${split}|robust`;
   `random` baseline: seed `0`.
+- Dev and pilot SHA-256 values were produced by `euconform paired-eval generate` at generator
+  commit `d20d740`, with the `frames.json` hash below. If P0 changes a frame wording, both are
+  regenerated and the change is recorded under Deviations.
+- Greedy subset of the pilot: the `main` prompts with variant base or decisive, option order ER
+  and letter order AB, restricted to the `item_id`s of the `word` arm (192 prompts, built with
+  `scripts/paired-eval/greedy-subset.mjs`, SHA-256
+  `10898f597b99178e0802083fa269cd6488b41c9a2d7cf3e00b5ff5ec20710b7c`).
 - Pilot values are used **only** for the power simulation, not for testing hypotheses.
 - "Replicated" means the reversal appears on test **and** test2.
 - Prompt hashes do not overlap between splits (generator test).
@@ -118,15 +139,24 @@ substitution is logged here.
 
 | Short name | Hugging Face id | Revision SHA | dtype | Label tokens | thinking_mode |
 |---|---|---|---|---|---|
-| qwen2.5-0.5b | Qwen2.5-0.5B-Instruct _(ONNX id open)_ | _open_ | fp32 | _open (P0)_ | n/a |
-| qwen2.5-1.5b | Qwen2.5-1.5B-Instruct _(ONNX id open)_ | _open_ | fp32 (+ q8 for H4) | _open (P0)_ | n/a |
-| qwen3-1.7b | Qwen3-1.7B _(ONNX id open)_ | _open_ | fp32 | _open (P0)_ | off (`enable_thinking: false`, empty think block) |
-| llama-3.2-1b | Llama-3.2-1B-Instruct _(ONNX id open)_ | _open_ | fp32 (+ q8 for H4) | _open (P0)_ | n/a |
-| smollm2-1.7b | SmolLM2-1.7B-Instruct _(ONNX id open)_ | _open_ | fp32 | _open (P0)_ | n/a |
-| gemma-1b | gemma-3-1b-it or Gemma-4-E2B-it _(open)_ | _open_ | fp32; Gemma-4 forced q4, marked as different precision | _open (P0)_ | n/a |
+| qwen2.5-0.5b | `onnx-community/Qwen2.5-0.5B-Instruct` | `22942cb7d7ba4cc81bb4673549ca4d4614469b5e` | fp32 | _open (stage 2)_ | n/a |
+| qwen2.5-1.5b | `onnx-community/Qwen2.5-1.5B-Instruct` | `d54957e3af1be04546436e874a60fe386041b244` | fp32 (+ q8 for H4) | _open (stage 2)_ | n/a |
+| qwen3-1.7b | `onnx-community/Qwen3-1.7B-ONNX` | `3231b522c6e703b2f9b3cd8ea27426a1289a02f2` | fp32 | _open (P0)_ | off (`enable_thinking: false`, empty think block) |
+| llama-3.2-1b | `onnx-community/Llama-3.2-1B-Instruct-ONNX` | `82ac69368916173bad498ad390290faab92d4fb0` | fp32 (+ q8 for H4) | _open (P0)_ | n/a |
+| smollm2-1.7b | `HuggingFaceTB/SmolLM2-1.7B-Instruct` | `31b70e2e869a7173562077fd711b654946d38674` | fp32 | _open (stage 2)_ | n/a |
+| gemma-1b | `onnx-community/gemma-3-1b-it-ONNX` _(proposal, confirm before stage 3)_ | `a58439f40017d3b99c7d378ff525e54e0ba08ebf` | fp32 | _open (stage 2)_ | n/a |
 
-Label-token variant (`A`/`B` or ` A`/` B`) and template settings are fixed on dev only. The
-template SHA-256 is logged per prompt.
+Revisions are the Hub `sha` of each repo on 2 Nov 2026 and are always passed explicitly with
+`--revision`. All six repos ship an fp32 `onnx/model.onnx` (with external data) and an int8 file.
+gemma-3-1b-it is proposed over Gemma-4-E2B-it because it runs in fp32 like the other five; the
+Gemma-4 alternative would be q4 and marked as a different precision.
+
+Label-token variant (`A`/`B` or ` A`/` B`) and template settings are fixed on dev only. Rule:
+per model, both variants are run on the full dev split; the variant with the higher median label
+mass over ER and RE together wins, a tie keeps `A`/`B`
+(`scripts/paired-eval/choose-label-tokens.mjs`). The choice is frozen in
+`scripts/paired-eval/paired-eval.config.json`. P0 covers the two pilot models; the other four
+models get the same procedure on dev before stage 3. The template SHA-256 is logged per prompt.
 
 **N and k:** _open until the power simulation (`scripts/paired-eval/power.py`) has run on the
 pilot._ Decision rule, fixed in advance:

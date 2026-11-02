@@ -63,10 +63,10 @@ PRIMARY_DTYPE = "fp32"
 LABEL_MASS_MIN = 0.5
 RETEST_REL_TOL = 1e-5
 
-READING_BOTH = "wirkt"
-READING_H3_ONLY = "über dem Placebo, aber nicht vom Wortlaut-Rauschen trennbar"
-READING_H3P_ONLY = "über dem Wortlaut-Rauschen, aber nicht über dem Placebo"
-READING_NONE = "kein Befund"
+READING_BOTH = "has an effect"
+READING_H3_ONLY = "above the placebo, but not separable from wording noise"
+READING_H3P_ONLY = "above the wording noise, but not above the placebo"
+READING_NONE = "no finding"
 
 ITEM_KEYS = [
     "prompt_id",
@@ -555,7 +555,7 @@ def analyse_model(md, inst, W, idx, level=0.95):
         out["summ"][k] = mean_ci(pc[k])
     viol = float(np.sum(pc["raw_viol"]))
     out["raw_swap_only_share"] = float(np.sum(pc["raw_swap_only"]) / viol) if viol > 0 else np.nan
-    # Schranken-Check: accuracy <= 1 - v / (2N), v = cases where base and decisive get the same decision
+    # Bound check: accuracy <= 1 - v / (2N), v = cases where base and decisive get the same decision
     v = int(np.sum(pc["violated"]))
     out["bound"] = {"v": v, "bound": 1 - v / (2 * n), "acc": float(np.mean(pc["acc"]))}
     out["bound"]["ok"] = out["bound"]["acc"] <= out["bound"]["bound"] + 1e-12
@@ -641,7 +641,7 @@ def covariate_model(md, inst, pc):
     import statsmodels.formula.api as smf
 
     if np.isnan(md.nt3).any():
-        return {}, "kein n_tokens"
+        return {}, "no n_tokens"
     nt = md.nt3
     dtok = np.mean(np.abs(nt[:, :, :] - nt[:, [BASE], :]), axis=2)  # (N, 12)
     rows = []
@@ -663,7 +663,7 @@ def covariate_model(md, inst, pc):
             )
     df = pd.concat(rows, ignore_index=True)
     if df["flip"].nunique() < 2:
-        return {}, "keine Kipper (konstant)"
+        return {}, "no flips (constant)"
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -671,7 +671,7 @@ def covariate_model(md, inst, pc):
                 disp=0, maxiter=200, cov_type="cluster", cov_kwds={"groups": df["case"].to_numpy()}
             )
         if not fit.mle_retvals.get("converged", True) or (np.abs(fit.params) > 25).any():
-            return {}, "nicht schätzbar (Separation)"
+            return {}, "not estimable (separation)"
         ci = fit.conf_int()
         out = {}
         for a in AXES:
@@ -679,7 +679,7 @@ def covariate_model(md, inst, pc):
             out[a] = (float(fit.params[name]), float(ci.loc[name, 0]), float(ci.loc[name, 1]), float(fit.pvalues[name]))
         return out, "ok"
     except Exception as e:  # noqa: BLE001 - report instead of crashing the whole analysis
-        return {}, f"nicht schätzbar ({type(e).__name__})"
+        return {}, f"not estimable ({type(e).__name__})"
 
 
 # --------------------------------------------------------------------------- hypotheses
@@ -735,7 +735,7 @@ def axis_tests(pc, W, inst):
 
 
 def origin_check(pc, W, inst):
-    """H3-Prüffrage: placebo flip rate of the origin axis for de vs tr coded cases."""
+    """H3 check: placebo flip rate of the origin axis for de vs tr coded cases."""
     x = pc["flip_plc"][:, AXES.index("origin")]
     de = (inst.name_group == "de").astype(float)
     tr = (inst.name_group == "tr").astype(float)
@@ -917,11 +917,11 @@ def analyse(items_path, score_paths, k, pairs_path, seed, out_dir, n_boot=DEFAUL
             pairs_cfg = json.load(fh)
     notes = []
     if inst.dropped:
-        notes.append(f"{len(inst.dropped)} Grundfälle ohne vollständige 24 Prompts in den Items ausgeschlossen.")
+        notes.append(f"{len(inst.dropped)} base cases without the complete 24 prompts in the items excluded.")
     usable = []
     for m in models_all:
         if m.complete.sum() == 0:
-            notes.append(f"{m.key}: keine vollständigen Grundfälle, übersprungen.")
+            notes.append(f"{m.key}: no complete base cases, skipped.")
         else:
             usable.append(m)
     # common case set: cases complete for every model
@@ -929,7 +929,7 @@ def analyse(items_path, score_paths, k, pairs_path, seed, out_dir, n_boot=DEFAUL
     for m in usable:
         common &= m.complete
     if not common.all():
-        notes.append(f"Gemeinsame Fallmenge: {int(common.sum())} von {inst.n} Grundfällen (nicht jedes Modell ist vollständig).")
+        notes.append(f"Common case set: {int(common.sum())} of {inst.n} base cases (not every model is complete).")
         inst, usable = restrict(inst, usable, common)
     if inst.n == 0:
         raise SystemExit("no common complete cases")
@@ -964,7 +964,7 @@ def analyse(items_path, score_paths, k, pairs_path, seed, out_dir, n_boot=DEFAUL
                 plist.append((ka, kb))
                 roles.append(pr.get("role", ""))
             else:
-                notes.append(f"Paar {pr['a']} gegen {pr['b']}: Modell fehlt oder nicht gerankt, nicht gerechnet.")
+                notes.append(f"Pair {pr['a']} vs {pr['b']}: model missing or not ranked, not computed.")
     pairs = pair_table(ranked, results, inst, W, k, level_k, plist, roles)
     h4 = h4_tests(usable, inst, results, W)
     # Kendall tau between Acc and GA ranking (descriptive)
@@ -1041,7 +1041,7 @@ def h0_checks(inst, models, results):
     not_run = [n for n, v in zip("abc", [out["a"], out["b"], out["c"]]) if v is None]
     out["failed"] = failed
     out["not_run"] = not_run
-    out["verdict"] = "widerlegt" if failed else ("erfüllt" if not not_run else "ungeprüft")
+    out["verdict"] = "refuted" if failed else ("holds" if not not_run else "untested")
     return out
 
 
@@ -1163,7 +1163,7 @@ def f3(x):
     return "–" if x is None or not math.isfinite(x) else f"{x:.3f}"
 
 
-def yn(b, yes="erfüllt", no="widerlegt"):
+def yn(b, yes="holds", no="refuted"):
     return yes if b else no
 
 
@@ -1171,94 +1171,94 @@ def render_report(ctx):
     inst, results, k = ctx["inst"], ctx["results"], ctx["k"]
     L = []
     w = L.append
-    w("# Paired decision eval: Auswertung")
+    w("# Paired decision eval: analysis")
     w("")
-    w(f"Grundfälle N = {inst.n}, Bootstrap B = {ctx['n_boot']}, Seed {ctx['seed']}, k = {k}. "
-      f"Modelle gerankt: {len(ctx['ranked'])}, nicht gerankt: {len(ctx['unranked'])}.")
+    w(f"Base cases N = {inst.n}, bootstrap B = {ctx['n_boot']}, seed {ctx['seed']}, k = {k}. "
+      f"Models ranked: {len(ctx['ranked'])}, not ranked: {len(ctx['unranked'])}.")
     w("Aussagegrenze: for six open 0.5–2B models on a synthetic rule-following task with eight rule families.")
     for n in ctx["notes"]:
-        w(f"- Hinweis: {n}")
+        w(f"- Note: {n}")
     w("")
-    w("| Modell | Acc | GA | Lücke Acc−GA | GA_inv | GA_sens | SFR | σ (nats) | Status |")
+    w("| Model | Acc | GA | Gap Acc−GA | GA_inv | GA_sens | SFR | σ (nats) | Status |")
     w("|---|---|---|---|---|---|---|---|---|")
     for m in ctx["models"]:
         r = results[m.key]
         s = r["summ"]
-        status = "Baseline" if m.is_baseline else ("gerankt" if m.key in ctx["ranked"] else ("Format nicht erfüllt" if not r["format_ok"] else "nicht primär (dtype)"))
+        status = "Baseline" if m.is_baseline else ("ranked" if m.key in ctx["ranked"] else ("format not met" if not r["format_ok"] else "not primary (dtype)"))
         w(f"| {m.key} | {f3(s['acc'][0])} | {f3(s['ga'][0])} | {f3(s['gap'][0])} | {f3(s['ga_inv'][0])} | {f3(s['ga_sens'][0])} | {f3(s['sfr'][0])} | {f3(s['sigma'][0])} | {status} |")
     w("")
     # H0
     h0 = ctx["h0"]
-    w("## H0 (Instrument)")
-    w("Kriterium: (a) Regelreferenz Acc = GA = 1, alle Kippraten 0; (b) jede decisive-Variante kippt die Referenz, keine irr-/Placebo-/Paraphrasen-Variante; (c) Retest |ΔlogP| ≤ 1e-5 relativ und gleiche Entscheidungen; (d) Median der Label-Masse ≥ 0,5 je Modell und Optionsreihenfolge. (a)–(c) verfehlt: kein Modelllauf zählt. (d) verfehlt: nicht gerankt.")
+    w("## H0 (instrument)")
+    w("Criterion: (a) rule reference Acc = GA = 1, all flip rates 0; (b) every decisive variant flips the reference, no irr, placebo or paraphrase variant does; (c) retest |ΔlogP| ≤ 1e-5 relative and identical decisions; (d) median label mass ≥ 0.5 per model and option order. (a)–(c) missed: no model run counts. (d) missed: not ranked.")
     w("")
     a = h0["a"]
-    w(f"- (a) Oracle: {'nicht geprüft (kein baseline:oracle in den Scores)' if a is None else yn(a['pass'], 'erfüllt', 'verfehlt')}")
-    w(f"- (b) Items: {yn(h0['b']['pass'], 'erfüllt', 'verfehlt')} (decisive ohne Kippen: {h0['b']['decisive_not_flipped']}, andere Varianten mit geänderter Referenz: {h0['b']['others_changed']})")
+    w(f"- (a) Oracle: {'not checked (no baseline:oracle in the scores)' if a is None else yn(a['pass'], 'holds', 'missed')}")
+    w(f"- (b) Items: {yn(h0['b']['pass'], 'holds', 'missed')} (decisive without flip: {h0['b']['decisive_not_flipped']}, other variants with changed reference: {h0['b']['others_changed']})")
     c = h0["c"]
     if c is None:
-        w("- (c) Retest: nicht geprüft (keine doppelten prompt_id in den Scores)")
+        w("- (c) Retest: not checked (no duplicate prompt_id in the scores)")
     else:
         worst = max(r["max_rel"] for _, r in c["models"])
-        w(f"- (c) Retest: {yn(c['pass'], 'erfüllt', 'verfehlt')} (größte relative Abweichung {worst:.2e})")
+        w(f"- (c) Retest: {yn(c['pass'], 'holds', 'missed')} (largest relative deviation {worst:.2e})")
     for key, ok in h0["d"].items():
         med = {o: results[key]["mass"][o][0] for o in ORDERS}
-        w(f"- (d) {key}: {yn(ok, 'erfüllt', 'Format nicht erfüllt')} (Median der Label-Masse ER {f3(med['ER'])}, RE {f3(med['RE'])})")
-    w(f"- Urteil H0: **{h0['verdict']}**" + ("; kein Modelllauf zählt." if h0["verdict"] == "widerlegt" else ""))
+        w(f"- (d) {key}: {yn(ok, 'holds', 'format not met')} (median label mass ER {f3(med['ER'])}, RE {f3(med['RE'])})")
+    w(f"- Verdict H0: **{h0['verdict']}**" + ("; no model run counts." if h0["verdict"] == "refuted" else ""))
     w("")
     # H1
-    w("## H1 (Kern): Umkehr der Rangfolge nach Acc und GA")
-    w("Kriterium: Umkehr heißt einseitig ΔAcc > 0 und ΔGA < 0 (orientiert an ΔAcc), Intersection-Union-p = max(p₁, p₂), Holm über k Paare. Widerlegt, wenn kein Paar nach Holm eine Umkehr zeigt.")
+    w("## H1 (core): reversal of the ranking by Acc and GA")
+    w("Criterion: reversal means one-sided ΔAcc > 0 and ΔGA < 0 (oriented by ΔAcc), intersection-union p = max(p₁, p₂), Holm over k pairs. Refuted if no pair shows a reversal after Holm.")
     w("")
     pairs = ctx["pairs"]
     if pairs:
-        w(f"| Paar (x ≥ y nach Acc) | ΔAcc | ΔGA | KI ΔGA (1−α/k) | p (IUT) | p Holm | Umkehr |")
+        w(f"| Pair (x ≥ y by Acc) | ΔAcc | ΔGA | CI ΔGA (1−α/k) | p (IUT) | p Holm | Reversal |")
         w("|---|---|---|---|---|---|---|")
         for r in pairs:
-            w(f"| {r['model_x']} gegen {r['model_y']} | {pp(r['d_acc'])} | {pp(r['d_ga'])} | [{pp(r['d_ga_lo'])}, {pp(r['d_ga_hi'])}] | {f3(r['p_ga'])} | {f3(r['p_holm_ga'])} | {'ja' if r['reversal'] else 'nein'} |")
+            w(f"| {r['model_x']} vs {r['model_y']} | {pp(r['d_acc'])} | {pp(r['d_ga'])} | [{pp(r['d_ga_lo'])}, {pp(r['d_ga_hi'])}] | {f3(r['p_ga'])} | {f3(r['p_holm_ga'])} | {'yes' if r['reversal'] else 'no'} |")
         any_rev = any(r["reversal"] for r in pairs)
         w("")
-        w(f"Urteil H1: **{yn(any_rev)}** ({sum(r['reversal'] for r in pairs)} von {len(pairs)} Paaren mit Umkehr).")
+        w(f"Verdict H1: **{yn(any_rev)}** ({sum(r['reversal'] for r in pairs)} of {len(pairs)} pairs with a reversal).")
         if not any_rev:
             X = max(r["reversal_ub_pp"] for r in pairs)
-            w(f"Lesart: „Keine Umkehr nachweisbar. Umkehrungen von mehr als {X:.1f} Prozentpunkten GA schließen wir für diese Modelle und diese Aufgabe aus.“ (X = größte obere Grenze von −ΔGA, Niveau 1−α/k einseitig.)")
+            w(f"Reading: \"No reversal detectable. We rule out reversals of more than {X:.1f} percentage points GA for these models and this task.\" (X = largest upper bound of −ΔGA, level 1−α/k one-sided.)")
     else:
-        w("Keine Paare auswertbar (weniger als zwei gerankte Modelle oder Paare nicht auflösbar). Urteil H1: **ungeprüft**.")
+        w("No pairs can be evaluated (fewer than two ranked models, or pairs not resolvable). Verdict H1: **untested**.")
     w("")
-    w("### H1-Zerlegung (berichtet)")
-    w("| Paar | ΔGA_inv | p Holm | Umkehr (inv) | ΔGA_sens | p Holm | Umkehr (sens) |")
+    w("### H1 decomposition (reported)")
+    w("| Pair | ΔGA_inv | p Holm | Reversal (inv) | ΔGA_sens | p Holm | Reversal (sens) |")
     w("|---|---|---|---|---|---|---|")
     for r in pairs:
-        w(f"| {r['model_x']} gegen {r['model_y']} | {pp(r['d_ga_inv'])} | {f3(r['p_holm_inv'])} | {'ja' if r['reversal_inv'] else 'nein'} | {pp(r['d_ga_sens'])} | {f3(r['p_holm_sens'])} | {'ja' if r['reversal_sens'] else 'nein'} |")
+        w(f"| {r['model_x']} vs {r['model_y']} | {pp(r['d_ga_inv'])} | {f3(r['p_holm_inv'])} | {'yes' if r['reversal_inv'] else 'no'} | {pp(r['d_ga_sens'])} | {f3(r['p_holm_sens'])} | {'yes' if r['reversal_sens'] else 'no'} |")
     w("")
-    w("### H1-Prüffrage (berichtet): Rohentscheidung (nur ER), Optionstausch RE als Invarianz-Variante")
-    w("| Paar | ΔAcc roh | ΔGA roh | p Holm | Umkehr roh |")
+    w("### H1 check (reported): raw decision (ER only), option swap RE as an invariance variant")
+    w("| Pair | ΔAcc raw | ΔGA raw | p Holm | Reversal raw |")
     w("|---|---|---|---|---|")
     for r in pairs:
-        w(f"| {r['model_x']} gegen {r['model_y']} | {pp(r['d_acc_raw'])} | {pp(r['d_ga_raw'])} | {f3(r['p_holm_raw'])} | {'ja' if r['reversal_raw'] else 'nein'} |")
+        w(f"| {r['model_x']} vs {r['model_y']} | {pp(r['d_acc_raw'])} | {pp(r['d_ga_raw'])} | {f3(r['p_holm_raw'])} | {'yes' if r['reversal_raw'] else 'no'} |")
     if ctx["tau"] is not None:
         w("")
-        w(f"Kendall-τ Acc-Rang gegen GA-Rang (beschreibend): {ctx['tau']:.3f}; gemittelte gegen rohe Acc-Rangliste: {ctx['tau_raw']:.3f}. Unterscheiden sich gemittelte und rohe Rangliste, ist das der Messketten-Befund.")
+        w(f"Kendall τ Acc rank vs GA rank (descriptive): {ctx['tau']:.3f}; averaged vs raw Acc ranking: {ctx['tau_raw']:.3f}. If the averaged and the raw ranking differ, that is the measurement-chain finding.")
     w("")
-    w("### H1b (berichtet): ΔAcc signifikant, ΔGA nicht")
+    w("### H1b (reported): ΔAcc significant, ΔGA not")
     for r in pairs:
-        w(f"- {r['model_x']} gegen {r['model_y']}: {'ja' if r['h1b'] else 'nein'} (p Acc {f3(r['p_acc'])}, p GA {f3(r['p_ga'])})")
+        w(f"- {r['model_x']} vs {r['model_y']}: {'yes' if r['h1b'] else 'no'} (p Acc {f3(r['p_acc'])}, p GA {f3(r['p_ga'])})")
     w("")
     # H2
-    w("## H2 (beschreibend): Marge reagiert auf decisive stärker als auf irrelevante Änderungen")
-    w("Kein Widerlegungskriterium. d_a = (Median|Δm*_a| − Median|Δm*_placebo_a|) / MAD(Δm*_placebo_a), Bootstrap-KI (95 %).")
+    w("## H2 (descriptive): the margin reacts more strongly to decisive than to irrelevant changes")
+    w("No refutation criterion. d_a = (median|Δm*_a| − median|Δm*_placebo_a|) / MAD(Δm*_placebo_a), bootstrap CI (95 %).")
     w("")
-    w("| Modell | " + " | ".join(AXES + ["decisive"]) + " |")
+    w("| Model | " + " | ".join(AXES + ["decisive"]) + " |")
     w("|---|" + "---|" * (len(AXES) + 1))
     for m in ctx["models"]:
         h = results[m.key]["h2"]
         w(f"| {m.key} | " + " | ".join(f"{f3(h[x][0])} [{f3(h[x][1])}, {f3(h[x][2])}]" for x in AXES + ["decisive"]) + " |")
     w("")
     # H3
-    w("## H3 (Invarianz je Achse) und H3-P (gegen Wortlaut-Rauschen)")
-    w("Kriterium H3: exakter McNemar (einseitig, irr kippt häufiger als Placebo), Holm über 4 Achsen je Modell, α = 0,05. Kriterium H3-P: einseitiger Bootstrap-Test auf mittleres d = flip_a − ½(flip_para1 + flip_para2) > 0, Holm über 4 Achsen je Modell. Bühnenregel: „wirkt“ nur, wenn H3 und H3-P gelten.")
+    w("## H3 (invariance per axis) and H3-P (against wording noise)")
+    w("Criterion H3: exact McNemar (one-sided, irr flips more often than placebo), Holm over 4 axes per model, α = 0.05. Criterion H3-P: one-sided bootstrap test of mean d = flip_a − ½(flip_para1 + flip_para2) > 0, Holm over 4 axes per model. Stage rule: an axis \"has an effect\" only if both H3 and H3-P hold.")
     w("")
-    w("| Modell | Achse | flip | Placebo | Paraphrase | Überschuss | p H3 (Holm) | Überschuss para | p H3-P (Holm) | Lesart |")
+    w("| Model | Axis | flip | Placebo | Paraphrase | Excess | p H3 (Holm) | Excess para | p H3-P (Holm) | Reading |")
     w("|---|---|---|---|---|---|---|---|---|---|")
     h3_any = h3p_any = False
     for m in ctx["models"]:
@@ -1269,7 +1269,7 @@ def render_report(ctx):
             h3p_any |= a["h3p_sig"]
             w(f"| {m.key} | {a['axis']} | {pp(a['flip_irr'])} | {pp(a['flip_placebo'])} | {pp(a['flip_para'])} | {pp(a['excess'])} | {f3(a['p_h3_holm'])} | {pp(a['excess_para'])} | {f3(a['p_h3p_holm'])} | {a['reading']} |")
     w("")
-    w(f"Urteil H3: **{yn(h3_any)}**. Urteil H3-P: **{yn(h3p_any)}**.")
+    w(f"Verdict H3: **{yn(h3_any)}**. Verdict H3-P: **{yn(h3p_any)}**.")
     w("")
     for m in ctx["models"]:
         if m.is_baseline:
@@ -1277,34 +1277,34 @@ def render_report(ctx):
         for a in results[m.key]["axis"]:
             cv = results[m.key]["cov"].get(a["axis"])
             if a["h3_sig"] and cv and cv[1] <= 0:
-                w(f"- {m.key}, Achse {a['axis']}: H3 gilt, hält unter Kovariaten nicht (KI der irr-Wirkung enthält 0): durch Tokenlänge oder Grenznähe erklärbar.")
+                w(f"- {m.key}, axis {a['axis']}: H3 holds, but not under covariates (CI of the irr effect contains 0): explainable by token length or boundary proximity.")
     w("")
-    w("### H3-Prüffrage (berichtet): Herkunft oder Seltenheit")
+    w("### H3 check (reported): origin or rarity")
     for m in ctx["models"]:
         if m.is_baseline:
             continue
         o = results[m.key]["origin"]
         if o is None:
-            w(f"- {m.key}: nicht berechenbar.")
+            w(f"- {m.key}: not computable.")
             continue
-        w(f"- {m.key}: Placebo-Kipprate Herkunftsachse de {pp(o['de'])}, tr {pp(o['tr'])}, Differenz {pp(o['diff'])} [{pp(o['ci'][0])}, {pp(o['ci'][1])}]"
-          + ("; **Herkunft oder Seltenheit, nicht getrennt**." if o["p"] <= ALPHA else "."))
+        w(f"- {m.key}: placebo flip rate of the origin axis de {pp(o['de'])}, tr {pp(o['tr'])}, difference {pp(o['diff'])} [{pp(o['ci'][0])}, {pp(o['ci'][1])}]"
+          + ("; **origin or rarity, not separated**." if o["p"] <= ALPHA else "."))
     w("")
     # H4
-    w("## H4 (Replikation): fp32 → q8 kippt mehr als der Placebo")
-    w("Kriterium: Kipprate fp32 → q8 auf base und decisive gegen die gepoolte Placebo-Kipprate (fp32), exakter McNemar einseitig (Paarung je Fall und Slot mit fest zugeordneter Placebo-Achse), Holm über die Modelle. Widerlegt bei Kipprate ≤ Placebo-Kipprate.")
+    w("## H4 (replication): fp32 → q8 flips more than the placebo")
+    w("Criterion: flip rate fp32 → q8 on base and decisive against the pooled placebo flip rate (fp32), exact one-sided McNemar (paired per case and slot with a fixed placebo axis), Holm over the models. Refuted if flip rate ≤ placebo flip rate.")
     w("")
     if ctx["h4"]:
-        w("| Modell | Kipprate q8 | Placebo-Kipprate | p (Holm) | ΔAcc q8−fp32 | Urteil |")
+        w("| Model | Flip rate q8 | Placebo flip rate | p (Holm) | ΔAcc q8−fp32 | Verdict |")
         w("|---|---|---|---|---|---|")
         for r in ctx["h4"]:
             w(f"| {r['model']} | {pp(r['flip_q8'])} | {pp(r['flip_placebo'])} | {f3(r['p_holm'])} | {pp(r['d_acc'])} | {yn(r['holds'])} |")
     else:
-        w("Kein Modell mit fp32- und q8-Lauf: **ungeprüft**.")
+        w("No model with an fp32 and a q8 run: **untested**.")
     w("")
     # sections for the reported measures
-    w("## Platz-Bias, Label-Masse, Robustheitsarm, Kalibrierung, Schranke (berichtet)")
-    w("| Modell | σ | Rohentscheidung ≠ gemittelt | π_ID | π_pos | 4-fach = 2-fach | Masse Median ER/RE | Wort ≙ logprob | Greedy ≙ logprob | ECE | Schranke |")
+    w("## Place bias, label mass, robustness arm, calibration, bound (reported)")
+    w("| Model | σ | Raw decision ≠ averaged | π_ID | π_pos | 4-fold = 2-fold | Mass median ER/RE | Word ≙ logprob | Greedy ≙ logprob | ECE | Bound |")
     w("|---|---|---|---|---|---|---|---|---|---|---|")
     for m in ctx["models"]:
         r = results[m.key]
@@ -1315,23 +1315,23 @@ def render_report(ctx):
             f3(pi_["pi_id"][0]) if pi_ else "–", f3(pi_["pi_pos"][0]) if pi_ else "–", pp(pi_["agree"][0]) if pi_ else "–",
             f"{f3(r['mass']['ER'][0])}/{f3(r['mass']['RE'][0])}",
             pp(rb["word"][0]) if "word" in rb else "–", pp(rb["greedy"][0]) if "greedy" in rb else "–",
-            f3(r["ece"]), ("ok" if r["bound"]["ok"] else "VERLETZT") + f" (≤ {f3(r['bound']['bound'])})",
+            f3(r["ece"]), ("ok" if r["bound"]["ok"] else "VIOLATED") + f" (≤ {f3(r['bound']['bound'])})",
         ]) + " |")
     w("")
     low = [(m.key, kind, results[m.key]["robust"][kind][0]) for m in ctx["models"] for kind in results[m.key]["robust"] if results[m.key]["robust"][kind][0] < 0.9]
     for key, kind, v in low:
-        w(f"- {key}: Übereinstimmung ({kind}) {pp(v)} unter 90 %: die Logprob-Entscheidung heißt hier „die Logprob-Präferenz“, nicht „die Entscheidung des Modells“.")
+        w(f"- {key}: agreement ({kind}) {pp(v)} below 90 %: here the logprob decision is called \"the logprob preference\", not \"the model's decision\".")
     for m in ctx["models"]:
         pi_ = results[m.key]["pi"]
         if pi_ and pi_["agree"][0] < 0.99:
-            w(f"- {m.key}: 4-fach gemittelte und 2-fach gemittelte Entscheidung stimmen nur zu {pp(pi_['agree'][0])} überein (erwartet ≥ 99 %): Hinweis auf nicht additiven Platz-Effekt.")
+            w(f"- {m.key}: the 4-fold averaged and the 2-fold averaged decision agree only {pp(pi_['agree'][0])} (expected ≥ 99 %): hint of a non-additive place effect.")
     w("")
-    w("## Annahmen")
-    w("- Retest (H0c): doppelte `prompt_id` desselben Modells in den übergebenen Score-Verzeichnissen gelten als Retest, die erste Zeile ist die Messung. Relative Abweichung = |Δ| / max(|l|, 1).")
-    w("- H3 nutzt den einseitigen exakten McNemar (P(X ≥ b), X ~ Bin(b+c, ½)); der zweiseitige statsmodels-Wert steht in `flips.csv`.")
-    w("- Schranken-Check: v = Anzahl Grundfälle, in denen base und decisive dieselbe Entscheidung erhalten (Gleichstand zählt als Entscheidung).")
-    w(f"- Gleichstand: |m*| ≤ {TIE_EPS:g} gilt als Gleichstand und als falsch.")
-    w("- Angezeigte KI in `metrics.csv` und H2/H3 haben 95 %, in `pairs.csv` das Niveau 1−α/k (Bonferroni).")
+    w("## Assumptions")
+    w("- Retest (H0c): duplicate `prompt_id` of the same model in the given score directories count as a retest, the first row is the measurement. Relative deviation = |Δ| / max(|l|, 1).")
+    w("- H3 uses the one-sided exact McNemar (P(X ≥ b), X ~ Bin(b+c, ½)); the two-sided statsmodels value is in `flips.csv`.")
+    w("- Bound check: v = number of base cases in which base and decisive get the same decision (a tie counts as a decision).")
+    w(f"- Tie: |m*| ≤ {TIE_EPS:g} counts as a tie and as wrong.")
+    w("- CIs shown in `metrics.csv` and H2/H3 are 95 %; in `pairs.csv` they have level 1−α/k (Bonferroni).")
     return "\n".join(L) + "\n"
 
 

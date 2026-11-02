@@ -68,7 +68,7 @@ def test_ap6_2_built_in_reversal_detected(analyze, tmp_path):
     assert pair["model_x"] == "X|fp32" and pair["reversal"] == "1"
     assert float(pair["p_holm_ga"]) <= 0.05
     report = open(out + "/report.md", encoding="utf-8").read()
-    assert "Urteil H1: **erfüllt**" in report
+    assert "Verdict H1: **holds**" in report
 
 
 def test_ap6_2_no_reversal_gives_finite_x(analyze, tmp_path):
@@ -89,7 +89,7 @@ def test_ap6_2_no_reversal_gives_finite_x(analyze, tmp_path):
     x = float(pair["reversal_ub_pp"])
     assert math.isfinite(x)
     report = open(out + "/report.md", encoding="utf-8").read()
-    assert "Urteil H1: **widerlegt**" in report and "Keine Umkehr nachweisbar" in report
+    assert "Verdict H1: **refuted**" in report and "No reversal detectable" in report
 
 
 def test_ap6_2_k15_uses_all_pairs(analyze, tmp_path):
@@ -189,8 +189,8 @@ def axis_dataset(rng, n, flip_irr, flip_plc, flip_para):
 @pytest.mark.parametrize(
     "flip_irr,flip_para,h3,h3p,reading",
     [
-        (0.20, 0.20, True, False, "über dem Placebo, aber nicht vom Wortlaut-Rauschen trennbar"),
-        (0.25, 0.05, True, True, "wirkt"),
+        (0.20, 0.20, True, False, "above the placebo, but not separable from wording noise"),
+        (0.25, 0.05, True, True, "has an effect"),
     ],
 )
 def test_ap6_3b_h3_and_h3p(analyze, tmp_path, flip_irr, flip_para, h3, h3p, reading):
@@ -313,7 +313,7 @@ def test_label_mass_failure_is_not_ranked(analyze, tmp_path):
         r["mass"] = 0.01
     ctx, out = run(analyze, tmp_path, "mass", items, {"thin": rows}, n_boot=300)
     assert "thin|fp32" in ctx["unranked"] and "thin|fp32" not in ctx["ranked"]
-    assert "Format nicht erfüllt" in open(out + "/report.md", encoding="utf-8").read()
+    assert "format not met" in open(out + "/report.md", encoding="utf-8").read()
 
 
 def test_bound_check_holds(analyze, tmp_path):

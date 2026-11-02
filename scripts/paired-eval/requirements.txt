@@ -1,0 +1,5 @@
+numpy==2.5.4
+scipy==1.18.1
+statsmodels==0.15.0
+pandas==3.1.0
+pytest==9.2.0

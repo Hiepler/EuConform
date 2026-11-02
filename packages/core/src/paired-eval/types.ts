@@ -174,6 +174,8 @@ export interface FamilyVariable {
   scale: number;
   coarse_step: number;
   decimals: number;
+  /** Plausible range of the printed value; draws whose value or mirror fall outside are redrawn. */
+  range?: [number, number];
 }
 
 export type FamilyLogic =
@@ -193,13 +195,77 @@ export interface Family {
   /** Rule variables; ratio families describe the ratio here and the raw inputs in `inputs`. */
   variables: FamilyVariable[];
   /** Ratio families only: the two printed inputs (numerator first). */
-  inputs?: {
-    var: string;
-    label: string;
-    unit: string;
-    decimals: number;
-    range: [number, number];
-  }[];
+  inputs?: [FamilyInput, FamilyInput];
+  /** Keys into `FamiliesFile.distractor_pool`. */
   distractors: [string, string];
   rule_text: string;
+}
+
+/** A printed input of a ratio family; the denominator carries the range it is drawn from. */
+export interface FamilyInput {
+  var: string;
+  label: string;
+  unit: string;
+  decimals: number;
+  range?: [number, number];
+}
+
+/** A distractor value: named by no rule of its family, drawn from a normal range. */
+export interface DistractorDef {
+  label: string;
+  unit: string;
+  decimals: number;
+  range: [number, number];
+  /** Blood pressure only: the diastolic range; the value is printed as systolic/diastolic. */
+  range_diastolic?: [number, number];
+}
+
+export interface FamiliesFile {
+  note: string;
+  distractor_pool: Record<string, DistractorDef>;
+  families: Family[];
+}
+
+/** `frames.json`: three wordings per frame part plus the canonical choice. */
+export interface FramesFile {
+  note: string;
+  canonical: { S1: string; S2: string; S3: string; S3word: string };
+  S1: { id: string; ER: string; RE: string }[];
+  S2: { id: string; text: string }[];
+  S3: { id: string; head: string; tail: string }[];
+  S3word: { id: string; text: string }[];
+}
+
+export interface NameList {
+  source_url: string;
+  source: string;
+  retrieved: string;
+  names: string[];
+}
+
+export interface NamesFile {
+  note: string;
+  first: Record<NameGroup, Record<NameGender, NameList>>;
+  last: Record<NameGroup, NameList>;
+}
+
+/** `manifest.json` written next to the generated JSONL. */
+export interface GenerateManifest {
+  generator: "paired-eval";
+  generator_version: string | null;
+  split: Split;
+  seed: string;
+  arm: Arm;
+  per_family: number;
+  /** Base cases in the robustness subset (decomp and word arms); null for main. */
+  robust_n: number | null;
+  robust_n_requested: number | null;
+  count: number;
+  items_sha256: string;
+  /** SHA-256 of `JSON.stringify(frames.json)` (key order as in the file). */
+  frames_sha256: string;
+  canonical_frame_ids: FramesFile["canonical"];
+  families: string[];
+  /** Base cases per family and cell `<stratum>|<label>|<group>|<gender>`. */
+  cell_balance: Record<string, Record<string, number>>;
 }

@@ -1,4 +1,5 @@
 import { defineCommand } from "citty";
+import generateCommand from "../paired-eval/generate-command";
 import runCommand from "../paired-eval/run-command";
 
 export default defineCommand({
@@ -7,6 +8,7 @@ export default defineCommand({
     description: "Paired decision eval: generate prompt sets, score them, run baselines",
   },
   subCommands: {
+    generate: generateCommand,
     run: runCommand,
   },
 });

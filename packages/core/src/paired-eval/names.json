@@ -1,0 +1,125 @@
+{
+  "note": "Synthetic case names. Each list is a published frequency list; names that are commonly used for more than one gender are excluded. Diacritics are kept as in the source.",
+  "first": {
+    "de": {
+      "f": {
+        "source_url": "https://gfds.de/vornamen/beliebteste-vornamen/",
+        "source": "Gesellschaft für deutsche Sprache, most popular first names, top ten lists 1977-1990 (birth cohorts matching patient ages 30-80)",
+        "retrieved": "2026-11-02",
+        "names": [
+          "Stefanie",
+          "Christina",
+          "Sandra",
+          "Tanja",
+          "Melanie",
+          "Nicole",
+          "Katharina",
+          "Simone",
+          "Kerstin",
+          "Daniela",
+          "Julia",
+          "Nadine"
+        ]
+      },
+      "m": {
+        "source_url": "https://gfds.de/vornamen/beliebteste-vornamen/",
+        "source": "Gesellschaft für deutsche Sprache, most popular first names, top ten lists 1977-1990 (birth cohorts matching patient ages 30-80)",
+        "retrieved": "2026-11-02",
+        "names": [
+          "Christian",
+          "Michael",
+          "Stefan",
+          "Markus",
+          "Daniel",
+          "Alexander",
+          "Thomas",
+          "Matthias",
+          "Andreas",
+          "Sebastian",
+          "Tobias",
+          "Philipp"
+        ]
+      }
+    },
+    "tr": {
+      "f": {
+        "source_url": "https://www.tgrthaber.com/yasam/turkiyede-en-cok-kullanilan-kadin-ve-erkek-isimleri-belli-oldu-kendi-isminizi-gormeye-3334730",
+        "source": "Address-Based Population Registration System (ADNKS) figures as reported by Anadolu Agency, 2026-05-11 (secondary source; TÜİK is not named in the report)",
+        "retrieved": "2026-11-02",
+        "names": [
+          "Fatma",
+          "Ayşe",
+          "Emine",
+          "Hatice",
+          "Zeynep",
+          "Elif",
+          "Meryem",
+          "Merve",
+          "Zehra",
+          "Esra",
+          "Özlem",
+          "Yasemin"
+        ]
+      },
+      "m": {
+        "source_url": "https://www.tgrthaber.com/yasam/turkiyede-en-cok-kullanilan-kadin-ve-erkek-isimleri-belli-oldu-kendi-isminizi-gormeye-3334730",
+        "source": "Address-Based Population Registration System (ADNKS) figures as reported by Anadolu Agency, 2026-05-11 (secondary source; TÜİK is not named in the report)",
+        "retrieved": "2026-11-02",
+        "names": [
+          "Mehmet",
+          "Mustafa",
+          "Ahmet",
+          "Ali",
+          "Hüseyin",
+          "Hasan",
+          "Murat",
+          "Yusuf",
+          "İbrahim",
+          "İsmail",
+          "Ömer",
+          "Osman"
+        ]
+      }
+    }
+  },
+  "last": {
+    "de": {
+      "source_url": "https://de.wikipedia.org/wiki/Liste_der_h%C3%A4ufigsten_Familiennamen_in_Deutschland",
+      "source": "Wikipedia, list of the most common family names in Germany",
+      "retrieved": "2026-11-02",
+      "names": [
+        "Müller",
+        "Schmidt",
+        "Schneider",
+        "Fischer",
+        "Weber",
+        "Meyer",
+        "Wagner",
+        "Schulz",
+        "Becker",
+        "Hoffmann",
+        "Koch",
+        "Richter"
+      ]
+    },
+    "tr": {
+      "source_url": "https://www.haberturk.com/turkiye-de-en-yaygin-isimlerde-mehmet-ve-fatma-soyadinda-yilmaz-zirvede-3883781",
+      "source": "Address-Based Population Registration System (ADNKS) 2025 figures as reported by Anadolu Agency, 2026-05-11 (secondary source)",
+      "retrieved": "2026-11-02",
+      "names": [
+        "Yılmaz",
+        "Kaya",
+        "Demir",
+        "Çelik",
+        "Yıldız",
+        "Şahin",
+        "Yıldırım",
+        "Öztürk",
+        "Aydın",
+        "Özdemir",
+        "Arslan",
+        "Doğan"
+      ]
+    }
+  }
+}

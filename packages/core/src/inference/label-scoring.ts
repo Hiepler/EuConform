@@ -111,7 +111,7 @@ interface RenderedPrompt {
 }
 
 async function renderPrompt(
-  deps: LabelScoringDeps,
+  deps: Omit<LabelScoringDeps, "model">,
   userText: string,
   assistantPrefix: string,
   chatTemplateKwargs: Record<string, unknown>

@@ -1,4 +1,5 @@
 import { defineCommand } from "citty";
+import baselineCommand from "../paired-eval/baseline-command";
 import generateCommand from "../paired-eval/generate-command";
 import runCommand from "../paired-eval/run-command";
 
@@ -10,5 +11,6 @@ export default defineCommand({
   subCommands: {
     generate: generateCommand,
     run: runCommand,
+    baseline: baselineCommand,
   },
 });

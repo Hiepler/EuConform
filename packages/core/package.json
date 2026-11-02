@@ -26,7 +26,8 @@
     "./evidence/browser": "./src/evidence/browser.ts",
     "./datasets": "./src/datasets/crows-pairs.ts",
     "./validation": "./src/validation/index.ts",
-    "./sbom": "./src/sbom/index.ts"
+    "./sbom": "./src/sbom/index.ts",
+    "./paired-eval": "./src/paired-eval/index.ts"
   },
   "scripts": {
     "build": "tsc",

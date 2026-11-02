@@ -4,6 +4,7 @@ import { defineCommand, runMain } from "citty";
 import biasCommand from "./commands/bias";
 import compareCommand from "./commands/compare";
 import importCommand from "./commands/import";
+import pairedEvalCommand from "./commands/paired-eval";
 import scanCommand from "./commands/scan";
 import validateCommand from "./commands/validate";
 import verifyCommand from "./commands/verify";
@@ -20,6 +21,7 @@ const main = defineCommand({
     bias: biasCommand,
     compare: compareCommand,
     import: importCommand,
+    "paired-eval": pairedEvalCommand,
   },
 });
 

@@ -181,3 +181,26 @@ export {
   calculateLatencyBias,
   validateCrowsPairsDataset,
 } from "./metrics";
+
+// Paired decision eval: label scoring (next-token letters, option words, greedy answer)
+export {
+  DEFAULT_ASSISTANT_PREFIX,
+  EMPTY_THINK_BLOCK,
+  firstStandaloneLetter,
+  generateGreedyAnswer,
+  scoreNextTokenLabels,
+  scoreOptionWords,
+  type GreedyAnswerResult,
+  type GreedyModel,
+  type GreedyScoringDeps,
+  type GreedyTokenizer,
+  type LabelScoreResult,
+  type LabelScoringDeps,
+  type LabelScoringOptions,
+  type LabelScoringProvenance,
+  type LabelTokenizer,
+  type OptionWordScoreResult,
+  type OptionWordScoringOptions,
+  type SessionThreadSettings,
+  type ThinkingMode,
+} from "./inference";

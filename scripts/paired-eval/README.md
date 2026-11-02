@@ -7,7 +7,7 @@ Setup: `python3 -m venv .venv && .venv/bin/pip install -r scripts/paired-eval/re
     python3 -I scripts/paired-eval/power.py --items pilot-items.jsonl --scores <dir>... --out <dir> [--full]
 
 `analyze.py` writes `metrics.csv` (deterministic for a fixed seed), `pairs.csv`, `flips.csv`, `report.md`.
-`power.py` writes `power.csv` and `power.md` (last section: `Entscheidung: N = …, k = …`).
+`power.py` writes `power.csv` and `power.md` (last section: `Decision: N = …, k = …`).
 Test mode runs 200 simulations x 400 draws; `--full` runs the pre-registered 2000 x 2000.
 
 ## pairs.json
@@ -22,5 +22,5 @@ Short names are resolved to the `model_id` in the score files (exact id, else a 
 match). Without a `pairs_k5` list (or with `--k 15`) all pairs of ranked models are used.
 `gemma-1b` is a placeholder and has to be mapped to the real Gemma id.
 
-Tests: `python3 -m pytest scripts/paired-eval/tests` (synthetic data only; the baseline end-to-end
-test follows once the `paired-eval generate` and `baseline` commands are on the branch).
+Tests: `python3 -m pytest scripts/paired-eval/tests` (synthetic data, plus the baseline end-to-end
+test through the `paired-eval generate` and `baseline` commands; it needs `tsx` on PATH or `EUCONFORM_CLI` and is skipped otherwise).

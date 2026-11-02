@@ -56,11 +56,11 @@ QUICK_SIMS, QUICK_BOOT = 200, 400
 FALLBACK_DISC = None  # computed from the pilot; with one pilot model: independence
 
 PAIRS_K5 = [
-    "Qwen2.5-0.5B gegen Qwen2.5-1.5B (Größe)",
-    "Qwen2.5-1.5B gegen Qwen3-1.7B (Generation)",
-    "Qwen3-1.7B gegen SmolLM2-1.7B (gleiche Größe, offene Daten)",
-    "Llama-3.2-1B gegen Gemma (andere Familien, ~1B)",
-    "Qwen2.5-0.5B gegen Llama-3.2-1B (kleinste Modelle)",
+    "Qwen2.5-0.5B vs Qwen2.5-1.5B (size)",
+    "Qwen2.5-1.5B vs Qwen3-1.7B (generation)",
+    "Qwen3-1.7B vs SmolLM2-1.7B (same size, open data)",
+    "Llama-3.2-1B vs Gemma (different families, ~1B)",
+    "Qwen2.5-0.5B vs Llama-3.2-1B (smallest models)",
 ]
 
 
@@ -305,7 +305,7 @@ def run_power(items, scores, out_dir, seed, sims, boot, ns=NS, deltas=DELTAS, ex
         for d in deltas:
             sim = simulate_h1(pilot, N, d / 100, sims, boot, rng)
             if abs(sim["shortfall"]) > 0.005:
-                notes.append(f"N={N}, δ={d} pp: erreichtes ΔAcc weicht im Mittel um {100 * sim['shortfall']:+.1f} pp vom Ziel ab (zu wenige Pilot-Fehler zum Umschreiben).")
+                notes.append(f"N={N}, δ={d} pp: achieved ΔAcc deviates from the target by {100 * sim['shortfall']:+.1f} pp on average (too few pilot errors to rewrite).")
             for k in KS:
                 pw = power_at(sim["p"], k)
                 table[(N, d, k)] = pw
@@ -329,14 +329,14 @@ def run_power(items, scores, out_dir, seed, sims, boot, ns=NS, deltas=DELTAS, ex
 def render_md(table, rows, dec, sims, boot, pilot, notes, ns, deltas, excess):
     L = []
     w = L.append
-    w("# Teststärke-Simulation (AP7)")
+    w("# Power simulation (AP7)")
     w("")
-    w(f"Pilot: {len(pilot['models'])} Modell(e) ({', '.join(m['name'] for m in pilot['models'])}), {pilot['n_cases']} Grundfälle.")
-    w(f"Simulationen: {sims}, Bootstrap-Ziehungen je Simulation: {boot}."
-      + (" **Testmodus**: weniger als die vorregistrierten 2.000 × 2.000." if (sims, boot) != (FULL_SIMS, FULL_BOOT) else " Abweichung von den 10.000 Ziehungen des Hauptlaufs: 2.000 Ziehungen je Simulation (Rechenzeit)."))
-    w("Der H1-Test ist `iut_boot` aus `analyze.py`. Ein Paar trägt den Effekt (ΔAcc = +δ, ΔGA = −δ), die übrigen k−1 Paare sind null; abgelehnt wird bei p ≤ α/k (konservative Holm-Näherung).")
+    w(f"Pilot: {len(pilot['models'])} model(s) ({', '.join(m['name'] for m in pilot['models'])}), {pilot['n_cases']} base cases.")
+    w(f"Simulations: {sims}, bootstrap draws per simulation: {boot}."
+      + (" **Test mode**: fewer than the pre-registered 2,000 × 2,000." if (sims, boot) != (FULL_SIMS, FULL_BOOT) else " Deviation from the 10,000 draws of the main run: 2,000 draws per simulation (compute time)."))
+    w("The H1 test is `iut_boot` from `analyze.py`. One pair carries the effect (ΔAcc = +δ, ΔGA = −δ), the other k−1 pairs are null; reject at p ≤ α/k (conservative Holm approximation).")
     w("")
-    w("## H1: Power je N, δ und k")
+    w("## H1: power by N, δ and k")
     for k in KS:
         w("")
         w(f"k = {k}")
@@ -351,41 +351,41 @@ def render_md(table, rows, dec, sims, boot, pilot, notes, ns, deltas, excess):
                     break
             w(f"| {N} | " + " | ".join(f"{100 * table[(N, d, k)]:.1f} %" for d in deltas) + f" | {'> ' + str(deltas[-1]) + ' pp' if d80 is None else str(d80) + ' pp'} |")
     w("")
-    w("## H3 und H3-P: Power (Holm über 4 Achsen, eine Achse mit Überschuss)")
+    w("## H3 and H3-P: power (Holm over 4 axes, one axis with excess)")
     w("")
-    w("| Test | N | " + " | ".join(f"Überschuss {e} pp" for e in excess) + " |")
+    w("| Test | N | " + " | ".join(f"Excess {e} pp" for e in excess) + " |")
     w("|---|---|" + "---|" * len(excess))
-    for test, label in (("h3", "H3"), ("h3p", "H3-P (geht nicht in die Entscheidungsregel ein)")):
+    for test, label in (("h3", "H3"), ("h3p", "H3-P (not part of the decision rule)")):
         for N in ns:
             vals = {r["effect_pp"]: r["power"] for r in rows if r["test"] == test and r["N"] == N}
             w(f"| {label} | {N} | " + " | ".join(f"{100 * vals[e]:.1f} %" for e in excess) + " |")
     w("")
-    w("## Entscheidung")
+    w("## Decision")
     w("")
     if dec is None:
-        w("Entscheidung: nicht berechnet (Raster von N oder δ weicht vom vorab festgelegten Raster ab).")
+        w("Decision: not computed (the N or δ grid differs from the pre-specified grid).")
     else:
         if dec["rule"] == "1":
-            w(f"Entscheidung: N = {dec['N']}, k = 15 (alle 15 Paare), δ₈₀ = {dec['delta80']} pp (Regel 1: kleinstes N mit δ₈₀ ≤ 10 pp bei k = 15).")
+            w(f"Decision: N = {dec['N']}, k = 15 (all 15 pairs), δ₈₀ = {dec['delta80']} pp (rule 1: smallest N with δ₈₀ ≤ 10 pp at k = 15).")
         elif dec["rule"] == "2":
-            w(f"Entscheidung: N = {dec['N']}, k = 5 (die 5 vorab festgelegten Paare), δ₈₀ = {dec['delta80']} pp (Regel 2: bei k = 15 erreicht kein N δ₈₀ ≤ 10 pp).")
+            w(f"Decision: N = {dec['N']}, k = 5 (the 5 pre-specified pairs), δ₈₀ = {dec['delta80']} pp (rule 2: no N reaches δ₈₀ ≤ 10 pp at k = 15).")
             for p in PAIRS_K5:
                 w(f"- {p}")
         else:
             d = dec["delta80"]
-            w(f"Entscheidung: N = 576, k = 5, δ₈₀ = {'> ' + str(DELTAS[-1]) + ' pp' if d is None else str(d) + ' pp'} (Regel 3: weder k = 15 noch k = 5 erreicht δ₈₀ ≤ 10 pp; δ₈₀ wird in der Vorregistrierung als Grenze genannt).")
+            w(f"Decision: N = 576, k = 5, δ₈₀ = {'> ' + str(DELTAS[-1]) + ' pp' if d is None else str(d) + ' pp'} (rule 3: neither k = 15 nor k = 5 reaches δ₈₀ ≤ 10 pp; δ₈₀ is stated as a limit in the pre-registration).")
     w("")
-    w("Die Laufzeit-Abbruchregel aus §7 des Messplans geht vor: Bei mehr als 10 s je Durchlauf fällt N auf 192 zurück und die Teststärke wird neu ausgewiesen.")
+    w("The runtime abort rule from §7 of the measurement plan takes precedence: above 10 s per run, N falls back to 192 and the power is reported again.")
     if notes:
         w("")
-        w("## Hinweise")
+        w("## Notes")
         for n in notes:
             w(f"- {n}")
     w("")
-    w("## Annahmen")
-    w("- Der Pilot liefert die Fehlerstruktur (Fall-Bootstrap); die Rate diskordanter Einheiten zwischen X und Y ist die zwischen den beiden Pilotmodellen (bei einem Modell: 2·r·(1−r) aus dessen Trefferquote).")
-    w("- GA wird nach dem Umschreiben der Acc-Einheiten durch Brechen oder Heilen der irr-Invarianz einzelner Fälle auf −δ gestellt.")
-    w("- H3 und H3-P: der Überschuss wird auf die gepoolte Pilot-Placebo- bzw. Paraphrasen-Rate aufgesetzt (Kipper hinzufügen oder entfernen), gepoolt über Modelle und Achsen.")
+    w("## Assumptions")
+    w("- The pilot supplies the error structure (case bootstrap); the rate of discordant units between X and Y is the one between the two pilot models (with one model: 2·r·(1−r) from its hit rate).")
+    w("- After rewriting the Acc units, GA is set to −δ by breaking or healing the irr invariance of individual cases.")
+    w("- H3 and H3-P: the excess is added on top of the pooled pilot placebo or paraphrase rate (adding or removing flips), pooled over models and axes.")
     return "\n".join(L) + "\n"
 
 

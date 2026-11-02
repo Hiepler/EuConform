@@ -46,7 +46,7 @@ def test_ap7_1_power_decreases_with_k(power, pilot_paths):
 def test_ap7_2_decision_line_in_report(power, pilot_paths, tmp_path):
     res = power.run_power(*pilot_paths, str(tmp_path / "pw"), 20261115, 20, 100)
     md = (tmp_path / "pw" / "power.md").read_text(encoding="utf-8")
-    assert "Entscheidung: N = " in md
+    assert "Decision: N = " in md
     assert (tmp_path / "pw" / "power.csv").exists()
     assert res["decision"]["N"] in power.NS and res["decision"]["k"] in (5, 15)
 

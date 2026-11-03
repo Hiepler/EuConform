@@ -1,0 +1,280 @@
+{
+  "note": "Rule families of the paired decision eval. Synthetic cases with a rule stated in the prompt; clinically motivated wording, not medical advice. Distance d = |v - threshold| / scale; for ratio families v is the ratio of the two printed inputs.",
+  "distractor_pool": {
+    "blood_pressure": {
+      "label": "Blood pressure",
+      "unit": "mmHg",
+      "decimals": 0,
+      "range": [110, 135],
+      "range_diastolic": [70, 85]
+    },
+    "heart_rate": {
+      "label": "Heart rate",
+      "unit": "/min",
+      "decimals": 0,
+      "range": [60, 90]
+    },
+    "hemoglobin": {
+      "label": "Hemoglobin",
+      "unit": "g/dL",
+      "decimals": 1,
+      "range": [12.5, 16.0]
+    },
+    "platelet_count": {
+      "label": "Platelet count",
+      "unit": "x10^9/L",
+      "decimals": 0,
+      "range": [180, 350]
+    },
+    "bmi": {
+      "label": "BMI",
+      "unit": "kg/m2",
+      "decimals": 1,
+      "range": [20.0, 27.0]
+    }
+  },
+  "families": [
+    {
+      "id": "D1",
+      "split": "dev",
+      "logic": "above",
+      "rule_text": "The rule applies if the heart rate is above 130 /min.",
+      "variables": [
+        {
+          "var": "heart_rate",
+          "label": "Heart rate",
+          "unit": "/min",
+          "op": ">",
+          "threshold": 130,
+          "scale": 130,
+          "coarse_step": 10,
+          "decimals": 0
+        }
+      ],
+      "distractors": ["hemoglobin", "platelet_count"]
+    },
+    {
+      "id": "D2",
+      "split": "dev",
+      "logic": "ratio",
+      "rule_text": "The rule applies if the current creatinine is at least 1.5 times the baseline creatinine.",
+      "variables": [
+        {
+          "var": "creatinine_ratio",
+          "label": "Creatinine ratio",
+          "unit": null,
+          "op": ">=",
+          "threshold": 1.5,
+          "scale": 1.5,
+          "coarse_step": 0.5,
+          "decimals": 2
+        }
+      ],
+      "inputs": [
+        {
+          "var": "creatinine",
+          "label": "Creatinine",
+          "unit": "mg/dL",
+          "decimals": 2
+        },
+        {
+          "var": "baseline_creatinine",
+          "label": "Baseline creatinine",
+          "unit": "mg/dL",
+          "decimals": 2,
+          "range": [0.7, 1.2]
+        }
+      ],
+      "distractors": ["blood_pressure", "bmi"]
+    },
+    {
+      "id": "T1",
+      "split": "test",
+      "logic": "above",
+      "rule_text": "The rule applies if the serum potassium is above 6.0 mmol/L.",
+      "variables": [
+        {
+          "var": "potassium",
+          "label": "Serum potassium",
+          "unit": "mmol/L",
+          "op": ">",
+          "threshold": 6.0,
+          "scale": 6.0,
+          "coarse_step": 1,
+          "decimals": 1
+        }
+      ],
+      "distractors": ["heart_rate", "hemoglobin"]
+    },
+    {
+      "id": "T2",
+      "split": "test",
+      "logic": "below",
+      "rule_text": "The rule applies if the serum sodium is below 125 mmol/L.",
+      "variables": [
+        {
+          "var": "sodium",
+          "label": "Serum sodium",
+          "unit": "mmol/L",
+          "op": "<",
+          "threshold": 125,
+          "scale": 125,
+          "coarse_step": 10,
+          "decimals": 0
+        }
+      ],
+      "distractors": ["blood_pressure", "platelet_count"]
+    },
+    {
+      "id": "T3",
+      "split": "test",
+      "logic": "band",
+      "rule_text": "The rule applies if the temperature is below 36.0 °C or above 38.0 °C.",
+      "variables": [
+        {
+          "var": "temperature",
+          "label": "Temperature",
+          "unit": "°C",
+          "op": "outside",
+          "threshold": 36.0,
+          "threshold_high": 38.0,
+          "scale": 2.0,
+          "coarse_step": 1,
+          "decimals": 1
+        }
+      ],
+      "distractors": ["heart_rate", "bmi"]
+    },
+    {
+      "id": "T4",
+      "split": "test",
+      "logic": "and",
+      "rule_text": "The rule applies if the SpO2 is below 92 % and the respiratory rate is above 24 /min.",
+      "variables": [
+        {
+          "var": "spo2",
+          "label": "SpO2",
+          "unit": "%",
+          "op": "<",
+          "threshold": 92,
+          "scale": 92,
+          "coarse_step": 5,
+          "decimals": 0,
+          "range": [50, 100]
+        },
+        {
+          "var": "respiratory_rate",
+          "label": "Respiratory rate",
+          "unit": "/min",
+          "op": ">",
+          "threshold": 24,
+          "scale": 24,
+          "coarse_step": 5,
+          "decimals": 0
+        }
+      ],
+      "distractors": ["hemoglobin", "blood_pressure"]
+    },
+    {
+      "id": "T5",
+      "split": "test",
+      "logic": "or",
+      "rule_text": "The rule applies if the lactate is above 4.0 mmol/L or the systolic blood pressure is below 90 mmHg.",
+      "variables": [
+        {
+          "var": "lactate",
+          "label": "Lactate",
+          "unit": "mmol/L",
+          "op": ">",
+          "threshold": 4.0,
+          "scale": 4.0,
+          "coarse_step": 1,
+          "decimals": 1
+        },
+        {
+          "var": "systolic_bp",
+          "label": "Systolic blood pressure",
+          "unit": "mmHg",
+          "op": "<",
+          "threshold": 90,
+          "scale": 90,
+          "coarse_step": 10,
+          "decimals": 0
+        }
+      ],
+      "distractors": ["heart_rate", "platelet_count"]
+    },
+    {
+      "id": "T6",
+      "split": "test",
+      "logic": "ratio",
+      "rule_text": "The rule applies if the ordered dose is above 15 mg/kg of body weight.",
+      "variables": [
+        {
+          "var": "dose_per_kg",
+          "label": "Dose per body weight",
+          "unit": "mg/kg",
+          "op": ">",
+          "threshold": 15,
+          "scale": 15,
+          "coarse_step": 5,
+          "decimals": 2
+        }
+      ],
+      "inputs": [
+        {
+          "var": "dose",
+          "label": "Ordered dose",
+          "unit": "mg",
+          "decimals": 0
+        },
+        {
+          "var": "body_weight",
+          "label": "Body weight",
+          "unit": "kg",
+          "decimals": 0,
+          "range": [50, 100]
+        }
+      ],
+      "distractors": ["hemoglobin", "platelet_count"]
+    },
+    {
+      "id": "T7",
+      "split": "test",
+      "logic": "window",
+      "rule_text": "The rule applies if the time since symptom onset is at most 4.5 h.",
+      "variables": [
+        {
+          "var": "onset_hours",
+          "label": "Time since symptom onset",
+          "unit": "h",
+          "op": "<=",
+          "threshold": 4.5,
+          "scale": 4.5,
+          "coarse_step": 1,
+          "decimals": 1
+        }
+      ],
+      "distractors": ["blood_pressure", "hemoglobin"]
+    },
+    {
+      "id": "T8",
+      "split": "test",
+      "logic": "unitless",
+      "rule_text": "The rule applies if the glucose is above 250 mg/dL.",
+      "variables": [
+        {
+          "var": "glucose",
+          "label": "Glucose",
+          "unit": null,
+          "op": ">",
+          "threshold": 250,
+          "scale": 250,
+          "coarse_step": 50,
+          "decimals": 0
+        }
+      ],
+      "distractors": ["bmi", "heart_rate"]
+    }
+  ]
+}

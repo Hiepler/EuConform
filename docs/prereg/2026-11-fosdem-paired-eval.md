@@ -1,7 +1,9 @@
 # Pre-registration: paired decision eval ("right for the wrong reasons"), FOSDEM 2027
 
-Status: **stage 1 frozen (before any model run), stages 2 and 3 open.** Fields marked _open_ are
-filled in before the first `run` on the test split. Every change after that goes to
+Status: **stage 1 content frozen; external deposit pending.** Stages 2 and 3 are open. Fields
+marked _open_ are filled in before the first `run` on the test split. The external deposit
+(DOI) is required before P0; until it exists, "frozen" means "fixed in this commit", not
+"independently anchored". Every change after that goes to
 [Deviations](#deviations) with date and reason.
 
 **Freeze stages.** Each stage is committed before the runs that depend on it. Git commit

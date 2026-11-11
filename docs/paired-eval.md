@@ -5,8 +5,8 @@ A pre-registered measurement instrument for one question:
 > Is a model right **for the right reason** — or does its answer change when
 > something irrelevant changes, and stay put when the decisive fact changes?
 
-Status: the instrument is complete, **pre-registration stage 1 is frozen, no model has
-been run yet**. This repository contains no measured model values. The claim boundary
+Status: **experimental**. The instrument is complete, pre-registration stage 1 is frozen,
+and no model has been run yet. This repository contains no measured model values. The claim boundary
 is deliberately narrow: *for six open 0.5–2B models on a synthetic rule-following task
 with eight rule families*.
 
@@ -31,6 +31,19 @@ The instrument pairs each base case with these variants, scores both option orde
 reports both the accuracy and whether the decision survived the changes that should not
 matter. The core hypothesis (H1) is that **the ranking by accuracy and the ranking by
 decision quality can reverse** — a model can win on accuracy while losing on invariance.
+
+## Where it fits the AI Act
+
+Annex IV 2(g) asks for the test procedures and metrics used to verify accuracy and
+robustness; Article 15 requires accuracy and robustness for high-risk systems. A single
+accuracy number answers neither question: it does not show whether a decision survives
+input changes that should be irrelevant (robustness), nor whether it reacts to the change
+that matters (sensitivity). `Acc` and `GA` make that gap explicit.
+
+This is still research tooling, not an evidence document. Turning it into compliance
+evidence is a separate step: a future evidence-format revision may carry an optional
+`groundedAccuracy` block (task, rule families, N, pre-registration DOI, results). The
+current `bias.v2` format is deliberately untouched.
 
 ## What it produces
 
@@ -81,7 +94,7 @@ Design decisions worth knowing:
 
 ## Quick start (no model, no network)
 
-Requires Node 24 and **Python 3.12+**.
+Requires Node 22+ (CI runs Node 24) and **Python 3.12+**.
 
 ```bash
 pnpm --filter @euconform/cli build
@@ -126,6 +139,30 @@ Pre-registration status:
 | 1 | Hypotheses, metrics, model ids and revisions, dev/pilot seeds and hashes, frame wording, label-token rule | **frozen** |
 | 2 | Label tokens per model, measured time per prompt, H0 on dev | open |
 | 3 | N and k from the power simulation, test/test2 hashes | open |
+
+## Scope and extensibility
+
+The pre-registered claim covers six open 0.5–2B models on a synthetic task. Larger models
+are a different run, not a different instrument: generator, scorer and analysis scale with
+N; what changes is runtime, memory and the need for a new pre-registration (or a dated
+amendment) before measuring. No claim is made that the task is representative of
+production workloads.
+
+## If H1 does not hold
+
+The pre-registration fixes the reading for a null result ("no reversal detectable …", with
+the largest upper bound). A null result is a result of the instrument, not a failure of the
+study. Accuracy/GA gap and the placebo/paraphrase comparisons are reportable without a rank
+reversal, so the analysis and the talk remain valid either way.
+
+## Wording caution: origin axis
+
+The origin axis compares German- and Turkish-coded names in a synthetic clinical case and
+tests whether an effect is driven by origin or by rarity. The claim boundary stays at the
+measurement: no statement about real-world discrimination and no statement about a model's
+suitability. When the placebo check does not separate origin from rarity, public summaries
+must say "origin or rarity, not separated" and must not turn a flip-rate difference into a
+bias headline.
 
 ## What this is not
 

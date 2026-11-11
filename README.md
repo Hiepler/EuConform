@@ -86,7 +86,7 @@
 | `validate` | Valid/invalid status per JSON file | Check EuConform JSON files against published schemas |
 | `verify` | Bundle integrity status | Check a manifest, extracted bundle, or ZIP archive |
 | `import` | `euconform.aibom.json` | Map an external CycloneDX SBOM into the EuConform AI BOM layer |
-| `paired-eval` | Prompt set + scores (JSONL), analysis report | Pre-registered paired decision eval: is a model right for the right reason? |
+| `paired-eval` | Prompt set + scores (JSONL), analysis report | Pre-registered paired decision eval (experimental): is a model right for the right reason? |
 
 ## 🚀 Quick Start
  
@@ -96,7 +96,7 @@
 
 ### Prerequisites
 
-- **Node.js** ≥ 18
+- **Node.js** ≥ 22 (CI runs Node 24)
 - **pnpm** ≥ 10 (recommended) or npm/yarn
 
 ### Installation

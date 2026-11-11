@@ -6,7 +6,8 @@ import runCommand from "../paired-eval/run-command";
 export default defineCommand({
   meta: {
     name: "paired-eval",
-    description: "Paired decision eval: generate prompt sets, score them, run baselines",
+    description:
+      "Paired decision eval (experimental): generate prompt sets, score them, run baselines",
   },
   subCommands: {
     generate: generateCommand,

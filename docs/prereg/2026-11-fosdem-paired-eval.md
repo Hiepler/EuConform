@@ -4,14 +4,35 @@ Status: **stage 1 frozen (before any model run), stages 2 and 3 open.** Fields m
 filled in before the first `run` on the test split. Every change after that goes to
 [Deviations](#deviations) with date and reason.
 
-**Freeze stages.** Each stage is committed before the runs that depend on it; the commit time
-can be checked against `started_at` in every `run.json`.
+**Freeze stages.** Each stage is committed before the runs that depend on it. Git commit
+timestamps alone are not treated as proof (they can be set by the author): stage 1 is
+additionally deposited externally before P0, and the deposit is the checkable anchor. The
+`started_at` values in every `run.json` are checked against the deposit date, not against
+commit time.
 
 | Stage | Fixed | Committed before |
 |---|---|---|
 | 1 | Hypotheses, metrics, model ids and revision SHAs, dev and pilot seeds and SHA-256, frame wording, label-token rule, pilot subsets | the first model run (P0) |
 | 2 | Label tokens per model (`scripts/paired-eval/paired-eval.config.json`), measured time per prompt, H0 on dev | the pilot run |
 | 3 | N and k (power simulation on the pilot), test and test2 SHA-256 | the first run on the test split |
+
+### Freeze record (stage 1)
+
+| Item | Frozen value |
+|---|---|
+| External deposit | **pending** — DOI and archive SHA-256 are recorded here before P0 |
+| `frames_sha256` (JSON.stringify, as in `manifest.json`) | `cfa1ae824fd04c984fbd6c297e35a7a050efd3c0b2e1517c9063bd55bf50caa5` |
+| dev `items_sha256` | `d88817d6d81c6edee668805cc19885257c2cdbeb7eac32e67425365e1f562084` |
+| pilot `items_sha256` | `16abe77edecd23f9931563c1893fb3facd1dfaee435bf04c959bdb91de6da74d` |
+| Model ids and revisions | section 4; all six confirmed against the Hub API |
+
+**Deposit checklist (before P0):**
+
+1. Archive this file, the run guide, `families.json`, `frames.json`, `names.json`,
+   `pairs.json`, and the dev and pilot `manifest.json`.
+2. Record the archive SHA-256 and deposit it (OSF registration or Zenodo).
+3. Write the DOI and archive SHA-256 into the table above in a follow-up commit.
+4. Only then run P0.
 
 Run order and commands: [`docs/prereg/2026-11-run-guide-macos.md`](2026-11-run-guide-macos.md).
 
@@ -90,7 +111,7 @@ stated in the prompt (English). Generator: `euconform paired-eval generate`
 
 | Split | Families | Base cases | Seed | items.jsonl SHA-256 |
 |---|---|---|---|---|
-| dev | D1, D2 | 48 (`--per-family 24`, 1,152 prompts) | `dev` (assumption; the plan names no dev seed) | `d88817d6d81c6edee668805cc19885257c2cdbeb7eac32e67425365e1f562084` |
+| dev | D1, D2 | 48 (`--per-family 24`, 1,152 prompts) | `dev` (fixed for this pre-registration; the plan names no dev seed; hash verified by regeneration) | `d88817d6d81c6edee668805cc19885257c2cdbeb7eac32e67425365e1f562084` |
 | pilot | T1–T8 | 96 (`--per-family 12`, half cells, gender alternating, 2,304 prompts) | `pilot` | `16abe77edecd23f9931563c1893fb3facd1dfaee435bf04c959bdb91de6da74d` |
 | pilot, `word` arm | T1–T8 | 96 (robust-n capped from 200, 192 prompts) | `pilot` | `85e0058c7499f75c1b77af7bb01998d0d6da95666e5175bd9e370ccae216fdf4` |
 | pilot, `decomp` arm | T1–T8 | 96 (robust-n capped from 200, 384 prompts) | `pilot` | `163b385ac7c4043ee0dd33c6e0df62b445b4193910f2073def9ffa67b693dcdf` |
@@ -113,8 +134,8 @@ stated in the prompt (English). Generator: `euconform paired-eval generate`
 **Frozen wording (`frames.json`):**
 
 - SHA-256 of `JSON.stringify(frames.json)` (as written to `manifest.json` `frames_sha256`):
-  `cfa1ae824fd04c984fbd6c297e35a7a050efd3c0b2e1517c9063bd55bf50caa5` _(pre-freeze value; final
-  value set in P0 on dev)_
+  `cfa1ae824fd04c984fbd6c297e35a7a050efd3c0b2e1517c9063bd55bf50caa5` _(frozen; reproduced by
+  regenerating the dev split from the committed generator)_
 - Canonical frame parts: `S1.w0`, `S2.w0`, `S3.w0`, `S3word.w0`. para1 and para2 use other
   combinations of `w0`–`w2` per frame part.
 - Canonical text (A/B arm, ER):
@@ -144,7 +165,7 @@ substitution is logged here.
 | qwen3-1.7b | `onnx-community/Qwen3-1.7B-ONNX` | `3231b522c6e703b2f9b3cd8ea27426a1289a02f2` | fp32 | _open (P0)_ | off (`enable_thinking: false`, empty think block) |
 | llama-3.2-1b | `onnx-community/Llama-3.2-1B-Instruct-ONNX` | `82ac69368916173bad498ad390290faab92d4fb0` | fp32 (+ q8 for H4) | _open (P0)_ | n/a |
 | smollm2-1.7b | `HuggingFaceTB/SmolLM2-1.7B-Instruct` | `31b70e2e869a7173562077fd711b654946d38674` | fp32 | _open (stage 2)_ | n/a |
-| gemma-1b | `onnx-community/gemma-3-1b-it-ONNX` _(proposal, confirm before stage 3)_ | `a58439f40017d3b99c7d378ff525e54e0ba08ebf` | fp32 | _open (stage 2)_ | n/a |
+| gemma-1b | `onnx-community/gemma-3-1b-it-ONNX` (confirmed against the Hub API on 11 Nov 2026) | `a58439f40017d3b99c7d378ff525e54e0ba08ebf` | fp32 | _open (stage 2)_ | n/a |
 
 Revisions are the Hub `sha` of each repo on 2 Nov 2026 and are always passed explicitly with
 `--revision`. All six repos ship an fp32 `onnx/model.onnx` (with external data) and an int8 file.

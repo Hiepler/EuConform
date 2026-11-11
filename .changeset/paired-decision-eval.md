@@ -3,7 +3,7 @@
 "@euconform/cli": minor
 ---
 
-Paired decision eval instrument for "right for the wrong reasons".
+**Experimental:** paired decision eval instrument for "right for the wrong reasons".
 
 Adds a pre-registered measurement instrument that separates accuracy from decision
 quality: every base case is paired with decisive, irrelevant, placebo and paraphrase
@@ -21,4 +21,8 @@ the changes that should not matter and reacts to the one that should.
   has been measured yet, so this release publishes the instrument, not results.
 
 `run.json` is a versioned research artifact (`euconform.paired-eval.run/v1`), not a
-EuConform evidence document and not part of `bundle.v1`.
+EuConform evidence document and not part of `bundle.v1`. The instrument is marked
+experimental: the API and the CLI surface may change without a major release until the
+first pre-registered measurement is published.
+
+Node engine requirement moves to `>=22` (the CLI already targets Node 22; CI runs Node 24).

@@ -8,6 +8,13 @@ on:
       - "packages/core/src/paired-eval/**"
       - "packages/cli/src/paired-eval/**"
       - ".github/workflows/paired-eval.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/paired-eval/**"
+      - "packages/core/src/paired-eval/**"
+      - "packages/cli/src/paired-eval/**"
+      - ".github/workflows/paired-eval.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -31,7 +38,7 @@ jobs:
           cache: "pnpm"
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: "pip"

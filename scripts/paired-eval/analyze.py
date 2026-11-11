@@ -1175,7 +1175,7 @@ def render_report(ctx):
     w("")
     w(f"Base cases N = {inst.n}, bootstrap B = {ctx['n_boot']}, seed {ctx['seed']}, k = {k}. "
       f"Models ranked: {len(ctx['ranked'])}, not ranked: {len(ctx['unranked'])}.")
-    w("Aussagegrenze: for six open 0.5–2B models on a synthetic rule-following task with eight rule families.")
+    w("Claim boundary: for six open 0.5–2B models on a synthetic rule-following task with eight rule families.")
     for n in ctx["notes"]:
         w(f"- Note: {n}")
     w("")

@@ -86,6 +86,7 @@
 | `validate` | Valid/invalid status per JSON file | Check EuConform JSON files against published schemas |
 | `verify` | Bundle integrity status | Check a manifest, extracted bundle, or ZIP archive |
 | `import` | `euconform.aibom.json` | Map an external CycloneDX SBOM into the EuConform AI BOM layer |
+| `paired-eval` | Prompt set + scores (JSONL), analysis report | Pre-registered paired decision eval: is a model right for the right reason? |
 
 ## 🚀 Quick Start
  
@@ -344,6 +345,18 @@ Current workflow boundaries:
 
 Stage 1 documentation, schemas, and example artifacts live in [docs/spec/README.md](docs/spec/README.md).
 Reference source projects for OSS builders live in [examples/README.md](examples/README.md).
+
+### Research Instrument: Paired Decision Eval
+
+Accuracy counts correct answers; it cannot tell a model that follows a rule from one that
+follows a shortcut that happens to agree on the test set. The paired decision eval pairs
+every base case with decisive, irrelevant, placebo and paraphrase variants and reports
+whether the decision survives the changes that should not matter — under a pre-registered
+analysis plan, before any model is run.
+
+- Instrument and status: [docs/paired-eval.md](docs/paired-eval.md)
+- Pre-registration: [docs/prereg/2026-11-fosdem-paired-eval.md](docs/prereg/2026-11-fosdem-paired-eval.md)
+- No measured model values are published yet; the instrument is complete and frozen.
 
 ### Bias Testing Methodology
 

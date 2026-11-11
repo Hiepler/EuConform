@@ -1,6 +1,10 @@
 # paired-eval analysis (AP6) and power simulation (AP7)
 
-Setup: `python3 -m venv .venv && .venv/bin/pip install -r scripts/paired-eval/requirements.txt`.
+Setup (Python 3.12+): `python3.12 -m venv .venv && .venv/bin/pip install -r scripts/paired-eval/requirements.txt`.
+
+Entry point and claim boundary: [`docs/paired-eval.md`](../../docs/paired-eval.md).
+`run.json` is a versioned research artifact (`euconform.paired-eval.run/v1`), not an
+EuConform evidence document.
 
     python3 -I scripts/paired-eval/analyze.py --items items.jsonl --scores <dir> [<dir>...] \
         --k 5|15 [--pairs scripts/paired-eval/pairs.json] [--seed 20261115] [--n-boot 10000] --out <dir>

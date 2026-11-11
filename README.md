@@ -26,7 +26,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node.js">
+  <img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node.js">
   <img src="https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript" alt="TypeScript">
   <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js">
   <a href="https://biomejs.dev">
@@ -355,7 +355,7 @@ whether the decision survives the changes that should not matter — under a pre
 analysis plan, before any model is run.
 
 - Instrument and status: [docs/paired-eval.md](docs/paired-eval.md)
-- Pre-registration: [docs/prereg/2026-11-fosdem-paired-eval.md](docs/prereg/2026-11-fosdem-paired-eval.md)
+- Pre-registration: [docs/prereg/2026-11-fosdem-paired-eval.md](docs/prereg/2026-11-fosdem-paired-eval.md) · deposited as [doi:10.5281/zenodo.24134199](https://doi.org/10.5281/zenodo.24134199)
 - No measured model values are published yet; the instrument is complete and frozen.
 
 ### Bias Testing Methodology

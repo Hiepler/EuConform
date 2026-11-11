@@ -5,8 +5,9 @@ A pre-registered measurement instrument for one question:
 > Is a model right **for the right reason** — or does its answer change when
 > something irrelevant changes, and stay put when the decisive fact changes?
 
-Status: **experimental**. The instrument is complete, pre-registration stage 1 is frozen,
-and no model has been run yet. This repository contains no measured model values. The claim boundary
+Status: **experimental**. The instrument is complete, pre-registration stage 1 is frozen and
+deposited ([doi:10.5281/zenodo.24134199](https://doi.org/10.5281/zenodo.24134199)), and no model
+has been run yet. This repository contains no measured model values. The claim boundary
 is deliberately narrow: *for six open 0.5–2B models on a synthetic rule-following task
 with eight rule families*.
 
@@ -176,7 +177,7 @@ bias headline.
 
 ## Where the rigor lives
 
-- Pre-registration: [`docs/prereg/2026-11-fosdem-paired-eval.md`](prereg/2026-11-fosdem-paired-eval.md)
+- Pre-registration: [`docs/prereg/2026-11-fosdem-paired-eval.md`](prereg/2026-11-fosdem-paired-eval.md) (deposited: [doi:10.5281/zenodo.24134199](https://doi.org/10.5281/zenodo.24134199))
 - Run guide: [`docs/prereg/2026-11-run-guide-macos.md`](prereg/2026-11-run-guide-macos.md)
 - Analysis notes: [`scripts/paired-eval/README.md`](../scripts/paired-eval/README.md)
 - Data contract: [`packages/core/src/paired-eval/types.ts`](../packages/core/src/paired-eval/types.ts)

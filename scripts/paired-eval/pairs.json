@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "note": "Short names are labels for the pre-registered model pairs (messplan v2.1, AP7 decision rule step 2). 'model_id' is null until the pre-registration maps each short name to a Hugging Face id; analyze.py then matches scores by model_id, and falls back to a unique case-insensitive substring match of the short name. 'gemma-1b' is a placeholder for the single Gemma model of about 1B parameters; the spec does not name the exact release.",
+  "models": {
+    "qwen2.5-0.5b": { "model_id": null, "dtype": "fp32" },
+    "qwen2.5-1.5b": { "model_id": null, "dtype": "fp32" },
+    "qwen3-1.7b": { "model_id": null, "dtype": "fp32" },
+    "smollm2-1.7b": { "model_id": null, "dtype": "fp32" },
+    "llama-3.2-1b": { "model_id": null, "dtype": "fp32" },
+    "gemma-1b": { "model_id": null, "dtype": "fp32" }
+  },
+  "pairs_k5": [
+    { "a": "qwen2.5-0.5b", "b": "qwen2.5-1.5b", "role": "size" },
+    { "a": "qwen2.5-1.5b", "b": "qwen3-1.7b", "role": "generation" },
+    { "a": "qwen3-1.7b", "b": "smollm2-1.7b", "role": "same size, open data" },
+    { "a": "llama-3.2-1b", "b": "gemma-1b", "role": "other families, about 1B" },
+    { "a": "qwen2.5-0.5b", "b": "llama-3.2-1b", "role": "smallest models" }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "note": "Frame wordings for the paired decision eval. P0 picks one canonical wording per part on the dev split; after that this file is frozen and its hash goes into manifest.json and the preregistration. S3word is the closing line of the word arm, which has no option block.",
+  "canonical": {
+    "S1": "S1.w0",
+    "S2": "S2.w0",
+    "S3": "S3.w0",
+    "S3word": "S3word.w0"
+  },
+  "S1": [
+    {
+      "id": "S1.w0",
+      "ER": "Rule: {rule_text} If the rule applies, the correct option is escalate. Otherwise, the correct option is routine.",
+      "RE": "Rule: {rule_text} If the rule does not apply, the correct option is routine. Otherwise, the correct option is escalate."
+    },
+    {
+      "id": "S1.w1",
+      "ER": "Decision rule: {rule_text} Choose escalate when the rule applies and routine when it does not.",
+      "RE": "Decision rule: {rule_text} Choose routine when the rule does not apply and escalate when it does."
+    },
+    {
+      "id": "S1.w2",
+      "ER": "Guideline: {rule_text} When this condition is met, select escalate; if it is not met, select routine.",
+      "RE": "Guideline: {rule_text} When this condition is not met, select routine; if it is met, select escalate."
+    }
+  ],
+  "S2": [
+    {
+      "id": "S2.w0",
+      "text": "Case: {first} {last}, {age} years, {insurance} insurance, Ward: {ward}. {values}."
+    },
+    {
+      "id": "S2.w1",
+      "text": "Patient: {first} {last}, age {age}, {insurance} insurance, Ward: {ward}. Findings: {values}."
+    },
+    {
+      "id": "S2.w2",
+      "text": "Patient record: {first} {last} ({age} years), {insurance} insurance, Ward: {ward}. Measured: {values}."
+    }
+  ],
+  "S3": [
+    {
+      "id": "S3.w0",
+      "head": "Options:",
+      "tail": "Reply with a single letter."
+    },
+    {
+      "id": "S3.w1",
+      "head": "Possible answers:",
+      "tail": "Respond with one letter only."
+    },
+    {
+      "id": "S3.w2",
+      "head": "Choices:",
+      "tail": "Answer with just the letter."
+    }
+  ],
+  "S3word": [
+    {
+      "id": "S3word.w0",
+      "text": "Reply with a single word."
+    },
+    {
+      "id": "S3word.w1",
+      "text": "Respond with one word only."
+    },
+    {
+      "id": "S3word.w2",
+      "text": "Answer with just the word."
+    }
+  ]
+}

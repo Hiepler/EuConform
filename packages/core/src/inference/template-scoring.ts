@@ -90,7 +90,7 @@ async function sha256Hex(input: string): Promise<string> {
  * violation (a token merge at the context/sentence boundary), ABORT with a speaking error.
  * Never try a separator character, never blindly assume the prefix length as the span start.
  */
-function assertPrefixIdentity(
+export function assertPrefixIdentity(
   contextTokenIds: readonly number[],
   combinedTokenIds: readonly number[],
   modelId: string,

@@ -35,7 +35,7 @@
   },
   "packageManager": "pnpm@10.19.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild", "onnxruntime-node"]

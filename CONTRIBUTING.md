@@ -19,9 +19,11 @@ We use GitHub to host code, to track issues and feature requests, as well as acc
 5. Make sure your code lints (`pnpm lint`).
 6. Issue that pull request!
 
-## Any contributions you make will be under the MIT and EUPL-1.2 Licenses
+## Licensing of your contributions
 
 In short, when you submit code contributions, you confirm that you have the right to contribute that code and that you license your contribution to the project under the project's existing licenses.
+
+Contributions to the prose documentation (Markdown files under `docs/`) are licensed under CC BY 4.0, see [LICENSE-DOCS](LICENSE-DOCS).
 
 ## Report bugs using GitHub's [issue tracker](https://github.com/Hiepler/EuConform/issues)
 
@@ -40,4 +42,4 @@ We use GitHub issues to track public bugs. Report a bug by opening a new issue; 
 - Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
 
 ## License
-By contributing, you agree that your contributions will be licensed under its MIT and EUPL-1.2 Licenses.
+By contributing, you agree that your code contributions will be licensed under its MIT and EUPL-1.2 Licenses, and your contributions to the documentation under `docs/` (Markdown files) under CC BY 4.0.

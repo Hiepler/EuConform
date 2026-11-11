@@ -526,11 +526,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 For security concerns, please see our [Security Policy](SECURITY.md). Do **not** create public issues for security vulnerabilities.
 
+## 📝 Citing EuConform
+
+If you use EuConform, its evidence format or its evaluation methods in research, a talk or a
+product, please cite it. GitHub shows a **"Cite this repository"** button based on
+[`CITATION.cff`](CITATION.cff) (APA and BibTeX).
+
 ## 📄 License
 
-Dual-licensed under:
+**Code** is dual-licensed under:
 - [MIT License](LICENSE) – for maximum compatibility
 - [EUPL-1.2](LICENSE-EUPL) – for EU institution compatibility
+
+This also covers the JSON Schemas (`docs/spec/schemas/`) and example artifacts
+(`docs/spec/examples/`), so they can be embedded in any project.
+
+**Documentation** – every Markdown file under [`docs/`](docs/) – is licensed under
+[CC BY 4.0](LICENSE-DOCS): reuse it freely, with attribution.
 
 ---
 

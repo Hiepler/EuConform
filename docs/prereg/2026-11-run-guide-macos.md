@@ -7,6 +7,11 @@ smoke test → P0 on dev → pilot → AP-R**. Nothing in here merges a pull req
 Pre-registration: [`2026-11-fosdem-paired-eval.md`](2026-11-fosdem-paired-eval.md).
 Specification: measurement plan v2.1, section 7 (time plan and abort rules) and section 9.
 
+**Post-merge state (12 Nov 2026):** the instrument is merged (PR #28, released as
+`@euconform/core@1.7.0` / `@euconform/cli@1.4.0`) and stage 1 is deposited at Zenodo
+([10.5281/zenodo.24134199](https://doi.org/10.5281/zenodo.24134199)). Measurements therefore go
+on their own branch and PR, not on the merged instrument branch.
+
 ## Assumptions
 
 Each assumption is marked so it can be checked; the first block in step 1 tests most of them.
@@ -28,12 +33,12 @@ Each assumption is marked so it can be checked; the first block in step 1 tests 
 
 | Step | What | Active time | Wall time (estimated) | Done when |
 |---|---|---|---|---|
-| 0 | Pre-registration stage 1 committed | 0 min (done by the pool) | – | `git log` shows the stage 1 commit before any `run.json` exists |
+| 0 | Pre-registration stage 1 committed and deposited | 0 min (done by the pool) | – | the prereg says `stage 1 frozen` and carries the Zenodo DOI |
 | 1 | Check prerequisites | 5 min | 5 min (+ installs) | every line in the check prints `ok` |
 | 2 | Setup: clone, install, build, unit tests | 5 min | 15 min | tests pass, `paired-eval --help` prints |
 | 3 | Smoke test AP3.3 on Qwen2.5-0.5B | 3 min | 10 min | vitest: 1 passed |
 | 4 | P0 on dev, then pilot (one unattended command) | 2 min | 3–18 h, middle 9 h | last line `PILOT DONE` |
-| 5 | Push P0 and pilot data | 3 min | 2 min | `git push` ok, PR #28 shows the commits |
+| 5 | Push P0 and pilot data | 3 min | 2 min | `git push` ok, the measurement PR shows the commits |
 | 6 | AP-R remeasurement | 5 min | 30–60 min | `summary.md` exists, pushed to PR #29 |
 | 7 | Report back | 1 min | – | one line to the pool |
 | | **Total** | **about 24 min** | **about 10–20 h** | |
@@ -45,9 +50,9 @@ stage 2 freeze is provably earlier than every pilot `run.json`.
 
 ## Step 0: pre-registration stage 1 (already done)
 
-The pool committed stage 1 of the pre-registration on `feat/paired-decision-eval` before any
-model has run: model ids and revision SHAs, dev and pilot seeds and SHA-256, the label-token rule
-and the pilot subsets. Fields that only P0 or the pilot can fill:
+The pool committed stage 1 of the pre-registration on `main` (merged as PR #28) and deposited it
+at Zenodo before any model has run: model ids and revision SHAs, dev and pilot seeds and SHA-256,
+the label-token rule and the pilot subsets. Fields that only P0 or the pilot can fill:
 
 | Field | Filled by | When |
 |---|---|---|
@@ -56,7 +61,7 @@ and the pilot subsets. Fields that only P0 or the pilot can fill:
 | Measured time per prompt | P0 (`docs/measurements/2026-11-paired-eval/p0/timing.txt`) | step 4 |
 | N and k | power simulation on the pilot data | pool, after step 5 |
 | test and test2 SHA-256 | `generate` after N is fixed | pool, before any test run (stage 3) |
-| Gemma variant | proposal `gemma-3-1b-it` fp32 in the pre-registration | confirm before stage 3 |
+| Gemma variant | confirmed in the pre-registration (`gemma-3-1b-it` fp32, Hub API 11 Nov 2026) | – |
 
 Nothing to do here; step 2 checks that the commit is present.
 
@@ -89,8 +94,11 @@ Python 3.12 is an assumption: the pinned wheels (`numpy 2.5.4`, `pandas 3.1.0`) 
 
 ```bash
 cd ~ && git clone https://github.com/Hiepler/EuConform.git && cd ~/EuConform
-git switch feat/paired-decision-eval && git pull --ff-only
-git log --oneline -5 | grep -i "stage 1" || echo "STOP: stage 1 pre-registration commit missing"
+git switch main && git pull --ff-only
+git switch -c measurement/paired-eval-2026-11
+git push -u origin measurement/paired-eval-2026-11
+grep -q "stage 1 frozen" docs/prereg/2026-11-fosdem-paired-eval.md || echo "STOP: stage 1 pre-registration missing"
+grep -qi "zenodo" docs/prereg/2026-11-fosdem-paired-eval.md || echo "STOP: stage 1 deposit missing"
 pnpm install --frozen-lockfile
 pnpm --filter @euconform/cli build
 node packages/cli/dist/index.js paired-eval --help
@@ -192,12 +200,14 @@ git commit -m "chore(paired-eval): add pilot runs for Qwen3-1.7B and Llama-3.2-1
 git log -3 --format='%h %an %s'
 git log -3 --format=%B | grep -iE "co-authored|claude|generated with" && echo "STOP: remove the trailer before pushing" || echo "no attribution: ok"
 git push
+gh pr create --title "chore(paired-eval): P0 and pilot measurements" \
+  --body "Stage 2 data and pilot runs for Qwen3-1.7B and Llama-3.2-1B. No hypothesis tests yet."
 ```
 
 **Commit rules:** plain English message, no `Co-Authored-By` or any AI trailer; the
 pre-commit hook may reformat `run.json` and `manifest.json`, that is expected. `scores.jsonl` and
 `items.jsonl` are never reformatted.
-**Success:** `git push` ends with `feat/paired-decision-eval -> feat/paired-decision-eval`.
+**Success:** `git push` ends with `measurement/paired-eval-2026-11 -> measurement/paired-eval-2026-11`, and the new PR lists the P0 and pilot commits.
 After the push the pool checks `thinking_mode` and `template` in every `run.json`, runs the
 analysis and the power simulation (AP7) and fills stage 3.
 
@@ -217,7 +227,7 @@ ls docs/measurements/2026-11-length-logp/
 git add docs/measurements/2026-11-length-logp
 git commit -m "chore(measurement): add sentence-length logP remeasurement results"
 git push
-git switch feat/paired-decision-eval
+git switch measurement/paired-eval-2026-11
 pnpm install --frozen-lockfile
 ```
 

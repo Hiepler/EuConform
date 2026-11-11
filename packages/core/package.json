@@ -1,6 +1,6 @@
 {
   "name": "@euconform/core",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "license": "MIT OR EUPL-1.2",
   "engines": {
     "node": ">=22"

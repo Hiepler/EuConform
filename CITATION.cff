@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: >-
+  If you use EuConform, its evidence format or its evaluation methods in your
+  work, please cite it using the metadata below.
+title: "EuConform: Open-Source Evidence Toolkit for AI Compliance"
+type: software
+authors:
+  - given-names: Benedikt
+    family-names: Hiepler
+    orcid: "https://orcid.org/0009-0005-2068-0415"
+repository-code: "https://github.com/Hiepler/EuConform"
+url: "https://euconform.eu"
+abstract: >-
+  EuConform defines an open evidence format for AI compliance under the EU AI
+  Act and provides offline, vendor-independent tools to produce, validate and
+  empirically evaluate it: report, AI BOM, CI and bundle artifacts, schema
+  validation, bundle verification, local bias evaluation with sentence
+  log-probabilities, and CycloneDX interoperability.
+keywords:
+  - EU AI Act
+  - AI compliance
+  - Annex IV
+  - evidence format
+  - AI BOM
+  - bias evaluation
+  - model evaluation
+  - offline-first
+license:
+  - MIT
+  - EUPL-1.2

@@ -26,7 +26,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node.js">
+  <img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node.js">
   <img src="https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript" alt="TypeScript">
   <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js">
   <a href="https://biomejs.dev">
@@ -355,7 +355,7 @@ whether the decision survives the changes that should not matter — under a pre
 analysis plan, before any model is run.
 
 - Instrument and status: [docs/paired-eval.md](docs/paired-eval.md)
-- Pre-registration: [docs/prereg/2026-11-fosdem-paired-eval.md](docs/prereg/2026-11-fosdem-paired-eval.md)
+- Pre-registration: [docs/prereg/2026-11-fosdem-paired-eval.md](docs/prereg/2026-11-fosdem-paired-eval.md) · deposited as [doi:10.5281/zenodo.24134199](https://doi.org/10.5281/zenodo.24134199)
 - No measured model values are published yet; the instrument is complete and frozen.
 
 ### Bias Testing Methodology
@@ -526,11 +526,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 For security concerns, please see our [Security Policy](SECURITY.md). Do **not** create public issues for security vulnerabilities.
 
+## 📝 Citing EuConform
+
+If you use EuConform, its evidence format or its evaluation methods in research, a talk or a
+product, please cite it. GitHub shows a **"Cite this repository"** button based on
+[`CITATION.cff`](CITATION.cff) (APA and BibTeX).
+
 ## 📄 License
 
-Dual-licensed under:
+**Code** is dual-licensed under:
 - [MIT License](LICENSE) – for maximum compatibility
 - [EUPL-1.2](LICENSE-EUPL) – for EU institution compatibility
+
+This also covers the JSON Schemas (`docs/spec/schemas/`) and example artifacts
+(`docs/spec/examples/`), so they can be embedded in any project.
+
+**Documentation** – every Markdown file under [`docs/`](docs/) – is licensed under
+[CC BY 4.0](LICENSE-DOCS): reuse it freely, with attribution.
 
 ---
 

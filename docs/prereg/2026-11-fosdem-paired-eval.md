@@ -1,10 +1,9 @@
 # Pre-registration: paired decision eval ("right for the wrong reasons"), FOSDEM 2027
 
-Status: **stage 1 frozen** (content fixed in this commit; external deposit pending). Stages 2
-and 3 are open. Fields marked _open_ are filled in before the first `run` on the test split.
-The external deposit (DOI) is required before P0; until it exists, "frozen" means "fixed in
-this commit", not "independently anchored". Every change after that goes to
-[Deviations](#deviations) with date and reason.
+Status: **stage 1 frozen** and deposited externally on 11 Nov 2026 as
+[doi:10.5281/zenodo.24134199](https://doi.org/10.5281/zenodo.24134199), before any model run.
+Stages 2 and 3 are open. Fields marked _open_ are filled in before the first `run` on the test
+split. Every change after that goes to [Deviations](#deviations) with date and reason.
 
 **Freeze stages.** Each stage is committed before the runs that depend on it. Git commit
 timestamps alone are not treated as proof (they can be set by the author): stage 1 is
@@ -22,13 +21,14 @@ commit time.
 
 | Item | Frozen value |
 |---|---|
-| External deposit | **pending** — DOI and archive SHA-256 are recorded here before P0 |
+| External deposit | Zenodo, published 11 Nov 2026: [10.5281/zenodo.24134199](https://doi.org/10.5281/zenodo.24134199) (concept DOI for later versions: 10.5281/zenodo.24134198) |
+| Deposited archive | `euconform-paired-eval-prereg-stage1.zip`, SHA-256 `93d6f94854a6d93bac331a7335e2be578ae5cb955464ba77e626d188e355bd85`, source commit `650cf91f78fef68533e4c4c3d08f8b3b794be82c` |
 | `frames_sha256` (JSON.stringify, as in `manifest.json`) | `cfa1ae824fd04c984fbd6c297e35a7a050efd3c0b2e1517c9063bd55bf50caa5` |
 | dev `items_sha256` | `d88817d6d81c6edee668805cc19885257c2cdbeb7eac32e67425365e1f562084` |
 | pilot `items_sha256` | `16abe77edecd23f9931563c1893fb3facd1dfaee435bf04c959bdb91de6da74d` |
 | Model ids and revisions | section 4; all six confirmed against the Hub API |
 
-**Deposit checklist (before P0):**
+**Deposit checklist (before P0, done 11 Nov 2026):**
 
 1. Archive this file, the run guide, `families.json`, `frames.json`, `names.json`,
    `pairs.json`, and the dev and pilot `manifest.json`.
